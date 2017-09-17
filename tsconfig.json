@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "lib": [
+            "dom",
+            "es5",
+            "es2015.promise"
+        ],
+        "outDir": "./dist/",
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "removeComments": true,
+        "module": "es2015",
+        "moduleResolution": "node",
+        "target": "es5",
+        "jsx": "react"
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+}

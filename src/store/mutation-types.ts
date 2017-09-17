@@ -1,0 +1,1 @@
+export const RECEIVE_WORDS = 'RECEIVE_WORDS';

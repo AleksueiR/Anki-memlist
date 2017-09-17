@@ -1,0 +1,107 @@
+<template>
+
+<div id="app">
+    Hello, reloaded; 1! -1-6-
+    <span>{{ msg }} {{ count }}</span>
+    <div>
+        <span class="test">green</span>
+        <span class="test2">orange</span>
+    </div>
+
+    <button v-on:click="updateStorage()">update store</button>
+
+    <input type="text"
+        v-model="newWord">
+
+    <button v-on:click="addNew()">add new</button>
+
+    <ul>
+        <li v-for="word in words" :key="word.value">
+            {{ word.value }} - {{ word.archived }} - {{ cache[word.value] }}
+        </li>
+    </ul>
+</div>
+
+</template>
+
+<script lang='ts'>
+
+import Vue from 'vue';
+import Component from 'vue-class-component';
+import { Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
+
+import storage from './../api/storage';
+import anki from './../api/anki';
+
+import { WordInterface } from '../types';
+
+import Store from '../store';
+
+@Component({
+})
+export default class App extends Vue {
+    msg = 'Hello world!!';
+    count = 0;
+    // words:WordInterface[] = [];
+    newWord:string = '';
+    cache:any = {
+
+    };
+
+    mounted() {
+        this.$store.dispatch('getAllWords');
+
+        const handle = setInterval(() =>
+            (this.count += 3),
+            1000);
+
+        console.log('helo');
+
+        //this.getWords();
+    }
+
+    // computed
+    get words(): WordInterface[] {
+        return this.$store.getters.allWords;
+    }
+
+    @Watch('words')
+    onChildChanged(newVal: WordInterface[], oldVal: WordInterface[]) {
+
+        newVal.forEach(async word => {
+            this.cache[word.value] = await anki.getNotes('English::Word Vault', 'Word', word.value);
+        });
+    }
+
+    addNew() {
+        this.words.push({
+            value: this.newWord,
+            archived: false
+        });
+        this.newWord = '';
+    }
+
+    updateStorage() {
+        storage.updateWords(this.words);
+    }
+}
+</script>
+
+<style lang="scss" scoped>
+#app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+    span {
+        color: red;
+    }
+    div .test {
+        color: green;
+    }
+    .test2 {
+        color: orange;
+    }
+}
+</style>

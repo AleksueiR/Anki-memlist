@@ -1,18 +1,20 @@
 import storage from '../../api/storage';
 import * as types from '../mutation-types';
 
-import { WordInterface } from '../../types';
+import { Word } from '../../types';
 
 import Vuex from 'vuex';
 
 // initial state
-const state = {
-    all: []
-};
+class WordsState {
+    constructor(public items: Word[] = []) {}
+}
+
+const state: WordsState = new WordsState();
 
 // getters
 const getters = {
-    allWords: (state: any):WordInterface[] => state!.all
+    items: (state: WordsState):Word[] => state.items
 };
 
 // actions
@@ -24,7 +26,7 @@ const actions = {
 
 // mutations
 const mutations = {
-    [types.RECEIVE_WORDS](state: any, { words }: { words: WordInterface[] }) {
+    [types.RECEIVE_WORDS](state: any, { words }: { words: Word[] }) {
         state.all = words;
     }/*,
 
@@ -34,8 +36,11 @@ const mutations = {
 }
 
 export default {
+    namespaced: true,
     state,
     getters,
     actions,
     mutations
 };
+
+export { WordsState };

@@ -4,7 +4,9 @@ const BASE_URL = 'http://127.0.0.1:8765';
 
 export default {
     async getNotes(deckName:string, fieldName:string, word:string) {
-        const response = await axios.post(`${BASE_URL}`, {
+        return '12345';
+
+        /*const response = await axios.post(`${BASE_URL}`, {
             action: 'findNotes',
             version: 5,
             params: {
@@ -12,6 +14,6 @@ export default {
             }
         });
 
-        return response.data.result;
+        return response.data.result;*/
     }
 };

@@ -16,8 +16,8 @@
     <button v-on:click="addNew()">add new</button>
 
     <ul>
-        <li v-for="word in words" :key="word.value">
-            {{ word.value }} - {{ word.archived }} - {{ cache[word.value] }}
+        <li v-for="word in words" :key="word.text">
+            {{ word.text }} - {{ word.archived }} - {{ cache[word.text] }}
         </li>
     </ul>
 </div>
@@ -34,7 +34,7 @@ import { mapActions, mapGetters } from 'vuex';
 import storage from './../api/storage';
 import anki from './../api/anki';
 
-import { WordInterface } from '../types';
+import { Word } from '../types';
 
 import Store from '../store';
 
@@ -62,23 +62,20 @@ export default class App extends Vue {
     }
 
     // computed
-    get words(): WordInterface[] {
+    get words(): Word[] {
         return this.$store.getters.allWords;
     }
 
     @Watch('words')
-    onChildChanged(newVal: WordInterface[], oldVal: WordInterface[]) {
+    onChildChanged(newVal: Word[], oldVal: Word[]) {
 
         newVal.forEach(async word => {
-            this.cache[word.value] = await anki.getNotes('English::Word Vault', 'Word', word.value);
+            this.cache[word.text] = await anki.getNotes('English::Word Vault', 'Word', word.text);
         });
     }
 
     addNew() {
-        this.words.push({
-            value: this.newWord,
-            archived: false
-        });
+        this.words.push(new Word(this.newWord));
         this.newWord = '';
     }
 

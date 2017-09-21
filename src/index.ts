@@ -4,6 +4,8 @@ import store from './store';
 
 //import * as Highcharts from 'highcharts';
 
+// const k:app = new app();
+
 new Vue({
   el: '#app',
   store,

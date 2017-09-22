@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/mocha": "^2.2.43",
     "@types/node": "^8.0.28",
     "axios": "^0.16.2",
@@ -16,7 +17,8 @@
     "vue-class-component": "^5.0.2",
     "vue-property-decorator": "^5.3.0",
     "vuetype": "^0.2.2",
-    "vuex": "^2.4.0"
+    "vuex": "^2.4.0",
+    "vuex-typescript": "^0.1.0"
   },
   "scripts": {
     "test": "poi test",

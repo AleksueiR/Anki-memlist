@@ -4,7 +4,7 @@
     Hello, reloaded; 1! -1-6-
     <span>{{ msg }} {{ count }}</span>
     <div>
-        <span class="test">green</span>
+        <span class="test">green -</span>
         <span class="test2">orange</span>
     </div>
 
@@ -16,7 +16,7 @@
     <button v-on:click="addNew()">add new</button>
 
     <ul>
-        <li v-for="word in words" :key="word.text">
+        <li v-for="word in items" :key="word.text">
             {{ word.text }} - {{ word.archived }} - {{ cache[word.text] }}
         </li>
     </ul>
@@ -31,15 +31,15 @@ import Component from 'vue-class-component';
 import { Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 
-import storage from './../api/storage';
+import storage from './../api/jsonbin';
 import anki from './../api/anki';
 
-import { Word } from '../types';
+import { Word, dFetchWods, dSyncWords, rItems } from './../store/modules/words';
 
 import Store from '../store';
 
-@Component({
-})
+
+@Component({})
 export default class App extends Vue {
     msg = 'Hello world!!';
     count = 0;
@@ -50,37 +50,36 @@ export default class App extends Vue {
     };
 
     mounted() {
-        this.$store.dispatch('getAllWords');
+        dFetchWods(this.$store);
 
         const handle = setInterval(() =>
             (this.count += 3),
             1000);
 
         console.log('helo');
-
-        //this.getWords();
     }
 
     // computed
-    get words(): Word[] {
-        return this.$store.getters.allWords;
+    get items(): Word[] {
+        return rItems(this.$store);
     }
 
-    @Watch('words')
+    /*@Watch('words')
     onChildChanged(newVal: Word[], oldVal: Word[]) {
 
         newVal.forEach(async word => {
             this.cache[word.text] = await anki.getNotes('English::Word Vault', 'Word', word.text);
         });
-    }
+    }*/
 
     addNew() {
-        this.words.push(new Word(this.newWord));
+        this.items.push(new Word(this.newWord));
         this.newWord = '';
     }
 
     updateStorage() {
-        storage.updateWords(this.words);
+        dSyncWords(this.$store);
+        // storage.updateWords(this.items);
     }
 }
 </script>

@@ -14,8 +14,10 @@
     "poi-preset-karma": "^9.0.3",
     "poi-preset-typescript": "^9.0.2",
     "sass-loader": "^6.0.6",
+    "typescript": "^2.5.2",
     "vue-class-component": "^5.0.2",
     "vue-property-decorator": "^5.3.0",
+    "vuetify": "^0.15.7",
     "vuetype": "^0.2.2",
     "vuex": "^2.4.0",
     "vuex-typescript": "^0.1.0"

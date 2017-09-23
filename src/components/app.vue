@@ -1,27 +1,44 @@
 <template>
+    <v-app id="app">
+        <main>
+            <v-container fluid>
+                <!--router-view></router-view-->
 
-<div id="app">
-    Hello, reloaded; 1! -1-6-
-    <span>{{ msg }} {{ count }}</span>
-    <div>
-        <span class="test">green -</span>
-        <span class="test2">orange</span>
-    </div>
+                <div>
+                    Hello, reloaded; 1! -1-6-
+                    <span>{{ msg }} {{ count }}</span>
+                    <div>
+                        <span class="test">green -</span>
+                        <span class="test2">orange</span>
+                    </div>
 
-    <button v-on:click="updateStorage()">update store</button>
+                    <button v-on:click="updateStorage()">update store</button>
 
-    <input type="text"
-        v-model="newWord">
+                    <v-text-field
+                        multi-line
+                        placeholder="new words"
+                        auto-grow
+                        rows="1"
+                        v-model="newWords">
+                    </v-text-field>
 
-    <button v-on:click="addNew()">add new</button>
+                    {{ newWords }}
 
-    <ul>
-        <li v-for="word in items" :key="word.text">
-            {{ word.text }} - {{ word.archived }} - {{ cache[word.text] }}
-        </li>
-    </ul>
-</div>
+                    <input type="text" v-model="newWord">
+                    <v-btn flat>Normal</v-btn>
+                    <v-btn light>Normal</v-btn>
+                    <button v-on:click="addNew()">add new</button>
 
+                    <ul>
+                        <li v-for="word in items" :key="word.text">
+                            {{ word.text }} - {{ word.archived }} - {{ cache[word.text] }}
+                        </li>
+                    </ul>
+                </div>
+
+            </v-container>
+        </main>
+    </v-app>
 </template>
 
 <script lang='ts'>
@@ -44,8 +61,9 @@ export default class App extends Vue {
     msg = 'Hello world!!';
     count = 0;
     // words:WordInterface[] = [];
-    newWord:string = '';
-    cache:any = {
+    newWord: string = '';
+    newWords: string = '';
+    cache: any = {
 
     };
 
@@ -73,8 +91,11 @@ export default class App extends Vue {
     }*/
 
     addNew() {
-        this.items.push(new Word(this.newWord));
-        this.newWord = '';
+        //this.items.push(new Word(this.newWord));
+        //this.newWord = '';
+
+        this.items.push(...this.newWords.split('\n').map(w => new Word(w)));
+        this.newWords = '';
     }
 
     updateStorage() {
@@ -85,6 +106,8 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss" scoped>
+@import url('./../../node_modules/vuetify/dist/vuetify.min.css');
+
 #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     text-align: center;

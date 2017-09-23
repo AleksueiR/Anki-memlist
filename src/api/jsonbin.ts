@@ -40,6 +40,7 @@ export default {
     }*/
 }
 
+// https://github.com/mzabriskie/axios/issues/718
 const promise = <T>(axiosPromise: AxiosPromise): Promise<T> => {
     return new Promise<T>((resolve, reject) => {
         axiosPromise

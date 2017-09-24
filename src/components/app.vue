@@ -1,40 +1,24 @@
 <template>
     <v-app id="app">
         <main>
-            <v-container fluid>
-                <!--router-view></router-view-->
+            <v-container fluid pa-0>
+                <word-selector></word-selector>
+
+
+                <router-link to="/long-list">Go to List</router-link>
+                <router-link to="/word-editor/38">Go to editor</router-link>
 
                 <div>
-                    Hello, reloaded; 1! -1-6-
+                    Hello, reloaded!!!- 1! -1-6-
                     <span>{{ msg }} {{ count }}</span>
                     <div>
                         <span class="test">green -</span>
                         <span class="test2">orange</span>
                     </div>
 
-                    <button v-on:click="updateStorage()">update store</button>
-
-                    <v-text-field
-                        multi-line
-                        placeholder="new words"
-                        auto-grow
-                        rows="1"
-                        v-model="newWords">
-                    </v-text-field>
-
-                    {{ newWords }}
-
-                    <input type="text" v-model="newWord">
-                    <v-btn flat>Normal</v-btn>
-                    <v-btn light>Normal</v-btn>
-                    <button v-on:click="addNew()">add new</button>
-
-                    <ul>
-                        <li v-for="word in items" :key="word.text">
-                            {{ word.text }} - {{ word.archived }} - {{ cache[word.text] }}
-                        </li>
-                    </ul>
                 </div>
+
+                <router-view></router-view>
 
             </v-container>
         </main>
@@ -44,28 +28,15 @@
 <script lang='ts'>
 
 import Vue from 'vue';
-import Component from 'vue-class-component';
-import { Inject, Model, Prop, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { Component } from 'vue-property-decorator';
 
-import storage from './../api/jsonbin';
-import anki from './../api/anki';
+import { dFetchWods } from './../store/modules/words';
 
-import { Word, dFetchWods, dSyncWords, rItems } from './../store/modules/words';
-
-import Store from '../store';
-
-
-@Component({})
+@Component
 export default class App extends Vue {
-    msg = 'Hello world!!';
     count = 0;
-    // words:WordInterface[] = [];
-    newWord: string = '';
-    newWords: string = '';
-    cache: any = {
 
-    };
+    cache: any = {};
 
     mounted() {
         dFetchWods(this.$store);
@@ -76,45 +47,18 @@ export default class App extends Vue {
 
         console.log('helo');
     }
-
-    // computed
-    get items(): Word[] {
-        return rItems(this.$store);
-    }
-
-    /*@Watch('words')
-    onChildChanged(newVal: Word[], oldVal: Word[]) {
-
-        newVal.forEach(async word => {
-            this.cache[word.text] = await anki.getNotes('English::Word Vault', 'Word', word.text);
-        });
-    }*/
-
-    addNew() {
-        //this.items.push(new Word(this.newWord));
-        //this.newWord = '';
-
-        this.items.push(...this.newWords.split('\n').map(w => new Word(w)));
-        this.newWords = '';
-    }
-
-    updateStorage() {
-        dSyncWords(this.$store);
-        // storage.updateWords(this.items);
-    }
-}
+};
 </script>
 
 <style lang="scss" scoped>
 @import url('./../../node_modules/vuetify/dist/vuetify.min.css');
 
 #app {
-    font-family: 'Avenir', Helvetica, Arial, sans-serif;
-    text-align: center;
-    color: #2c3e50;
-    margin-top: 60px;
+    // font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    // text-align: center;
+    // color: #2c3e50;
     span {
-        color: red;
+        // color: red;
     }
     div .test {
         color: green;

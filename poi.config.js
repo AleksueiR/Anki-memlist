@@ -1,4 +1,11 @@
+const pkg = require("./package.json");
+
 module.exports = {
+    html: {
+        title: pkg.productName || pkg.name,
+        description: pkg.description,
+        template: 'src/index.ejs'
+    },
     presets: [
         require('poi-preset-typescript')({}),
         require('poi-preset-karma')({
@@ -7,15 +14,11 @@ module.exports = {
         })
     ],
     extendWebpack(config) {
-        //config.resolve.alias
-        //    .set('vue$', 'vue/dist/vue.esm.js'); // vue.esm include template compiler; without it all templates need to be pre-compiled
+        config.target('electron-renderer');
 
-        /*config.output
-            .set('library', 'DQV');*/
-
-        // config.set('devtool', '#source-map');
-
-        //console.log(config);
+        config.node
+            .set('__filename', false)
+            .set('__dirname', false);
     },
     karma: {
         mime: {

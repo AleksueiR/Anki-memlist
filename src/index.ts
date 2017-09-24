@@ -1,33 +1,39 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import Vuetify from 'vuetify';
+import VueRouter from 'vue-router';
 
 import app from './components/app.vue';
-import { createStore } from "./store";
+import wordSelector from './components/word-selector.vue';
+import wordList from './components/word-list.vue';
+import wordEditor from './components/word-editor.vue';
 
+import { createStore } from "./store";
 import { State } from './store/state';
 
-Vue.use(Vuetify);
 Vue.use(Vuex);
+Vue.use(Vuetify);
+Vue.use(VueRouter);
 
-const astore: Vuex.Store<State> = createStore();
+const store: Vuex.Store<State> = createStore();
 
-new Vue({
-  el: '#app',
-  store: astore,
-  template: '<app/>',
-  components: { app }
+const routes = [
+  { path: '/long-list', component: wordList, name: 'list' },
+  { path: '/word-editor/:id', component: wordEditor, name: 'editor', props: true }
+];
+
+const router = new VueRouter({
+  routes
 });
 
-// console.log('main', Highcharts);
+Vue.component('word-selector', wordSelector);
 
-export {
-    //Highcharts
-}
+const rootVue = new Vue({
+  el: '#app',
+  store,
+  router,
+  template: '<app/>',
+  components: { app, wordList, wordEditor }
+});
 
-
-import axios from 'axios';
-
-const url = 'https://www.vocabulary.com/dictionary/definition.ajax?search=supine&lang=en';
-axios.get(url).then(response =>
-  console.log(response.data));
+router.replace({ name: 'list' });

@@ -1,2 +1,2 @@
 export * from "./words";
-export * from "./wordsState";
+export * from "./words-state";

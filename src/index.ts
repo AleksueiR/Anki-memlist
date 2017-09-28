@@ -5,7 +5,7 @@ import VueRouter from 'vue-router';
 
 import app from './components/app.vue';
 import wordSelector from './components/word-selector.vue';
-import wordList from './components/word-list.vue';
+import wordList from './components/list/word-list.vue';
 import wordEditor from './components/word-editor.vue';
 
 import { createStore } from "./store";

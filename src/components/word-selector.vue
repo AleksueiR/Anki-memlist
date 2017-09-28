@@ -45,8 +45,8 @@ export default class WordSelector extends Vue {
             return [];
         }
 
-        return rItems(this.$store)
-            .filter((word: Word) => word.text.toLowerCase().startsWith(this.lookupValue));
+        return rItems(this.$store);
+            // .filter((word: Word) => word.text.toLowerCase().startsWith(this.lookupValue));
     }
 
     get isLookup() {

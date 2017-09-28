@@ -4,19 +4,8 @@
             <v-container fluid pa-0>
                 <word-selector></word-selector>
 
-
                 <router-link to="/long-list">Go to List</router-link>
                 <router-link to="/word-editor/38">Go to editor</router-link>
-
-                <div>
-                    Hello, reloaded!!!- 1! -1-6-
-                    <span>{{ msg }} {{ count }}</span>
-                    <div>
-                        <span class="test">green -</span>
-                        <span class="test2">orange</span>
-                    </div>
-
-                </div>
 
                 <router-view></router-view>
 

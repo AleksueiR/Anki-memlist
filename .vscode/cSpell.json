@@ -6,6 +6,10 @@
     "language": "en",
     // words - list of words to be always considered correct
     "words": [
+        "anki",
+        "memlist",
+        "vuetify",
+        "vuetype",
         "vuex"
     ],
     // flagWords - list of words to be always considered incorrect

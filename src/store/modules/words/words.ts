@@ -35,6 +35,14 @@ const mutations = {
 
     addWord(state: WordsState, word: Word) {
         state.items.push(word);
+    },
+
+    removeWord(state: WordsState, word: Word) {
+        const index: number = state.items.findIndex((w: Word) => w === word );
+
+        if (index !== -1) {
+            state.items.splice(index, 1);
+        }
     }
 };
 
@@ -58,3 +66,4 @@ export const dSyncWords = dispatch(actions.syncWords);
 //mutations
 /* export */ const cKeepWords = commit(mutations.keepWords);
 export const cAddWord = commit(mutations.addWord);
+export const cRemoveWord = commit(mutations.removeWord);

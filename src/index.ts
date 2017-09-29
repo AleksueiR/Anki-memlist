@@ -4,9 +4,11 @@ import Vuetify from 'vuetify';
 import VueRouter from 'vue-router';
 
 import app from './components/app.vue';
-import wordSelector from './components/word-selector.vue';
+
+// TODO: find how to split routes into separate files
 import wordList from './components/list/word-list.vue';
 import wordEditor from './components/word-editor.vue';
+
 
 import { createStore } from "./store";
 import { State } from './store/state';
@@ -26,14 +28,14 @@ const router = new VueRouter({
   routes
 });
 
-Vue.component('word-selector', wordSelector);
+// Vue.component('word-selector', wordSelector);
 
 const rootVue = new Vue({
   el: '#app',
   store,
   router,
   template: '<app/>',
-  components: { app, wordList, wordEditor }
+  components: { app }
 });
 
 router.replace({ name: 'list' });

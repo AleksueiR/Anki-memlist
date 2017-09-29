@@ -19,9 +19,19 @@
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 
+import wordSelector from './word-selector.vue';
+import wordList from './list/word-list.vue';
+import wordEditor from './word-editor.vue';
+
 import { dFetchWods } from './../store/modules/words';
 
-@Component
+@Component({
+    components: {
+        wordSelector,
+        wordList,
+        wordEditor
+    }
+})
 export default class App extends Vue {
     count = 0;
 

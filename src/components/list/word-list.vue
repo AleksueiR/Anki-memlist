@@ -1,13 +1,5 @@
 <template>
    <div>
-        <!--ul>
-            <word-item v-for="word in items" :key="word.text"
-                @archive="archiveWord"
-                @edit="editWord"
-                v-on:remove="removeWord"
-                v-bind:word="word"></word-item>
-        </ul-->
-
         <v-list dense>
             <template v-for="word in items">
                 <word-item
@@ -48,7 +40,7 @@ export default class WordList extends Vue {
     }
 
     editWord(word: Word): void {
-        this.$router.push({ name: 'editor', params: { id: word.text } });
+        this.$router.push({ name: 'editor', params: { id: word.id } });
     }
 
     removeWord(word: Word): void {

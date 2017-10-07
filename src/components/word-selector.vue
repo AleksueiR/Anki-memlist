@@ -3,23 +3,43 @@
         <v-layout row>
             <v-flex md4 offset-md4>
                 <v-text-field
-                    @keyup.13="addNewWord()"
-                    ref="lookupValue"
+
+                    @focus="isFocused = true"
+                    @keyup.13="addOrEdit()"
                     label="word lookup"
                     v-model.trim="lookupValue"
                     single-line autofocus></v-text-field>
             </v-flex>
-
-            {{ lookupValue }}
         </v-layout>
-        <v-layout row>
+        <v-layout row v-if="isNonEmptyLookup && isFocused">
             <v-flex md4 offset-md4>
                 <span v-if="isNewWord">Nothing found. Press 'Enter' to add to the list.</span>
-                <ul>
-                    <li v-for="word in lookupResults" :key="word.text">
-                        {{ word.text }} - {{ word.archived }}
-                    </li>
-                </ul>
+                <span v-if="!isNewWord">Already exists. Press 'Enter' to edit.</span>
+
+                <v-list>
+                    <template v-for="word in lookupResults" >
+                        <v-list-tile @click="editWord(word)" :key="word.text">
+
+                            <v-list-tile-content>
+                                <v-list-tile-title>{{ word.text }} </v-list-tile-title>
+                            </v-list-tile-content>
+
+                            <!--v-list-tile-action>
+                                <v-btn icon small class="ma-0"
+                                    @click.stop.prevent="archive">
+                                    <v-icon>mdi-archive</v-icon>
+                                </v-btn>
+                            </v-list-tile-action>
+
+                            <v-list-tile-action>
+                                <v-btn icon small class="ma-0"
+                                    @click.stop.prevent="remove">
+                                    <v-icon>mdi-delete</v-icon>
+                                </v-btn>
+                            </v-list-tile-action-->
+                        </v-list-tile>
+                    </template>
+                </v-list>
             </v-flex>
         </v-layout>
     </v-layout>
@@ -37,20 +57,26 @@ import { Word, dSyncWords, rItems, cAddWord } from './../store/modules/words';
 
 @Component
 export default class WordSelector extends Vue {
+    isFocused: boolean = false;
+
     lookupValue: string = '';
+
+    get isNonEmptyLookup() {
+        return this.lookupValue !== '';
+    }
 
     // computed
     get lookupResults(): Word[] {
-        if (this.lookupValue === '') {
+        if (!this.isNonEmptyLookup) {
             return [];
         }
 
-        return rItems(this.$store);
-            // .filter((word: Word) => word.text.toLowerCase().startsWith(this.lookupValue));
-    }
+        const results = rItems(this.$store)
+            .filter((word: Word) => {console.log(word);
+                return word.text.toLowerCase().startsWith(this.lookupValue.toLowerCase())})
+            .slice(0, 9)
 
-    get isLookup() {
-        return this.lookupValue !== '';
+        return results;
     }
 
     /**
@@ -61,29 +87,37 @@ export default class WordSelector extends Vue {
             return false;
         }
 
-        const a = rItems(this.$store)
-            .find((word: Word) => word.text === this.lookupValue) as Word;
+        const isNew = !this.lookupResults.some(result => result.text === this.lookupValue);
 
+        return isNew;
+    }
 
-        return rItems(this.$store)
-            .find((word: Word) => word.text === this.lookupValue)
-            === undefined;
+    addOrEdit(event: any): void {
+        if (this.isNewWord) {
+            this.addNewWord(event);
+        } else {
+            const word = this.lookupResults.find(result => result.text === this.lookupValue);
+            this.editWord(word!);
+        }
     }
 
     // methods
-    addNewWord(event:any) {
-        console.log(event);
-        cAddWord(this.$store, new Word(this.lookupValue));
+    addNewWord(event: any): void {
+
+        cAddWord(this.$store, new Word({ text: this.lookupValue }));
         dSyncWords(this.$store);
 
         this.lookupValue = '';
-        // console.log(this.$refs.lookupValue.value = '');
+    }
+
+    editWord(word: Word): void {
+        console.log('edit workd');
+        this.$router.push({ name: 'editor', params: { id: word.id } });
+
+        // this.lookupValue = word.text;
     }
 }
 
-function isWord(word: Word | undefined): word is Word {
-    return (<Word>word) !== undefined;
-}
 </script>
 
 <style lang="scss" scoped>

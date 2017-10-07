@@ -3,19 +3,19 @@
     <v-list-tile @click="edit">
 
         <v-list-tile-content>
-            <v-list-tile-title>{{ word.text }}</v-list-tile-title>
+            <v-list-tile-title>{{ word.text }} {{ word.archived }} {{ word.id }} </v-list-tile-title>
         </v-list-tile-content>
 
         <v-list-tile-action>
             <v-btn icon small class="ma-0"
-                @click="archive">
+                @click.stop.prevent="archive">
                 <v-icon>mdi-archive</v-icon>
             </v-btn>
         </v-list-tile-action>
 
         <v-list-tile-action>
             <v-btn icon small class="ma-0"
-                @click="remove">
+                @click.stop.prevent="remove">
                 <v-icon>mdi-delete</v-icon>
             </v-btn>
         </v-list-tile-action>

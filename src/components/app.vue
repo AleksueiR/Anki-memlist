@@ -1,15 +1,17 @@
 <template>
     <v-app id="app">
         <main>
-            <v-container fluid pa-0>
-                <word-selector></word-selector>
+            <v-content>
+                <v-container fluid pa-0>
+                    <word-selector></word-selector>
 
-                <router-link to="/long-list">Go to List</router-link>
-                <router-link to="/word-editor/38">Go to editor</router-link>
+                    <router-link to="/long-list">Go to List</router-link>
+                    <router-link to="/word-editor/38">Go to editor</router-link>
 
-                <router-view></router-view>
+                    <router-view></router-view>
 
-            </v-container>
+                </v-container>
+            </v-content>
         </main>
     </v-app>
 </template>

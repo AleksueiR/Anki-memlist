@@ -9,7 +9,9 @@ import { State as RootState } from './../../state';
 
 type WordsContext = ActionContext<WordsState, RootState>;
 
-const state: WordsState = { items: [] };
+const state: WordsState = {
+    items: []
+};
 
 // getters
 const getters = {
@@ -30,7 +32,7 @@ const actions = {
 // mutations
 const mutations = {
     keepWords(state: WordsState, { items }: { items: Word[] }) {
-        state.items = items;
+        state.items = items.map(item => new Word(item));
     },
 
     addWord(state: WordsState, word: Word) {

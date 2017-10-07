@@ -1,6 +1,6 @@
 <template>
    <div>
-       word-editor word id {{ id }}
+       word-editor word id {{ id }} {{ word }}
 
    </div>
 </template>
@@ -19,6 +19,12 @@ import { Word, dFetchWods, dSyncWords, rItems } from './../store/modules/words';
 export default class WordList extends Vue {
     @Prop()
     id: string
+
+    get word(): Word | undefined {
+        console.log('sdfsdfd');
+
+        return rItems(this.$store).find(item => item.id === this.id);
+    }
 }
 </script>
 

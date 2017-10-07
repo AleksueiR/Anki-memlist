@@ -7,6 +7,7 @@ module.exports = {
         template: 'src/index.ejs'
     },
     presets: [
+        require('poi-preset-babel-minify')(),
         require('poi-preset-typescript')({}),
         require('poi-preset-karma')({
             port: 5001, // default

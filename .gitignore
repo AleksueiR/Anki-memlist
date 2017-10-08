@@ -20,4 +20,5 @@ tsd.json
 *.swo
 npm-debug.log
 
+assets
 .token.ts

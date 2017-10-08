@@ -1,11 +1,13 @@
 import { ActionContext, Store } from 'vuex';
 import { getStoreAccessors } from 'vuex-typescript';
 
-import jsonbin from './../../../api/jsonbin';
+// import jsonbin from './../../../api/jsonbin';
 import gists from './../../../api/gists';
 
 import { Word, WordsState } from './words-state';
 import { State as RootState } from './../../state';
+
+import { gistId, fileName } from './../../../../.settings';
 
 type WordsContext = ActionContext<WordsState, RootState>;
 
@@ -21,11 +23,11 @@ const getters = {
 // actions
 const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
-        cKeepWords(context, { items: (await gists.get<WordsState>()).items })
+        cKeepWords(context, { items: (await gists.get<WordsState>(gistId, fileName)).items })
     },
 
     async syncWords(context: WordsContext): Promise<void> {
-        return await gists.post<WordsState>(state);
+        return await gists.post<WordsState>(state, gistId, fileName);
     }
 };
 

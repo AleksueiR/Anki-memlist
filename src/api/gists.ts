@@ -6,11 +6,8 @@ const gists = new Gists({
     token
 });
 
-const gistId = 'ad3d67bd40fee687adf84405e5745e17';
-const fileName = 'anki-words-memlist.json';
-
 export default {
-    get<T>(): Promise<T> {
+    get<T>(gistId: string, fileName: string): Promise<T> {
         const gistPromise = new Promise<T>((resolve, reject) => {
             gists.download({ id: gistId }, (err: any, data: any) => {
                 if (err !== null) {
@@ -24,7 +21,7 @@ export default {
         return gistPromise;
     },
 
-    post<T>(data: T): Promise<void> {
+    post<T>(data: T, gistId: string, fileName: string): Promise<void> {
         const options = {
             id: gistId,
             files: {

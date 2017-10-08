@@ -1,7 +1,7 @@
 <template>
     <v-app id="app">
         <v-content>
-            <v-container fluid pa-0 grid-list-md>
+            <v-container fluid pa-0>
                 <v-layout column>
                     <word-selector></word-selector>
 

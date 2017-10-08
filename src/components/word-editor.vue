@@ -8,6 +8,9 @@
                 </v-flex>
                 <v-flex xs6>
                     two
+                    <div>
+                        <va-source :word="word"></va-source>
+                    </div>
                 </v-flex>
             </v-layout>
         </v-container>
@@ -24,17 +27,20 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import storage from './../api/jsonbin';
 import anki from './../api/anki';
 
+import VASource from './../sources/va.vue';
+
 import { Word, dFetchWods, dSyncWords, rItems } from './../store/modules/words';
 
-
-@Component
+@Component({
+    components: {
+        'va-source': VASource
+    }
+})
 export default class WordList extends Vue {
     @Prop()
     id: string
 
     get word(): Word | undefined {
-        console.log('sdfsdfd');
-
         return rItems(this.$store).find(item => item.id === this.id);
     }
 }

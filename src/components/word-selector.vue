@@ -3,20 +3,19 @@
         <v-layout row>
             <v-flex md4 offset-md4>
                 <v-text-field
-
                     @focus="isFocused = true"
                     @keyup.13="addOrEdit()"
                     label="word lookup"
+                    :hint="hint"
                     v-model.trim="lookupValue"
-                    single-line autofocus></v-text-field>
+                    single-line
+                    clearable
+                    autofocus></v-text-field>
             </v-flex>
         </v-layout>
         <v-layout row v-if="isNonEmptyLookup && isFocused">
             <v-flex md4 offset-md4>
-                <span v-if="isNewWord">Nothing found. Press 'Enter' to add to the list.</span>
-                <span v-if="!isNewWord">Already exists. Press 'Enter' to edit.</span>
-
-                <v-list>
+                <v-list dense>
                     <template v-for="word in lookupResults" >
                         <v-list-tile @click="editWord(word)" :key="word.text">
 
@@ -62,7 +61,7 @@ export default class WordSelector extends Vue {
     lookupValue: string = '';
 
     get isNonEmptyLookup() {
-        return this.lookupValue !== '';
+        return this.lookupValue !== '' && this.lookupValue !== null;
     }
 
     // computed
@@ -77,6 +76,16 @@ export default class WordSelector extends Vue {
             .slice(0, 9)
 
         return results;
+    }
+
+    get hint(): string {
+        if (!this.isNonEmptyLookup) {
+            return '';
+        }
+
+        return this.isNewWord ?
+            `Nothing found. Press 'Enter' to add to the list.` :
+            `Already exists. Press 'Enter' to edit.`;
     }
 
     /**
@@ -114,7 +123,7 @@ export default class WordSelector extends Vue {
         console.log('edit workd');
         this.$router.push({ name: 'editor', params: { id: word.id } });
 
-        // this.lookupValue = word.text;
+        this.lookupValue = '';
     }
 }
 

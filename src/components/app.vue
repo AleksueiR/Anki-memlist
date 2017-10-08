@@ -6,7 +6,7 @@
                     <word-selector></word-selector>
 
                     <router-link to="/long-list">Go to List</router-link>
-                    <router-link to="/word-editor/38">Go to editor</router-link>
+                    <!--router-link to="/word-editor/38">Go to editor</router-link-->
 
                     <router-view></router-view>
 

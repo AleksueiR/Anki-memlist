@@ -3,7 +3,7 @@
     <v-list-tile @click="edit">
 
         <v-list-tile-content>
-            <v-list-tile-title>{{ word.text }} {{ word.archived }} {{ word.id }} </v-list-tile-title>
+            <v-list-tile-title>{{ word.text }} {{ word.archived }} </v-list-tile-title>
         </v-list-tile-content>
 
         <v-list-tile-action>

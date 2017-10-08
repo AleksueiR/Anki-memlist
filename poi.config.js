@@ -17,6 +17,9 @@ module.exports = {
     extendWebpack(config) {
         config.target('electron-renderer');
 
+        /*config.resolve.alias
+            .set('quill$', 'quill/quill.js') // vue.esm include template compiler; without it all templates need to be pre*/
+
         config.node
             .set('__filename', false)
             .set('__dirname', false);

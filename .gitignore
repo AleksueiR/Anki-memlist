@@ -19,3 +19,5 @@ tsd.json
 *.swp
 *.swo
 npm-debug.log
+
+.token.ts

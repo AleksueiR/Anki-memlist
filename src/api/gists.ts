@@ -1,7 +1,9 @@
 import Gists from 'gists';
 
+import token from './../../.token';
+
 const gists = new Gists({
-    token: '6ec8daed64f083143438a50ef94892b1d81dc68f'
+    token
 });
 
 const gistId = 'ad3d67bd40fee687adf84405e5745e17';

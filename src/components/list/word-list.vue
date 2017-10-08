@@ -1,5 +1,5 @@
 <template>
-   <div>
+   <v-layout column>
         <v-list dense>
             <template v-for="word in items">
                 <word-item
@@ -10,7 +10,7 @@
                     v-bind:word="word"></word-item>
             </template>
         </v-list>
-   </div>
+   </v-layout>
 </template>
 
 <script lang="ts">

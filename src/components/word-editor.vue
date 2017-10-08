@@ -1,8 +1,20 @@
 <template>
-   <div>
-       word-editor word id {{ id }} {{ word }}
+    <div>
+        <h5>{{ word.text }}</h5>
+        <v-container grid-list-md fluid>
+            <v-layout row>
+                <v-flex xs6>
+                    one
+                </v-flex>
+                <v-flex xs6>
+                    two
+                </v-flex>
+            </v-layout>
+        </v-container>
 
-   </div>
+        word-editor word id {{ id }} {{ word }}
+
+    </div>
 </template>
 
 <script lang="ts">

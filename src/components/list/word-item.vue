@@ -3,7 +3,7 @@
     <v-list-tile @click="edit">
 
         <v-list-tile-content>
-            <v-list-tile-title>{{ word.text }} {{ word.archived }} </v-list-tile-title>
+            <v-list-tile-title>{{ word.text }} /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }}) </v-list-tile-title>
         </v-list-tile-content>
 
         <v-list-tile-action>
@@ -44,12 +44,18 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
+import moment from 'moment';
+
 import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/words';
 
 @Component
 export default class WordItem extends Vue {
     @Prop()
     word: Word
+
+    dateFormat(date: number): string {
+        return moment(date).fromNow(); //format('YYYY-MM-DD HH:mm:ss');
+    }
 
     archive():void {
         this.$emit('archive', this.word);

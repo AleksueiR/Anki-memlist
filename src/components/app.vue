@@ -3,7 +3,6 @@
         <v-content>
             <v-container fluid pa-0>
                 <v-layout column>
-                    <word-selector></word-selector>
 
                     <router-link to="/long-list">Go to List</router-link>
                     <!--router-link to="/word-editor/38">Go to editor</router-link-->
@@ -21,7 +20,6 @@
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 
-import wordSelector from './word-selector.vue';
 import wordList from './list/word-list.vue';
 import wordEditor from './word-editor.vue';
 
@@ -29,7 +27,6 @@ import { dFetchWods } from './../store/modules/words';
 
 @Component({
     components: {
-        wordSelector,
         wordList,
         wordEditor
     }

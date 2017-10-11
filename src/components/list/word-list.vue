@@ -84,10 +84,15 @@ export default class WordList extends Vue {
                 return word.text.toLowerCase().startsWith(this.lookup.toLowerCase())
             })
             .sort((wordA: Word, wordB: Word) => {
+                if (wordA.dateAdded > wordB.dateAdded) { return -1; }
+                if (wordA.dateAdded < wordB.dateAdded) { return 1; }
+                return 0;
+            });
+            /* .sort((wordA: Word, wordB: Word) => {
                 if (wordA.text > wordB.text) { return 1; }
                 if (wordA.text < wordB.text) { return -1; }
                 return 0;
-            });
+            }); */
 
         return filteredItems;
     }

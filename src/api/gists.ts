@@ -1,9 +1,9 @@
 import Gists from 'gists';
 
-import token from './../../.token';
+import { storage, gistTokenKey } from './../settings';
 
 const gists = new Gists({
-    token
+    token: storage.get(gistTokenKey)
 });
 
 export default {

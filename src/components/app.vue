@@ -3,13 +3,8 @@
         <v-content>
             <v-container fluid pa-0>
                 <v-layout column>
-
-                    <router-link to="/long-list">Go to List</router-link>
-                    <!--router-link to="/word-editor/38">Go to editor</router-link-->
-
                     <router-view></router-view>
                 </v-layout>
-
             </v-container>
         </v-content>
     </v-app>

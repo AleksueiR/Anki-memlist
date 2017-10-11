@@ -7,7 +7,10 @@ import gists from './../../../api/gists';
 import { Word, WordsState } from './words-state';
 import { State as RootState } from './../../state';
 
-import { gistId, fileName } from './../../../../.settings';
+import { storage, gistIdKey, gistFileNameKey } from './../../../settings';
+
+const gistId: string = storage.get(gistIdKey) as string;
+const gistFileName = storage.get(gistFileNameKey) as string;
 
 type WordsContext = ActionContext<WordsState, RootState>;
 
@@ -23,11 +26,11 @@ const getters = {
 // actions
 const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
-        cKeepWords(context, { items: (await gists.get<WordsState>(gistId, fileName)).items })
+        cKeepWords(context, { items: (await gists.get<WordsState>(gistId, gistFileName)).items })
     },
 
     async syncWords(context: WordsContext): Promise<void> {
-        return await gists.post<WordsState>(state, gistId, fileName);
+        return await gists.post<WordsState>(state, gistId, gistFileName);
     }
 };
 

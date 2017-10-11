@@ -1,6 +1,7 @@
 <template>
     <div>
-        <v-menu offset-y>
+        <v-menu
+            offset-y>
             <v-btn icon slot="activator">
                 <v-icon>mdi-menu</v-icon>
             </v-btn>
@@ -8,12 +9,19 @@
                 <v-list-tile v-for="item in items" :key="item.name" @click="item.action()">
                     <v-list-tile-title>{{ item.name }}</v-list-tile-title>
                 </v-list-tile>
+                <!--<v-divider></v-divider>
+                <v-list-tile>
+                    <v-list-tile-action>
+                        <v-switch v-model="message" color="purple"></v-switch>
+                    </v-list-tile-action>
+                    <v-list-tile-title>Enable messages</v-list-tile-title>
+                </v-list-tile> -->
             </v-list>
         </v-menu>
-        <v-dialog v-model="bulkImportDialog" transition="dialog-bottom-transition">
+        <v-dialog v-model="bulkImportDialog" transition="dialog-bottom-transition" content-class="elevation-2 square">
             <v-card>
                 <v-card-text>
-                    <v-container grid-list-md >
+                    <v-container grid-list-md>
                         <v-layout wrap>
                             <v-text-field
                                 ref="bulk-import"
@@ -30,8 +38,22 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn color="grey" flat="flat" @click="openBulkImport(false)">Close</v-btn>
+                    <v-btn color="grey darken-1" flat="flat" @click="openBulkImport(false)">Close</v-btn>
                     <v-btn color="green darken-1" flat="flat" :disabled="!isBulkImportValid" @click="addBulkLines()">Import</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="settingsDialog" transition="dialog-bottom-transition" content-class="elevation-2 square"
+            width="500"
+            scrollable>
+            <v-card>
+                <v-card-text>
+                    <settings></settings>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="black" flat="flat" @click="openSettings(false)">Close</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -44,17 +66,33 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
 import { Word, dSyncWords, cAddWord, rItems } from './../../store/modules/words';
 
-@Component
+import settings from './../settings.vue';
+
+@Component({
+    components: {
+        settings
+    }
+})
 export default class WordMenu extends Vue {
     bulkImportDialog: boolean = false;
     bulkValue: string = '';
+
+    settingsDialog: boolean = false;
 
     items = [
         {
             name: 'Bulk Import',
             action: this.openBulkImport
+        },
+        {
+            name: 'Settings',
+            action: this.openSettings
         }
     ];
+
+    openSettings(value = !this.settingsDialog): void {
+        this.settingsDialog = value;
+    }
 
     openBulkImport(value = !this.bulkImportDialog): void {
         this.bulkImportDialog = value;
@@ -136,8 +174,10 @@ export default class WordMenu extends Vue {
 }
 </script>
 
-<style lang="sass" scoped>
-
+<style lang="scss" scoped>
+.square {
+    border-radius: 0;
+}
 </style>
 
 

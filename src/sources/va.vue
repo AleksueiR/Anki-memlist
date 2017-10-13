@@ -22,8 +22,15 @@ export default class VASource extends Vue {
     @Prop()
     word: Word;
 
+    get normalizedWord(): string {
+        const letters = this.word.text.toLowerCase().split('');
+        letters[0] = letters[0].toUpperCase();
+
+        return letters.join('');
+    }
+
     get isExist(): boolean {
-        if (!vaWords[this.word.text]) {
+        if (!vaWords[this.normalizedWord]) {
             return false;
         }
 
@@ -31,7 +38,7 @@ export default class VASource extends Vue {
     }
 
     get vaWord(): object {
-        return vaWords[this.word.text];
+        return vaWords[this.normalizedWord];
     }
 }
 

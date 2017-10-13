@@ -1,31 +1,36 @@
 <template>
-   <v-layout column>
-        <v-layout row>
-            <v-text-field
-                @focus="isFocused = true"
-                @keyup.enter="addOrEditWord()"
-                @keyup.esc="clearLookup()"
+    <div>
+    <el-row :gutter="20">
+        <el-col :span="22">
+            <el-input
+                @keyup.enter.native="addOrEditWord()"
+                @keyup.esc.native="clearLookup"
                 label="Lookup"
                 :hint="lookupHint"
                 v-model.trim="lookup"
-                single-line
-                full-width
-                clearable
-                autofocus></v-text-field>
+                autofocus
+                icon="close"
+                :on-icon-click="clearLookup">
+            </el-input>
+            <span class="text-smaller">{{ lookupHint }}</span>
+        </el-col>
+        <el-col :span="2" class="word-menu">
             <word-menu></word-menu>
-        </v-layout>
-        <v-divider></v-divider>
-        <v-list>
-            <template v-for="word in items">
-                <word-item
-                    :key="word.text"
-                    @archive="archiveWord"
-                    @edit="editWord"
-                    v-on:remove="removeWord"
-                    v-bind:word="word"></word-item>
-            </template>
-        </v-list>
-   </v-layout>
+        </el-col>
+    </el-row>
+    <el-row>
+        <ul class="word-list">
+            <word-item
+                v-for="word in items"
+                :key="word.text"
+                @archive="archiveWord"
+                @edit="editWord"
+                v-on:remove="removeWord"
+                v-bind:word="word"></word-item>
+        </ul>
+    </el-row>
+    </div>
+
 </template>
 
 <script lang="ts">
@@ -86,8 +91,10 @@ export default class WordList extends Vue {
             .sort((wordA: Word, wordB: Word) => {
                 if (wordA.dateAdded > wordB.dateAdded) { return -1; }
                 if (wordA.dateAdded < wordB.dateAdded) { return 1; }
+                if (wordA.text > wordB.text) { return 1; }
+                if (wordA.text < wordB.text) { return -1; }
                 return 0;
-            });
+            })
             /* .sort((wordA: Word, wordB: Word) => {
                 if (wordA.text > wordB.text) { return 1; }
                 if (wordA.text < wordB.text) { return -1; }
@@ -133,7 +140,14 @@ export default class WordList extends Vue {
 </script>
 
 <style lang="scss" scoped>
+    .word-list {
+        list-style-type: none;
+        padding: 0;
+    }
 
+    .word-menu {
+        text-align: right;
+    }
 </style>
 
 

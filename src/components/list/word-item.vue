@@ -1,43 +1,20 @@
 <template>
-
-    <v-list-tile @click="edit">
-
-        <v-list-tile-content>
-            <v-list-tile-title>{{ word.text }} /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }}) </v-list-tile-title>
-        </v-list-tile-content>
-
-        <v-list-tile-action>
-            <v-btn icon small class="ma-0"
-                @click.stop.prevent="archive">
-                <v-icon>mdi-archive</v-icon>
-            </v-btn>
-        </v-list-tile-action>
-
-        <v-list-tile-action>
-            <v-btn icon small class="ma-0"
-                @click.stop.prevent="remove">
-                <v-icon>mdi-delete</v-icon>
-            </v-btn>
-        </v-list-tile-action>
-    </v-list-tile>
-
-    <!--div>
-
-        {{ word.text }} - {{ word.archived }}
-
-        <v-btn flat @click="edit">edit</v-btn>
-
-        <v-btn icon small class="ml-3 ma-0"
-            @click="archive">
-            <v-icon>mdi-archive</v-icon>
-        </v-btn>
-
-        <v-btn icon small class="ma-0"
-            @click="remove">
-            <v-icon>mdi-delete</v-icon>
-        </v-btn>
-
-    </div-->
+    <li @click="edit"
+        @mouseover="isOver = true"
+        @mouseleave="isOver = false"
+        :class="{ over: isOver }">
+        <el-row type="flex" align="middle" >
+            <el-col :span="20">
+                <span>{{ word.text }} /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }} )</span>
+            </el-col>
+            <el-col :span="4" v-if="isOver" class="word-controls">
+                <el-button-group>
+                    <el-button icon="check" @click.stop.prevent="archive" size="small"></el-button>
+                    <el-button icon="delete" @click.stop.prevent="remove" size="small"></el-button>
+                </el-button-group>
+            </el-col>
+        </el-row>
+    </li>
 </template>
 
 <script lang="ts">
@@ -52,6 +29,8 @@ import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/word
 export default class WordItem extends Vue {
     @Prop()
     word: Word
+
+    isOver: boolean = false;
 
     dateFormat(date: number): string {
         return moment(date).fromNow(); //format('YYYY-MM-DD HH:mm:ss');
@@ -72,10 +51,23 @@ export default class WordItem extends Vue {
 </script>
 
 <style lang="scss" scoped>
-button.btn--small {
-    .icon {
-        font-size: 16px;
-    }
+.el-row {
+    height: 36px;
+    padding: 8px;
+    cursor: pointer;
+}
+
+button {
+    border: none;
+    background: none;
+}
+
+.word-controls {
+    text-align: right;
+}
+
+.over {
+    background-color: #EFF2F7;
 }
 </style>
 

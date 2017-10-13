@@ -1,13 +1,16 @@
 <template>
-    <v-app id="app">
+    <div class="root">
+        <router-view></router-view>
+    </div>
+    <!-- <v-app id="app">
         <v-content>
             <v-container fluid pa-0>
                 <v-layout column>
-                    <router-view></router-view>
+
                 </v-layout>
             </v-container>
         </v-content>
-    </v-app>
+    </v-app> -->
 </template>
 
 <script lang='ts'>
@@ -44,20 +47,12 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import url('./../../node_modules/vuetify/dist/vuetify.min.css');
+// @import url('./../../node_modules/vuetify/dist/vuetify.min.css');
+@import url('./../../node_modules/element-ui/lib/theme-default/index.css');
 
-#app {
-    // font-family: 'Avenir', Helvetica, Arial, sans-serif;
-    // text-align: center;
-    // color: #2c3e50;
-    span {
-        // color: red;
-    }
-    div .test {
-        color: green;
-    }
-    .test2 {
-        color: orange;
-    }
+.root {
+    padding: 16px;
+    font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,SimSun,sans-serif;
 }
+
 </style>

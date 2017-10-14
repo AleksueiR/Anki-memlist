@@ -1,6 +1,6 @@
 import Quill from 'quill';
 
-import Toolbar from 'quill/modules/toolbar';
+/* import Toolbar from 'quill/modules/toolbar';
 import Snow from 'quill/themes/snow';
 
 import Bold from 'quill/formats/bold';
@@ -15,6 +15,6 @@ Quill.register({
   'formats/italic': Italic,
   'formats/header': Header
 });
-
+ */
 
 export default Quill;

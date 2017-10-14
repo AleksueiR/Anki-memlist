@@ -3,7 +3,7 @@ import wordEditor from './components/word-editor.vue';
 import settings from './components/settings.vue';
 
 const routes = [
-    { path: '/long-list', component: wordList, name: 'list' },
+    { path: '/list', component: wordList, name: 'list' },
     { path: '/word-editor/:id', component: wordEditor, name: 'editor', props: true },
     { path: '/settings', component: settings, name: 'settings' }
 ];

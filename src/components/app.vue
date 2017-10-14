@@ -47,8 +47,7 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss" scoped>
-// @import url('./../../node_modules/vuetify/dist/vuetify.min.css');
-@import url('./../../node_modules/element-ui/lib/theme-default/index.css');
+@import url('~element-ui/lib/theme-default/index.css');
 
 .root {
     padding: 16px;

@@ -1,34 +1,34 @@
 <template>
     <div>
-    <el-row :gutter="20">
-        <el-col :span="22">
-            <el-input
-                @keyup.enter.native="addOrEditWord()"
-                @keyup.esc.native="clearLookup"
-                label="Lookup"
-                :hint="lookupHint"
-                v-model.trim="lookup"
-                autofocus
-                icon="close"
-                :on-icon-click="clearLookup">
-            </el-input>
-            <span class="text-smaller">{{ lookupHint }}</span>
-        </el-col>
-        <el-col :span="2" class="word-menu">
-            <word-menu></word-menu>
-        </el-col>
-    </el-row>
-    <el-row>
-        <ul class="word-list">
-            <word-item
-                v-for="word in items"
-                :key="word.text"
-                @archive="archiveWord"
-                @edit="editWord"
-                v-on:remove="removeWord"
-                v-bind:word="word"></word-item>
-        </ul>
-    </el-row>
+        <el-row :gutter="20">
+            <el-col :span="22">
+                <el-input
+                    @keyup.enter.native="addOrEditWord()"
+                    @keyup.esc.native="clearLookup"
+                    label="Lookup"
+                    :hint="lookupHint"
+                    v-model.trim="lookup"
+                    autofocus
+                    icon="close"
+                    :on-icon-click="clearLookup">
+                </el-input>
+                <span class="text-smaller">{{ lookupHint }}</span>
+            </el-col>
+            <el-col :span="2" class="word-menu">
+                <word-menu></word-menu>
+            </el-col>
+        </el-row>
+        <el-row>
+            <ul class="word-list">
+                <word-item
+                    v-for="word in items"
+                    :key="word.text"
+                    @archive="archiveWord"
+                    @edit="editWord"
+                    v-on:remove="removeWord"
+                    v-bind:word="word"></word-item>
+            </ul>
+        </el-row>
     </div>
 
 </template>

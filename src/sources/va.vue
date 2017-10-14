@@ -1,7 +1,7 @@
 <template>
-    <div>
+    <div v-if="isExist">
         <h4>Verbal Advantage</h4>
-        <div v-if="isExist">
+        <div>
             <p>{{ vaWord.pronunciation }}</p>
 
             <p v-html="vaWord.description"></p>

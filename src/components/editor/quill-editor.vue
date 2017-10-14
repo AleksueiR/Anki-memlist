@@ -8,9 +8,7 @@
 <script lang="ts">
 import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import Quill from 'quill';
-const Block = Quill.import('blots/block');
-// import Snow from 'quill/themes/snow';
+import Quill from './quill';
 
 @Component
 export default class QuillEditor extends Vue {
@@ -20,20 +18,14 @@ export default class QuillEditor extends Vue {
     @Prop()
     fieldName: string;
 
+    quill: Quill;
+
     @Watch('initialHTML')
     onInitialHTMLChanged(val: string, oldVal: string) {
         this.quill.clipboard.dangerouslyPasteHTML(this.initialHTML);
     }
 
-    quill: Quill;
-
     mounted(): void {
-        /* Quill.register({
-            'themes/snow': Snow
-        }); */
-
-        Block.tagName = 'div';
-        Quill.register(Block, true);
 
         this.quill = new Quill(this.$refs['editor'] as HTMLElement, {
             modules: {

@@ -41,13 +41,13 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import storage from './../api/jsonbin';
-import anki from './../api/anki';
+import storage from './../../api/jsonbin';
+import anki from './../../api/anki';
 
-import QuillEditor from './editor/quill-editor.vue';
-import VASource from './../sources/va.vue';
+import QuillEditor from './editor/../quill-editor.vue';
+import VASource from './../../sources/va.vue';
 
-import { Word, dFetchWods, dSyncWords, rItems } from './../store/modules/words';
+import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/words';
 
 @Component({
     components: {
@@ -79,6 +79,11 @@ export default class WordList extends Vue {
         if (!this.id) {
             return;
         }
+
+        anki.retrieveMediaFile('earth_global_circulation1_-_en.svg.png').then((data: any) => {
+            //console.log(data);
+
+        })
 
         this.modelFields = await anki.getModelFieldNames('Word Vault');
 

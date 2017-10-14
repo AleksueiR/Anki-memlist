@@ -37,5 +37,15 @@ export default {
         });
 
         return response.data.result;
+    },
+
+    async retrieveMediaFile(fileName: string): Promise<string> {
+        const response = await axios.post(`${BASE_URL}`, {
+            action: 'retrieveMediaFile',
+            version: 5,
+            params: { filename: fileName }
+        });
+
+        return response.data.result;
     }
 };

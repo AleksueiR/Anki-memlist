@@ -1,5 +1,5 @@
 import wordList from './components/list/word-list.vue';
-import wordEditor from './components/word-editor.vue';
+import wordEditor from './components/editor/word-editor.vue';
 import settings from './components/settings.vue';
 
 const routes = [

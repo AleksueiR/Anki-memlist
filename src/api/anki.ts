@@ -2,6 +2,13 @@ import axios from 'axios';
 
 const BASE_URL = 'http://127.0.0.1:8765';
 
+interface AnkiConnectResponse {
+    result: JSON,
+    error: string | null
+}
+
+export { AnkiConnectResponse };
+
 export default {
     async findNotes(deckName: string, fieldName: string, word: string): Promise<number[]> {
 
@@ -39,13 +46,26 @@ export default {
         return response.data.result;
     },
 
-    async retrieveMediaFile(fileName: string): Promise<string> {
+    async retrieveMediaFile(fileName: string): Promise<AnkiConnectResponse> {
         const response = await axios.post(`${BASE_URL}`, {
             action: 'retrieveMediaFile',
             version: 5,
             params: { filename: fileName }
         });
 
-        return response.data.result;
+        return response.data;
+    },
+
+    async storeMediaFile(fileName: string, data: string): Promise<AnkiConnectResponse> {
+        const response = await axios.post(`${BASE_URL}`, {
+            action: 'storeMediaFile',
+            version: 5,
+            params: {
+                filename: fileName,
+                data
+            }
+        });
+
+        return response.data;
     }
 };

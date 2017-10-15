@@ -34,7 +34,8 @@ export default class QuillEditor extends Vue {
                     ['bold', 'italic', 'underline'],
                     ['image', 'code-block'],
                     ['clean']
-                ]
+                ],
+                imageDrop: true
             },
             placeholder: 'Compose an epic...',
             theme: 'snow'  // or 'bubble'

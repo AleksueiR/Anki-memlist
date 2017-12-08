@@ -5,7 +5,8 @@
             <el-breadcrumb-item>{{ word.text }}</el-breadcrumb-item>
         </el-breadcrumb>
 
-        <el-row :gutter="20">
+        <!-- editor is hidden for now -->
+        <el-row :gutter="20" v-if="false">
             <el-col :span="12">
                 <!-- <el-tabs v-model="editableTabsValue" type="card" editable @edit="handleTabsEdit">
                     <el-tab-pane
@@ -34,6 +35,13 @@
             </el-col>
         </el-row>
 
+        <el-row>
+            <el-col :span="12">
+                <va-source :word="word"></va-source>
+
+            </el-col>
+        </el-row>
+
     </div>
 </template>
 
@@ -47,7 +55,12 @@ import anki from './../../api/anki';
 import QuillEditor from './editor/../quill-editor.vue';
 import VASource from './../../sources/va.vue';
 
-import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/words';
+import {
+    Word,
+    dFetchWods,
+    dSyncWords,
+    rItems
+} from './../../store/modules/words';
 
 @Component({
     components: {
@@ -56,8 +69,7 @@ import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/word
     }
 })
 export default class WordList extends Vue {
-    @Prop()
-    id: string;
+    @Prop() id: string;
 
     activeTab: string = 'first';
 
@@ -80,14 +92,19 @@ export default class WordList extends Vue {
             return;
         }
 
-        anki.retrieveMediaFile('earth_global_circulation1_-_en.svg.png').then((data: any) => {
-            //console.log(data);
-
-        })
+        anki
+            .retrieveMediaFile('earth_global_circulation1_-_en.svg.png')
+            .then((data: any) => {
+                //console.log(data);
+            });
 
         this.modelFields = await anki.getModelFieldNames('Word Vault');
 
-        this.notes = await anki.findNotes('English::Word Vault', 'Word', this.word!.text);
+        this.notes = await anki.findNotes(
+            'English::Word Vault',
+            'Word',
+            this.word!.text
+        );
         this.noteFields = await anki.getFields(this.notes[0]);
 
         /* anki.getNotes('English::Word Vault', 'Word', this.word!.text).then(data => {
@@ -101,20 +118,16 @@ export default class WordList extends Vue {
         }).then(data => {
             console.log(data);
         }) */
-
-
     }
 
     notes: number[] = [];
     modelFields: string[] = [];
     noteFields: string[] = [];
-
 }
 </script>
 
 <style lang="scss" scoped>
-@import "~quill/dist/quill.core.css";
-
+@import '~quill/dist/quill.core.css';
 </style>
 
 

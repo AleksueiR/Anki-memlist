@@ -25,15 +25,25 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import {
+    Vue,
+    Component,
+    Inject,
+    Model,
+    Prop,
+    Watch
+} from 'vue-property-decorator';
 
-import { Word, dSyncWords, cAddWord, rItems } from './../store/modules/words';
-
+import {
+    Word,
+    dSyncWords,
+    cAddWord,
+    rItems
+} from './../../store/modules/words';
 
 @Component
 export default class BulkImport extends Vue {
-    @Prop()
-    isOpen: boolean;
+    @Prop() isOpen: boolean;
 
     bulkValue: string = '';
 
@@ -72,7 +82,8 @@ export default class BulkImport extends Vue {
             return [];
         }
 
-        return this.bulkValue.split('\n')
+        return this.bulkValue
+            .split('\n')
             .map(line => line.trim())
             .filter(line => line);
     }
@@ -84,9 +95,9 @@ export default class BulkImport extends Vue {
 
         const existingWords: Word[] = rItems(this.$store);
 
-        const duplicates = this.bulkLines
-            .filter(line =>
-                existingWords.find(word => word.text === line.trim()));
+        const duplicates = this.bulkLines.filter(line =>
+            existingWords.find(word => word.text === line.trim())
+        );
 
         return duplicates;
     }
@@ -100,7 +111,9 @@ export default class BulkImport extends Vue {
         const newWordCount = lineCount - duplicateCount;
 
         if (duplicateCount > 0) {
-            return `Found ${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''}; ${newWordCount} new word${newWordCount > 1 ? 's' : ''}.`;
+            return `Found ${duplicateCount} duplicate${duplicateCount > 1
+                ? 's'
+                : ''}; ${newWordCount} new word${newWordCount > 1 ? 's' : ''}.`;
         } else if (lineCount > 0) {
             return `${lineCount} new word${newWordCount > 1 ? 's' : ''}.`;
         }

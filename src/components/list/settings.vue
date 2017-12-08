@@ -19,13 +19,19 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
-import * as settings from './../settings';
+import {
+    Vue,
+    Component,
+    Inject,
+    Model,
+    Prop,
+    Watch
+} from 'vue-property-decorator';
+import * as settings from './../../settings';
 
 @Component
 export default class Settings extends Vue {
-    @Prop()
-    isOpen: boolean;
+    @Prop() isOpen: boolean;
 
     close(): void {
         this.$emit('update:isOpen', false);
@@ -59,7 +65,6 @@ export default class Settings extends Vue {
         // give DOM time to paint
         // setTimeout((<HTMLElement>this.$refs['gist-token']).focus, 50);
     }
-
 }
 </script>
 

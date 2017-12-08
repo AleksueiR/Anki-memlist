@@ -15,8 +15,8 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import settings from './../settings.vue';
-import bulkimport from './../bulk-import.vue';
+import settings from './settings.vue';
+import bulkimport from './bulk-import.vue';
 
 @Component({
     components: {

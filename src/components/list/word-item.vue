@@ -9,8 +9,12 @@
             </el-col>
             <el-col :span="4" v-if="isOver" class="word-controls">
                 <el-button-group>
-                    <el-button icon="check" @click.stop.prevent="archive" size="small"></el-button>
-                    <el-button icon="delete" @click.stop.prevent="remove" size="small"></el-button>
+                    <el-tooltip content="Mark as added" placement="top-start">
+                        <el-button icon="check" @click.stop.prevent="archive" size="small"></el-button>
+                    </el-tooltip>
+                    <el-tooltip content="Remove from list" placement="top-start">
+                        <el-button icon="delete" @click.stop.prevent="remove" size="small"></el-button>
+                    </el-tooltip>
                 </el-button-group>
             </el-col>
         </el-row>
@@ -23,12 +27,16 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
 import moment from 'moment';
 
-import { Word, dFetchWods, dSyncWords, rItems } from './../../store/modules/words';
+import {
+    Word,
+    dFetchWods,
+    dSyncWords,
+    rItems
+} from './../../store/modules/words';
 
 @Component
 export default class WordItem extends Vue {
-    @Prop()
-    word: Word
+    @Prop() word: Word;
 
     isOver: boolean = false;
 
@@ -36,15 +44,15 @@ export default class WordItem extends Vue {
         return moment(date).fromNow(); //format('YYYY-MM-DD HH:mm:ss');
     }
 
-    archive():void {
+    archive(): void {
         this.$emit('archive', this.word);
     }
 
-    edit():void {
+    edit(): void {
         this.$emit('edit', this.word);
     }
 
-    remove():void {
+    remove(): void {
         this.$emit('remove', this.word);
     }
 }
@@ -67,7 +75,7 @@ button {
 }
 
 .over {
-    background-color: #EFF2F7;
+    background-color: #eff2f7;
 }
 </style>
 

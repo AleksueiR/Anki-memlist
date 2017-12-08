@@ -39,7 +39,13 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
 import anki from './../../api/anki';
 
-import { Word, dSyncWords, rItems, cRemoveWord, cAddWord } from './../../store/modules/words';
+import {
+    Word,
+    dSyncWords,
+    rItems,
+    cRemoveWord,
+    cAddWord
+} from './../../store/modules/words';
 import wordItem from './word-item.vue';
 import wordMenu from './word-menu.vue';
 
@@ -61,9 +67,9 @@ export default class WordList extends Vue {
             return '';
         }
 
-        return this.isLookupNew ?
-            `Nothing found. Press 'Enter' to add to the list.` :
-            `Already exists. Press 'Enter' to edit.`;
+        return this.isLookupNew
+            ? `Nothing found. Press 'Enter' to add to the list.`
+            : `Already exists. Press 'Enter' to edit.`;
     }
 
     /**
@@ -86,16 +92,26 @@ export default class WordList extends Vue {
                     return word;
                 }
 
-                return word.text.toLowerCase().startsWith(this.lookup.toLowerCase())
+                return word.text
+                    .toLowerCase()
+                    .startsWith(this.lookup.toLowerCase());
             })
             .sort((wordA: Word, wordB: Word) => {
-                if (wordA.dateAdded > wordB.dateAdded) { return -1; }
-                if (wordA.dateAdded < wordB.dateAdded) { return 1; }
-                if (wordA.text > wordB.text) { return 1; }
-                if (wordA.text < wordB.text) { return -1; }
+                if (wordA.dateAdded > wordB.dateAdded) {
+                    return -1;
+                }
+                if (wordA.dateAdded < wordB.dateAdded) {
+                    return 1;
+                }
+                if (wordA.text > wordB.text) {
+                    return 1;
+                }
+                if (wordA.text < wordB.text) {
+                    return -1;
+                }
                 return 0;
-            })
-            /* .sort((wordA: Word, wordB: Word) => {
+            });
+        /* .sort((wordA: Word, wordB: Word) => {
                 if (wordA.text > wordB.text) { return 1; }
                 if (wordA.text < wordB.text) { return -1; }
                 return 0;
@@ -140,14 +156,14 @@ export default class WordList extends Vue {
 </script>
 
 <style lang="scss" scoped>
-    .word-list {
-        list-style-type: none;
-        padding: 0;
-    }
+.word-list {
+    list-style-type: none;
+    padding: 0;
+}
 
-    .word-menu {
-        text-align: right;
-    }
+.word-menu {
+    text-align: right;
+}
 </style>
 
 

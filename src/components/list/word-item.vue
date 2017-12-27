@@ -10,10 +10,10 @@
             <el-col :span="4" v-if="isOver" class="word-controls">
                 <el-button-group>
                     <el-tooltip content="Mark as added" placement="top-start">
-                        <el-button icon="check" @click.stop.prevent="archive" size="small"></el-button>
+                        <el-button icon="el-icon-check" @click.stop.prevent="archive" size="small"></el-button>
                     </el-tooltip>
                     <el-tooltip content="Remove from list" placement="top-start">
-                        <el-button icon="delete" @click.stop.prevent="remove" size="small"></el-button>
+                        <el-button icon="el-icon-delete" @click.stop.prevent="remove" size="small"></el-button>
                     </el-tooltip>
                 </el-button-group>
             </el-col>

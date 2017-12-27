@@ -1,6 +1,6 @@
 <template>
     <el-dropdown trigger="click">
-        <el-button type="primary" icon="menu"></el-button>
+        <el-button type="primary" icon="el-icon-menu"></el-button>
         <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="isSettingsOpen = true">Settigns</el-dropdown-item>
             <el-dropdown-item @click.native="isImportOpen = true">Bulk Import</el-dropdown-item>

@@ -19,8 +19,7 @@ import { Word } from './../store/modules/words';
 
 @Component
 export default class VASource extends Vue {
-    @Prop()
-    word: Word;
+    @Prop() word: Word;
 
     get normalizedWord(): string {
         const letters = this.word.text.toLowerCase().split('');
@@ -41,7 +40,6 @@ export default class VASource extends Vue {
         return vaWords[this.normalizedWord];
     }
 }
-
 </script>
 
 <style lang="sass" scoped>

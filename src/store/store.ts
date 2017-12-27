@@ -15,5 +15,4 @@ export const createStore = () =>
         modules: {
             words
         }
-    }
-);
+    });

@@ -14,7 +14,6 @@
 </template>
 
 <script lang='ts'>
-
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 
@@ -33,15 +32,15 @@ export default class App extends Vue {
     mounted() {
         dFetchWods(this.$store);
     }
-};
+}
 </script>
 
 <style lang="scss" scoped>
-@import url('~element-ui/lib/theme-default/index.css');
+@import url('~element-ui/lib/theme-chalk/index.css');
 
 .root {
     padding: 16px;
-    font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,SimSun,sans-serif;
+    font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
+        Microsoft YaHei, SimSun, sans-serif;
 }
-
 </style>

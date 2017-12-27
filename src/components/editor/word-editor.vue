@@ -36,8 +36,10 @@
         </el-row>
 
         <el-row>
-            <el-col :span="12">
-                <va-source :word="word"></va-source>
+            <el-col :span="12" v-for="source in sources" :key="source">
+                <!-- <vocabulary-source :word="word"></vocabulary-source> -->
+
+                <component :is="source" :word="word"></component>
 
             </el-col>
         </el-row>
@@ -54,6 +56,8 @@ import anki from './../../api/anki';
 
 import QuillEditor from './editor/../quill-editor.vue';
 import VASource from './../../sources/va.vue';
+import VocabularySource from './../../sources/vocabulary.vue';
+import OxfordDictionariesSource from './../../sources/oxforddictionaries.vue';
 
 import {
     Word,
@@ -65,6 +69,8 @@ import {
 @Component({
     components: {
         'va-source': VASource,
+        'vocabulary-source': VocabularySource,
+        'oxforddictionaries-source': OxfordDictionariesSource,
         'quill-editor': QuillEditor
     }
 })
@@ -74,6 +80,8 @@ export default class WordList extends Vue {
     activeTab: string = 'first';
 
     raw: string = '';
+
+    sources = ['vocabulary-source', 'oxforddictionaries-source'];
 
     get word(): Word | undefined {
         return rItems(this.$store).find(item => item.id === this.id);

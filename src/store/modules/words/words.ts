@@ -1,7 +1,6 @@
 import { ActionContext, Store } from 'vuex';
 import { getStoreAccessors } from 'vuex-typescript';
 
-// import jsonbin from './../../../api/jsonbin';
 import gists from './../../../api/gists';
 
 import { Word, WordsState } from './words-state';

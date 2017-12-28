@@ -19,6 +19,7 @@ const state: WordsState = {
 };
 
 // getters
+// retuns Word collection from the WordsState store
 const getters = {
     items: (state: WordsState): Word[] => state.items
 };
@@ -26,7 +27,9 @@ const getters = {
 // actions
 const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
-        cKeepWords(context, { items: (await gists.get<WordsState>(gistId, gistFileName)).items })
+        cKeepWords(context, {
+            items: (await gists.get<WordsState>(gistId, gistFileName)).items
+        });
     },
 
     async syncWords(context: WordsContext): Promise<void> {
@@ -36,6 +39,7 @@ const actions = {
 
 // mutations
 const mutations = {
+    // stores Word collection in the WordsState store
     keepWords(state: WordsState, { items }: { items: Word[] }) {
         state.items = items.map(item => new Word(item));
     },
@@ -45,7 +49,7 @@ const mutations = {
     },
 
     removeWord(state: WordsState, word: Word) {
-        const index: number = state.items.findIndex((w: Word) => w === word );
+        const index: number = state.items.findIndex((w: Word) => w === word);
 
         if (index !== -1) {
             state.items.splice(index, 1);
@@ -61,7 +65,9 @@ export const words = {
     mutations
 };
 
-const { commit, read, dispatch } = getStoreAccessors<WordsState, RootState>('words');
+const { commit, read, dispatch } = getStoreAccessors<WordsState, RootState>(
+    'words'
+);
 
 // getter
 export const rItems = read(getters.items);

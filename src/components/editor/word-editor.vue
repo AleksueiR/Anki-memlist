@@ -35,7 +35,7 @@
             </el-col>
         </el-row>
 
-        <el-row>
+        <el-row :gutter="20">
             <el-col :span="12" v-for="source in sources" :key="source">
                 <!-- <vocabulary-source :word="word"></vocabulary-source> -->
 

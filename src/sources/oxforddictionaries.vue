@@ -1,8 +1,9 @@
 <template>
     <div>
-        <h4>en.oxforddictionaries</h4>
+        <h4>Oxford Living Dictionaries</h4>
 
         <div v-for="(group, index) in definition.groups" :key="`group-${index}`">
+            ===
             <div v-for="(part, index) in group.parts" :key="`part-${index}`">
                 {{ part.name }}
 
@@ -13,16 +14,24 @@
 
                 <div v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`">
                     {{ ++senseIndex }}
-                    <p v-html="sense.grammaticalNote"></p>
-                    <p v-html="sense.senseRegisters"></p>
-                    <p v-html="sense.definition"></p>
+
+                    <p>
+                        <span v-if="sense.grammaticalNote">[{{ sense.grammaticalNote }}]</span>
+                        <span v-if="sense.senseRegisters">[{{ sense.senseRegisters }}]</span>
+                        {{ sense.definition }}
+                    </p>
+
                     <p v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p>
 
                     <div v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`">
                         {{ senseIndex }}.{{ ++subsenseIndex }}
-                        <p v-html="subsense.grammaticalNote"></p>
-                        <p v-html="subsense.senseRegisters"></p>
-                        <p v-html="subsense.definition"></p>
+
+                        <p>
+                            <span v-if="subsense.grammaticalNote">[{{ subsense.grammaticalNote }}]</span>
+                            <span v-if="subsense.senseRegisters">[{{ subsense.senseRegisters }}]</span>
+                            {{ subsense.definition }}
+                        </p>
+
                         <p v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p>
                     </div>
 
@@ -31,7 +40,9 @@
             </div>
 
             <div v-for="(pronunciation, index) in group.pronunciations" :key="`pronunciation-${index}`">
-                {{ pronunciation.part }} {{ pronunciation.spelling }} {{ pronunciation.audio }}
+                {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
+
+                <!-- {{ pronunciation.audio }} -->
 
                 <a class="speaker" @click.stop.prevent="playSound">
                     <audio ref="player" controls :src="pronunciation.audio"></audio>
@@ -39,43 +50,28 @@
                 </a>
             </div>
 
+            <section v-if="group.phrases.length > 0">
+                <h3>Phrases</h3>
+
+                <div v-for="(phrase, index) in group.phrases" :key="`phrase-${index}`">
+                    <h4>{{ phrase.text }}</h4>
+                    <p><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</p>
+
+                    <p v-for="(example, index) in phrase.examples.slice(0, 3)" :key="`example-${index}`">{{ example }}</p>
+                </div>
+            </section>
+
+
             <h3>Notes</h3>
 
             <div v-for="(note, index) in group.notes" :key="`note-${index}`">
                 <h4>{{ note.title }}</h4>
 
-                {{ note.text }}
+                <p v-for="(line, index) in note.lines" :key="`line-${index}`">{{ line }}</p>
             </div>
             ___
         </div>
 
-        <!-- {{ definition }} -->
-
-        <!-- <p v-html="definition.groups"></p> -->
-
-        <!-- <div v-if="isExist">
-
-            <p v-html="definition.short"></p>
-            <p v-html="definition.long"></p>
-
-            <div v-for="(group, index) in definition.groups" :key="`group-${index}`">
-                {{++index}} <div v-for="(ordinal, index) in group" :key="`ordinal-${index}`">
-                    <div v-for="(sense, index) in ordinal" :key="`sense-${index}`">
-                        <p v-html="sense.part"></p>
-                        <p v-html="sense.definition"></p>
-                        <p v-html="sense.examples"></p>
-                        <hr>
-                    </div>
-                </div>
-            </div>
-
-            <audio ref="player" controls>
-                <source :src="audioSource" type="audio/mpeg">
-            </audio>
-
-
-
-        </div> -->
     </div>
 </template>
 
@@ -125,7 +121,7 @@ const scrapeConfig = {
                                         iterator: '.subSense',
                                         data: {
                                             grammaticalNote: {
-                                                sel: '.grammatical_note'
+                                                sel: '> .grammatical_note'
                                             },
                                             senseRegisters: {
                                                 sel: '.sense-registers'
@@ -151,8 +147,11 @@ const scrapeConfig = {
                     part: {
                         sel: '.ps'
                     },
-                    spelling: {
-                        sel: '.phoneticspelling'
+                    spellings: {
+                        scrape: {
+                            iterator: '.phoneticspelling',
+                            data: 'text'
+                        }
                     },
                     audio: {
                         sel: '.pronunciations audio',
@@ -161,8 +160,54 @@ const scrapeConfig = {
                 };
 
                 const notesConfig = {
-                    title: { sel: 'strong' },
-                    text: { sel: '.senseInnerWrapper' }
+                    title: {
+                        sel:
+                            'h3:not([class$="phrases-title"]), h2:not([class$="phrases-title"])'
+                    },
+                    lines: {
+                        scrape: {
+                            iterator: '.senseInnerWrapper > p',
+                            data: 'text'
+                        }
+                    }
+                };
+
+                const phrasesConfig = {
+                    text: {
+                        sel: '.ind .phrase'
+                    },
+                    senseRegisters: {
+                        sel: '',
+                        method: function($: any) {
+                            return $(this)
+                                .next()
+                                .find('.phrase_sense .sense-registers')
+                                .text()
+                                .trim();
+                        }
+                    },
+                    definition: {
+                        sel: '',
+                        method: function($: any) {
+                            return $(this)
+                                .next()
+                                .find('.phrase_sense > .trg:first-child .ind')
+                                .text();
+                        }
+                    },
+                    examples: {
+                        sel: '',
+                        method: function($: any) {
+                            console.log('phraseexampels', $(this));
+
+                            return artoo.scrape($(this).next(), {
+                                scrape: {
+                                    iterator: '.phrase_sense .ex',
+                                    data: 'text'
+                                }
+                            })[0];
+                        }
+                    }
                 };
 
                 return {
@@ -184,14 +229,16 @@ const scrapeConfig = {
                             .nextUntil('.entryHead')
                             .filter('.etymology'),
                         notesConfig
-                    )
-                } /* {
-                    parts: artoo.scrape(
-                        $(this).nextUntil('.entryHead'),
-                        partConfig
                     ),
-
-                } */;
+                    phrases: artoo.scrape(
+                        $(this)
+                            .nextUntil('.entryHead')
+                            .find(
+                                '.phrases-title ~ .senseInnerWrapper > .semb.gramb > li'
+                            ),
+                        phrasesConfig
+                    )
+                };
             }
         }
     }
@@ -200,11 +247,6 @@ const scrapeConfig = {
 @Component
 export default class OxfordDictionariesSource extends WordSource {
     definition: WordDefinition = {};
-
-    /* dfs() {
-        const a = [];
-        a.find();
-    } */
 
     async created() {
         this.definition = await axios

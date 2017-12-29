@@ -9,6 +9,8 @@ declare module 'quill-image-drop-module';
 
 declare module 'artoo-js';
 
+declare module 'vue-perfect-scrollbar';
+
 /* declare module 'quill/modules/toolbar';
 declare module 'quill/themes/snow';
 declare module 'quill/formats/header';

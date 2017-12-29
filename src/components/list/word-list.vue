@@ -9,8 +9,8 @@
                     :hint="lookupHint"
                     v-model.trim="lookup"
                     autofocus
-                    icon="close"
-                    :on-icon-click="clearLookup">
+                    suffix-icon="el-icon-edit"
+                    :clearable="true">
                 </el-input>
                 <span class="text-smaller">{{ lookupHint }}</span>
             </el-col>

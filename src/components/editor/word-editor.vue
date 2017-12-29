@@ -51,7 +51,6 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import storage from './../../api/jsonbin';
 import anki from './../../api/anki';
 
 import QuillEditor from './editor/../quill-editor.vue';

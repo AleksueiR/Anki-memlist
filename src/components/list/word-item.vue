@@ -49,6 +49,7 @@ export default class WordItem extends Vue {
     }
 
     edit(): void {
+        console.log('edit clicked!');
         this.$emit('edit', this.word);
     }
 

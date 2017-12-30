@@ -2,13 +2,13 @@ import uniqid from 'uniqid';
 import moment from 'moment';
 
 export interface WordOptions {
-    text?: string,
-    id?: string,
-    archived?: boolean,
-    noteIds?: string[],
+    text?: string;
+    id?: string;
+    archived?: boolean;
+    noteIds?: string[];
 
-    dateAdded?: number
-};
+    dateAdded?: number;
+}
 
 export class Word {
     text: string;
@@ -18,7 +18,13 @@ export class Word {
 
     readonly dateAdded: number;
 
-    constructor({ id = uniqid.time(), text = '', archived = false, noteIds = [], dateAdded = moment.now() }: WordOptions = {}) {
+    constructor({
+        id = uniqid.time(),
+        text = '',
+        archived = false,
+        noteIds = [],
+        dateAdded = moment.now()
+    }: WordOptions = {}) {
         if (!text) {
             // TODO: complain or throw error
             return;
@@ -43,5 +49,6 @@ export class Word {
 }
 
 export interface WordsState {
-    items: Word[]
-};
+    items: Word[];
+    selectedItem: Word | null;
+}

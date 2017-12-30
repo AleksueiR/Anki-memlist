@@ -1,9 +1,12 @@
 <template>
-    <div v-if="word">
-        <el-breadcrumb separator="/">
+    <div v-if="word" class="container">
+
+        <!-- {{ word.text }} -->
+
+        <!-- <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/list' }">word list</el-breadcrumb-item>
             <el-breadcrumb-item>{{ word.text }}</el-breadcrumb-item>
-        </el-breadcrumb>
+        </el-breadcrumb> -->
 
         <!-- editor is hidden for now -->
         <el-row :gutter="20" v-if="false">
@@ -35,14 +38,29 @@
             </el-col>
         </el-row>
 
-        <el-row :gutter="20">
-            <el-col :span="12" v-for="source in sources" :key="source">
-                <!-- <vocabulary-source :word="word"></vocabulary-source> -->
+        <header>
+            <h1 class="title">{{ word.text }}</h1>
+        </header>
 
-                <component :is="source" :word="word"></component>
+        <section class="container main">
+            <section class="content scroll">
+                <!-- <VuePerfectScrollbar class="scroll-area"> -->
+                    <div v-for="source in sources" :key="source.id" :id="source.id">
+                        <!-- <vocabulary-source :word="word"></vocabulary-source> -->
 
-            </el-col>
-        </el-row>
+                        <component :is="source.id" :word="word"></component>
+                    </div>
+                <!-- </VuePerfectScrollbar> -->
+            </section>
+            <aside class="sidebar scroll">
+                <ul class="headings">
+                    <li v-for="source in sources" :key="source.id" class="heading">
+                        <a :href="`#${source.id}`" class="anchor">{{ source.name }}</a>
+                    </li>
+                </ul>
+
+            </aside>
+        </section>
 
     </div>
 </template>
@@ -58,10 +76,13 @@ import VASource from './../../sources/va.vue';
 import VocabularySource from './../../sources/vocabulary.vue';
 import OxfordDictionariesSource from './../../sources/oxforddictionaries.vue';
 
+import { EventBus, WORD_SELECTED } from './../../event-bus';
+
 import {
     Word,
     dFetchWods,
     dSyncWords,
+    rSelectedItem,
     rItems
 } from './../../store/modules/words';
 
@@ -80,10 +101,28 @@ export default class WordList extends Vue {
 
     raw: string = '';
 
-    sources = ['vocabulary-source', 'oxforddictionaries-source'];
+    sources = [
+        {
+            name: 'Vocabulary.com',
+            id: 'vocabulary-source'
+        },
+        { name: 'Oxford Dictonaries', id: 'oxforddictionaries-source' }
+    ];
 
-    get word(): Word | undefined {
-        return rItems(this.$store).find(item => item.id === this.id);
+    // _word: Word | null = null;
+    get word(): Word | null {
+        return rSelectedItem(this.$store);
+        // return rItems(this.$store).find(item => item.id === this.id);
+        // return this._word;
+    }
+
+    created(): void {
+        /*  this.$on(WORD_SELECTED, (word: Word) => {
+            console.log(word);
+            this._word = word;
+
+            this.$nextTick();
+        }); */
     }
 
     async mounted(): Promise<void> {
@@ -135,6 +174,79 @@ export default class WordList extends Vue {
 
 <style lang="scss" scoped>
 @import '~quill/dist/quill.core.css';
+
+.title {
+    letter-spacing: 0px;
+    font-size: 3em;
+    text-transform: none;
+    color: black;
+    font-weight: 300;
+    display: block;
+    white-space: nowrap;
+    line-height: 64px;
+    margin: 0 0 16px 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.main {
+    flex-direction: row;
+
+    .content {
+        flex: 1;
+    }
+
+    .sidebar {
+        width: 15em;
+        flex-shrink: 0;
+
+        .headings {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .heading {
+            line-height: 1.4;
+            font-weight: 700;
+
+            .anchor {
+                font-size: 14px;
+                padding: 6px 20px;
+                color: #2c3e50;
+                display: block;
+                text-decoration: none;
+
+                &:active,
+                &:hover {
+                    color: #2980b9;
+                }
+            }
+        }
+    }
+}
+
+.scroll {
+    overflow: auto;
+    padding-right: 16px;
+
+    &::-webkit-scrollbar {
+        width: 5px;
+        padding: 12px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.6);
+    }
+}
 </style>
 
 

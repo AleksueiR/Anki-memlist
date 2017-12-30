@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h4>Oxford Living Dictionaries</h4>
+        <h4 id="oxforddictionaries-source">Oxford Living Dictionaries</h4>
 
         <div v-for="(group, index) in definition.groups" :key="`group-${index}`">
             ===
@@ -82,6 +82,9 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { Word } from './../store/modules/words';
 
 import axios, { AxiosPromise, AxiosInstance } from 'axios';
+
+import loglevel from 'loglevel';
+const log: loglevel.Logger = loglevel.getLogger(`source`);
 
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
@@ -248,11 +251,17 @@ const scrapeConfig = {
 export default class OxfordDictionariesSource extends WordSource {
     definition: WordDefinition = {};
 
-    async created() {
+    @Watch('word')
+    async onWordChanged(val: Word | null) {
+        log.info('fsd');
+
+        if (!val) {
+            log.info('word is not set');
+            return '';
+        }
+
         this.definition = await axios
-            .get(
-                `https://en.oxforddictionaries.com/definition/${this.word.text}`
-            )
+            .get(`https://en.oxforddictionaries.com/definition/${val.text}`)
             .then(response => {
                 const a = cheerio.load(response.data);
 
@@ -268,6 +277,10 @@ export default class OxfordDictionariesSource extends WordSource {
 
                 return null;
             });
+    }
+
+    mounted(): void {
+        this.onWordChanged(this.word);
     }
 
     get isExist(): boolean {

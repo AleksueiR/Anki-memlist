@@ -1,34 +1,42 @@
 <template>
-    <div>
-        <el-row :gutter="20">
-            <el-col :span="22">
-                <el-input
-                    @keyup.enter.native="addOrEditWord()"
-                    @keyup.esc.native="clearLookup"
-                    label="Lookup"
-                    :hint="lookupHint"
-                    v-model.trim="lookup"
-                    autofocus
-                    suffix-icon="el-icon-edit"
-                    :clearable="true">
-                </el-input>
-                <span class="text-smaller">{{ lookupHint }}</span>
-            </el-col>
-            <el-col :span="2" class="word-menu">
+    <div class="container">
+        <!-- <el-row>
+            <el-col> -->
+                <section class="lookup">
+                    <el-input
+                        @keyup.enter.native="addOrEditWord()"
+                        @keyup.esc.native="clearLookup"
+                        label="Lookup"
+                        :hint="lookupHint"
+                        @input="blah"
+                        v-model.trim="lookup"
+                        autofocus
+                        suffix-icon="el-icon-edit"
+                        :clearable="true">
+                    </el-input>
+                </section>
+            <!-- </el-col> -->
+            <!-- <el-col :span="2" class="word-menu">
                 <word-menu></word-menu>
-            </el-col>
-        </el-row>
-        <el-row>
-            <ul class="word-list">
-                <word-item
-                    v-for="word in items"
-                    :key="word.text"
-                    @archive="archiveWord"
-                    @edit="editWord"
-                    v-on:remove="removeWord"
-                    v-bind:word="word"></word-item>
-            </ul>
-        </el-row>
+            </el-col> -->
+        <!-- </el-row> -->
+        <!-- <el-row> -->
+            <span class="text-smaller">{{ lookupHint }}</span>
+        <section class="scroll">
+            <!-- <VuePerfectScrollbar class="scroll-area"> -->
+                <ul class="list">
+                    <word-item
+                        v-for="word in items"
+                        :key="word.text"
+                        @archive="archiveWord"
+                        @edit="editWord"
+                        @select="selectWord"
+                        v-on:remove="removeWord"
+                        v-bind:word="word"></word-item>
+                </ul>
+        </section>
+            <!-- </VuePerfectScrollbar> -->
+        <!-- </el-row> -->
     </div>
 
 </template>
@@ -37,15 +45,19 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
+import debounce from 'lodash/debounce';
+
 import anki from './../../api/anki';
 
 import {
     Word,
     dSyncWords,
     rItems,
+    cSelectWord,
     cRemoveWord,
     cAddWord
 } from './../../store/modules/words';
+
 import wordItem from './word-item.vue';
 import wordMenu from './word-menu.vue';
 
@@ -57,6 +69,17 @@ import wordMenu from './word-menu.vue';
 })
 export default class WordList extends Vue {
     lookup: string = '';
+
+    debounce = debounce;
+
+    blah = this.debounce(this.foobar, 500);
+
+    foobar(a: any): void {
+        console.log('!!!', a, this.lookup);
+        const word = new Word({ text: this.lookup });
+
+        cSelectWord(this.$store, word);
+    }
 
     get isLookupValid(): boolean {
         return this.lookup !== '' && this.lookup !== null;
@@ -86,6 +109,8 @@ export default class WordList extends Vue {
     }
 
     get items(): Word[] {
+        console.log('get items');
+
         const filteredItems = rItems(this.$store)
             .filter((word: Word) => {
                 if (!this.isLookupValid) {
@@ -145,7 +170,13 @@ export default class WordList extends Vue {
     }
 
     editWord(word: Word): void {
-        this.$router.push({ name: 'editor', params: { id: word.id } });
+        //cSelectWord(word);
+        //this.$router.push({ name: 'editor', params: { id: word.id } });
+        //EventBus.$emit(WORD_SELECTED, word);
+    }
+
+    selectWord(word: Word): void {
+        cSelectWord(this.$store, word);
     }
 
     removeWord(word: Word): void {
@@ -156,13 +187,45 @@ export default class WordList extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.word-list {
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.lookup {
+    height: 4em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.list {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
 
 .word-menu {
     text-align: right;
+}
+
+.scroll {
+    overflow: auto;
+    padding-right: 16px;
+
+    &::-webkit-scrollbar {
+        width: 5px;
+        padding: 12px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.6);
+    }
 }
 </style>
 

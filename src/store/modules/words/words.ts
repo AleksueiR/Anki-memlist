@@ -14,18 +14,22 @@ const gistFileName = storage.get(gistFileNameKey) as string;
 type WordsContext = ActionContext<WordsState, RootState>;
 
 const state: WordsState = {
+    selectedItem: null,
     items: []
 };
 
 // getters
 // retuns Word collection from the WordsState store
 const getters = {
-    items: (state: WordsState): Word[] => state.items
+    items: (state: WordsState): Word[] => state.items,
+    selectedIted: (state: WordsState): Word | null => state.selectedItem
 };
 
 // actions
 const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
+        console.log('fetchwords');
+
         cKeepWords(context, {
             items: (await gists.get<WordsState>(gistId, gistFileName)).items
         });
@@ -38,6 +42,10 @@ const actions = {
 
 // mutations
 const mutations = {
+    selectWord(state: WordsState, item: Word) {
+        state.selectedItem = item;
+    },
+
     // stores Word collection in the WordsState store
     keepWords(state: WordsState, { items }: { items: Word[] }) {
         state.items = items.map(item => new Word(item));
@@ -70,12 +78,14 @@ const { commit, read, dispatch } = getStoreAccessors<WordsState, RootState>(
 
 // getter
 export const rItems = read(getters.items);
+export const rSelectedItem = read(getters.selectedIted);
 
 // action
 export const dFetchWods = dispatch(actions.fetchWords);
 export const dSyncWords = dispatch(actions.syncWords);
 
 //mutations
+export const cSelectWord = commit(mutations.selectWord);
 /* export */ const cKeepWords = commit(mutations.keepWords);
 export const cAddWord = commit(mutations.addWord);
 export const cRemoveWord = commit(mutations.removeWord);

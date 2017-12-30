@@ -65,6 +65,9 @@ import { Word } from './../store/modules/words';
 
 import axios, { AxiosPromise, AxiosInstance } from 'axios';
 
+import loglevel from 'loglevel';
+const log: loglevel.Logger = loglevel.getLogger(`source`);
+
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
@@ -166,11 +169,16 @@ const scrapeConfig = {
 export default class VocabularySource extends WordSource {
     definition: WordDefinition = {};
 
-    async created() {
+    @Watch('word')
+    async onWordChanged(val: Word | null) {
+        if (!val) {
+            log.info('word is not set');
+            return '';
+        }
+
         this.definition = await axios
             .get(
-                `https://www.vocabulary.com/dictionary/definition.ajax?search=${this
-                    .word.text}&lang=en`
+                `https://www.vocabulary.com/dictionary/definition.ajax?search=${val.text}&lang=en`
             )
             .then(response => {
                 artoo.setContext(cheerio.load(response.data));
@@ -197,6 +205,10 @@ export default class VocabularySource extends WordSource {
             });
     }
 
+    mounted(): void {
+        this.onWordChanged(this.word);
+    }
+
     groupSensesByPart(senses: object[]): object[] {
         return senses.reduce((parts: any[], sense: any) => {
             const partName: string = sense.part;
@@ -216,12 +228,12 @@ export default class VocabularySource extends WordSource {
         }, []) as object[];
     }
 
-    get normalizedWord(): string {
+    /* get normalizedWord(): string {
         const letters = this.word.text.toLowerCase().split('');
         letters[0] = letters[0].toUpperCase();
 
         return letters.join('');
-    }
+    } */
 
     get isExist(): boolean {
         if (!this.definition) {

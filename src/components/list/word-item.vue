@@ -4,10 +4,10 @@
         @mouseleave="isOver = false"
         :class="{ over: isOver }">
         <el-row type="flex" align="middle" >
-            <el-col :span="20">
-                <span>{{ word.text }} /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }} )</span>
+            <el-col :span="12">
+                <span>{{ word.text }} <!-- /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }} ) --></span>
             </el-col>
-            <el-col :span="4" v-if="isOver" class="word-controls">
+            <el-col :span="12" v-if="isOver" class="word-controls">
                 <el-button-group>
                     <el-tooltip content="Mark as added" placement="top-start">
                         <el-button icon="el-icon-check" @click.stop.prevent="archive" size="small"></el-button>
@@ -34,6 +34,8 @@ import {
     rItems
 } from './../../store/modules/words';
 
+import { EventBus, WORD_SELECTED } from './../../event-bus';
+
 @Component
 export default class WordItem extends Vue {
     @Prop() word: Word;
@@ -50,7 +52,8 @@ export default class WordItem extends Vue {
 
     edit(): void {
         console.log('edit clicked!');
-        this.$emit('edit', this.word);
+        // this.$emit('edit', this.word);
+        this.$emit('select', this.word);
     }
 
     remove(): void {

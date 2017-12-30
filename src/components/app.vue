@@ -1,20 +1,12 @@
 <template>
 
-    <div class="root">
-        <!-- <VuePerfectScrollbar class="scroll-area" v-once :settings="settings"> -->
-        <router-view></router-view>
-        <!-- </VuePerfectScrollbar> -->
-    </div>
+    <section class="root">
 
-    <!-- <v-app id="app">
-        <v-content>
-            <v-container fluid pa-0>
-                <v-layout column>
+        <word-list class="word-list"></word-list>
 
-                </v-layout>
-            </v-container>
-        </v-content>
-    </v-app> -->
+        <word-editor class="word-editor"></word-editor>
+
+    </section>
 </template>
 
 <script lang='ts'>
@@ -37,9 +29,9 @@ import { dFetchWods } from './../store/modules/words';
     }
 })
 export default class App extends Vue {
-    settings = {
+    /* settings = {
         maxScrollbarLength: 60
-    };
+    }; */
 
     mounted() {
         dFetchWods(this.$store);
@@ -51,15 +43,33 @@ export default class App extends Vue {
 @import url('~element-ui/lib/theme-chalk/index.css');
 
 .root {
-    padding: 16px;
+    padding: 8px 0;
+    font-size: 16px;
     font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
         Microsoft YaHei, SimSun, sans-serif;
+
+    display: flex;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    flex-direction: row;
+
+    > section,
+    > aside {
+        display: flex;
+    }
 }
 
-.scroll-area {
-    position: relative;
-    margin: auto;
-    // width: 400px;
-    // height: 300px;
+.word-list {
+    width: 15em;
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+.word-editor {
+    margin-left: 16px;
+    flex: 1;
 }
 </style>

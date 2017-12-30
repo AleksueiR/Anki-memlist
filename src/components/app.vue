@@ -40,8 +40,6 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss" scoped>
-@import url('~element-ui/lib/theme-chalk/index.css');
-
 .root {
     padding: 8px 0;
     font-size: 16px;

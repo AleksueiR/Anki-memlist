@@ -42,7 +42,7 @@ const actions = {
 
 // mutations
 const mutations = {
-    selectWord(state: WordsState, item: Word) {
+    selectWord(state: WordsState, item: Word | null) {
         state.selectedItem = item;
     },
 

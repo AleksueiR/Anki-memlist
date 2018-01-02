@@ -1,5 +1,10 @@
 <template>
-    <div v-if="word" class="container">
+    <div class="container">
+
+        <div class="null-state" v-if="!word">
+            <img src="https://image.flaticon.com/icons/svg/326/326804.svg" />
+            <span class="message"><span class="code">undefined</span> is not a word</span>
+        </div>
 
         <!-- {{ word.text }} -->
 
@@ -38,11 +43,11 @@
             </el-col>
         </el-row>
 
-        <header>
+        <header v-if="word">
             <h1 class="title">{{ word.text }}</h1>
         </header>
 
-        <section class="container main">
+        <section class="container main" v-if="word">
             <section class="content scroll">
                 <!-- <VuePerfectScrollbar class="scroll-area"> -->
                     <div v-for="source in sources" :key="source.id" :id="source.id">
@@ -192,6 +197,32 @@ export default class WordList extends Vue {
     flex-direction: column;
 }
 
+.null-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: center;
+
+    img {
+        width: 7em;
+        margin-bottom: 16px;
+    }
+
+    span {
+        color: #2c3e50;
+        font-size: 1.2em;
+    }
+
+    .code {
+        padding: 0.2em 0.4em;
+        margin: 0;
+        font-size: 85%;
+        background-color: rgba(27, 31, 35, 0.05);
+        border-radius: 3px;
+    }
+}
+
 .main {
     flex-direction: row;
 
@@ -235,7 +266,6 @@ export default class WordList extends Vue {
 
     &::-webkit-scrollbar {
         width: 5px;
-        padding: 12px;
     }
 
     &::-webkit-scrollbar-thumb {

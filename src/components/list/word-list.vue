@@ -6,12 +6,13 @@
                     <el-input
                         @keyup.enter.native="addOrEditWord()"
                         @keyup.esc.native="clearLookup"
-                        label="Lookup"
-                        :hint="lookupHint"
                         @input="blah"
                         v-model.trim="lookup"
-                        autofocus
+                        label="Lookup"
+                        placeholder="type a word"
                         suffix-icon="el-icon-edit"
+                        autofocus
+                        :hint="lookupHint"
                         :clearable="true">
                     </el-input>
                 </section>
@@ -47,6 +48,10 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
 import debounce from 'lodash/debounce';
 
+import loglevel from 'loglevel';
+loglevel.setDefaultLevel(loglevel.levels.TRACE);
+const log: loglevel.Logger = loglevel.getLogger(`word-list`);
+
 import anki from './../../api/anki';
 
 import {
@@ -76,6 +81,13 @@ export default class WordList extends Vue {
 
     foobar(a: any): void {
         console.log('!!!', a, this.lookup);
+        if (!this.isLookupValid) {
+            log.info(`[word-list] not a word`);
+
+            cSelectWord(this.$store, null);
+            return;
+        }
+
         const word = new Word({ text: this.lookup });
 
         cSelectWord(this.$store, word);
@@ -211,11 +223,9 @@ export default class WordList extends Vue {
 
 .scroll {
     overflow: auto;
-    padding-right: 16px;
 
     &::-webkit-scrollbar {
         width: 5px;
-        padding: 12px;
     }
 
     &::-webkit-scrollbar-thumb {

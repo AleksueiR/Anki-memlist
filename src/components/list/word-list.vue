@@ -16,6 +16,8 @@
                         :clearable="true">
                     </el-input>
                 </section>
+
+                <word-menu></word-menu>
             <!-- </el-col> -->
             <!-- <el-col :span="2" class="word-menu">
                 <word-menu></word-menu>

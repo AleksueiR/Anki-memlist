@@ -34,6 +34,8 @@ import {
     Watch
 } from 'vue-property-decorator';
 
+import { cOpenImport } from './../../store/modules/app';
+
 import {
     Word,
     dSyncWords,
@@ -49,7 +51,7 @@ export default class BulkImport extends Vue {
 
     close(): void {
         this.bulkValue = '';
-        this.$emit('update:isOpen', false);
+        cOpenImport(this.$store, false);
     }
 
     addBulkLines(): void {

@@ -26,7 +26,6 @@
         <!-- <el-row> -->
             <span class="text-smaller">{{ lookupHint }}</span>
         <section class="scroll">
-            <!-- <VuePerfectScrollbar class="scroll-area"> -->
                 <ul class="list">
                     <word-item
                         v-for="word in items"
@@ -38,7 +37,6 @@
                         v-bind:word="word"></word-item>
                 </ul>
         </section>
-            <!-- </VuePerfectScrollbar> -->
         <!-- </el-row> -->
     </div>
 

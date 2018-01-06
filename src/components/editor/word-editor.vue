@@ -49,13 +49,11 @@
 
         <section class="container main" v-if="word">
             <section class="content scroll">
-                <!-- <VuePerfectScrollbar class="scroll-area"> -->
                     <div v-for="source in sources" :key="source.id" :id="source.id">
                         <!-- <vocabulary-source :word="word"></vocabulary-source> -->
 
                         <component :is="source.id" :word="word"></component>
                     </div>
-                <!-- </VuePerfectScrollbar> -->
             </section>
             <aside class="sidebar scroll">
                 <ul class="headings">

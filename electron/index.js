@@ -23,7 +23,7 @@ function createWindow() {
 
     // and load the index.html of the app.
     const url = isDev
-        ? 'http://localhost:3003'
+        ? 'http://localhost:3031'
         : path.join(__dirname, '../dist/', 'index.html');
     mainWindow.loadURL(url);
     /*mainWindow.loadURL(url.format({

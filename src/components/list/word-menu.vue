@@ -2,12 +2,10 @@
     <el-dropdown trigger="click">
         <el-button type="primary" icon="el-icon-menu"></el-button>
         <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item @click.native="isSettingsOpen = true">Settigns</el-dropdown-item>
-            <el-dropdown-item @click.native="isImportOpen = true">Bulk Import</el-dropdown-item>
+            <el-dropdown-item @click.native="openSettings($store, true)">Settigns</el-dropdown-item>
+            <el-dropdown-item @click.native="openImport($store, true)">Bulk Import</el-dropdown-item>
         </el-dropdown-menu>
 
-        <settings :isOpen.sync="isSettingsOpen"></settings>
-        <bulk-import :isOpen.sync="isImportOpen"></bulk-import>
     </el-dropdown>
 </template>
 
@@ -15,8 +13,10 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import settings from './settings.vue';
-import bulkimport from './bulk-import.vue';
+import settings from './../dialogs/settings.vue';
+import bulkimport from './../dialogs/bulk-import.vue';
+
+import { cOpenSettings, cOpenImport } from './../../store/modules/app';
 
 @Component({
     components: {
@@ -25,8 +25,13 @@ import bulkimport from './bulk-import.vue';
     }
 })
 export default class WordMenu extends Vue {
-    isSettingsOpen: boolean = false;
-    isImportOpen: boolean = false;
+    openSettings(): void {
+        cOpenSettings(this.$store, true);
+    }
+
+    openImport(): void {
+        cOpenImport(this.$store, true);
+    }
 }
 </script>
 

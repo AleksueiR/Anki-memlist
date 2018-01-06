@@ -1,15 +1,17 @@
 import Gists from 'gists';
 
-import { storage, gistTokenKey } from './../settings';
+import { gistTokenSetting } from './../settings';
 
-const gists = new Gists({
-    token: storage.get(gistTokenKey)
-});
+function gists(): any {
+    return new Gists({
+        token: gistTokenSetting.get()
+    });
+}
 
 export default {
     get<T>(gistId: string, fileName: string): Promise<T> {
         const gistPromise = new Promise<T>((resolve, reject) => {
-            gists.download({ id: gistId }, (err: any, data: any) => {
+            gists().download({ id: gistId }, (err: any, data: any) => {
                 if (err !== null) {
                     reject(err);
                 }
@@ -32,7 +34,7 @@ export default {
         };
 
         const gistPromise = new Promise<void>((resolve, reject) => {
-            gists.edit(options, (err: any, data: any) => {
+            gists().edit(options, (err: any, data: any) => {
                 if (err !== null) {
                     reject(err);
                 }
@@ -42,6 +44,5 @@ export default {
         });
 
         return gistPromise;
-    },
-}
-
+    }
+};

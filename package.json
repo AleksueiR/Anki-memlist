@@ -51,7 +51,7 @@
     },
     "scripts": {
         "test": "poi test",
-        "dev": "poi --port 3003 --templateCompiler true src/index.ts",
+        "dev": "poi --port 3031 --templateCompiler true src/index.ts",
         "build": "poi build src/index.ts",
         "both": "concurrently \"npm run dev\" \"npm run app\" -k",
         "app": "electron electron/index.js",

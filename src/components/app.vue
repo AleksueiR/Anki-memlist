@@ -6,35 +6,67 @@
 
         <word-editor class="word-editor"></word-editor>
 
+        <settings :isOpen.sync="isSettingsOpen"></settings>
+        <bulk-import :isOpen.sync="isImportOpen"></bulk-import>
     </section>
+
 </template>
 
 <script lang='ts'>
 import Vue from 'vue';
-import { Component } from 'vue-property-decorator';
-
-/* import VuePerfectScrollbar from 'vue-perfect-scrollbar'; */
+import { Component, Watch } from 'vue-property-decorator';
 
 import wordList from './list/word-list.vue';
 import wordEditor from './editor/word-editor.vue';
+import settings from './dialogs/settings.vue';
+import bulkimport from './dialogs/bulk-import.vue';
 
+import {
+    rIsImportOpen,
+    rIsSettingsOpen,
+    cOpenSettings
+} from './../store/modules/app';
 import { dFetchWods } from './../store/modules/words';
+
+import { areSettingsValid } from './../settings';
 
 @Component({
     components: {
-        // VuePerfectScrollbar,
-
         wordList,
-        wordEditor
+        wordEditor,
+
+        settings,
+        'bulk-import': bulkimport
     }
 })
 export default class App extends Vue {
-    /* settings = {
-        maxScrollbarLength: 60
-    }; */
+    @Watch('isSettingsOpen')
+    onIsSettingsOpenChange(value: boolean): void {
+        console.log('!!!!');
+        if (!value) {
+            this.init();
+        }
+    }
 
-    mounted() {
-        dFetchWods(this.$store);
+    get isImportOpen(): boolean {
+        return rIsImportOpen(this.$store);
+    }
+
+    get isSettingsOpen(): boolean {
+        return rIsSettingsOpen(this.$store);
+    }
+
+    mounted(): void {
+        this.init();
+    }
+
+    init(): void {
+        if (areSettingsValid()) {
+            console.log('sdfsd');
+            dFetchWods(this.$store);
+        } else {
+            cOpenSettings(this.$store, true);
+        }
     }
 }
 </script>

@@ -6,10 +6,7 @@ import gists from './../../../api/gists';
 import { Word, WordsState } from './words-state';
 import { State as RootState } from './../../state';
 
-import { storage, gistIdKey, gistFileNameKey } from './../../../settings';
-
-const gistId: string = storage.get(gistIdKey) as string;
-const gistFileName = storage.get(gistFileNameKey) as string;
+import { gistIdSetting, gistFileNameSetting } from './../../../settings';
 
 type WordsContext = ActionContext<WordsState, RootState>;
 
@@ -31,12 +28,19 @@ const actions = {
         console.log('fetchwords');
 
         cKeepWords(context, {
-            items: (await gists.get<WordsState>(gistId, gistFileName)).items
+            items: (await gists.get<WordsState>(
+                gistIdSetting.get(),
+                gistFileNameSetting.get()
+            )).items
         });
     },
 
     async syncWords(context: WordsContext): Promise<void> {
-        return await gists.post<WordsState>(state, gistId, gistFileName);
+        return await gists.post<WordsState>(
+            state,
+            gistIdSetting.get(),
+            gistFileNameSetting.get()
+        );
     }
 };
 

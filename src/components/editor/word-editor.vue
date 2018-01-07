@@ -1,11 +1,6 @@
 <template>
     <div class="container">
 
-        <div class="null-state" v-if="!word">
-            <img src="https://image.flaticon.com/icons/svg/326/326804.svg" />
-            <span class="message"><span class="code">undefined</span> is not a word</span>
-        </div>
-
         <!-- {{ word.text }} -->
 
         <!-- <el-breadcrumb separator="/">
@@ -43,9 +38,18 @@
             </el-col>
         </el-row>
 
-        <header v-if="word">
-            <h1 class="title">{{ word.text }}</h1>
+        <header>
+            <h1 class="title" v-if="word">{{ word.text }}</h1>
+
+            <div class="controls">
+                <word-menu></word-menu>
+            </div>
         </header>
+
+        <div class="null-state" v-if="!word">
+            <img src="https://image.flaticon.com/icons/svg/326/326804.svg" />
+            <span class="message"><span class="code">undefined</span> is not a word</span>
+        </div>
 
         <section class="container main" v-if="word">
             <section class="content scroll">
@@ -88,13 +92,15 @@ import {
     rSelectedItem,
     rItems
 } from './../../store/modules/words';
+import wordMenu from './../list/word-menu.vue';
 
 @Component({
     components: {
         'va-source': VASource,
         'vocabulary-source': VocabularySource,
         'oxforddictionaries-source': OxfordDictionariesSource,
-        'quill-editor': QuillEditor
+        'quill-editor': QuillEditor,
+        wordMenu: wordMenu
     }
 })
 export default class WordList extends Vue {
@@ -177,6 +183,19 @@ export default class WordList extends Vue {
 
 <style lang="scss" scoped>
 @import '~quill/dist/quill.core.css';
+
+header {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    .controls {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
+        padding: 1em;
+    }
+}
 
 .title {
     letter-spacing: 0px;

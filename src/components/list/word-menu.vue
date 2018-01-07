@@ -1,11 +1,12 @@
 <template>
-    <el-dropdown trigger="click">
-        <el-button type="primary" icon="el-icon-menu"></el-button>
+    <el-dropdown trigger="click" class="trigger">
+        <el-button icon="el-icon-setting"></el-button>
         <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="openSettings($store, true)">Settigns</el-dropdown-item>
             <el-dropdown-item @click.native="openImport($store, true)">Bulk Import</el-dropdown-item>
         </el-dropdown-menu>
 
+        <!-- <i class="el-icon-setting" style="margin-right: 15px"></i> -->
     </el-dropdown>
 </template>
 
@@ -36,7 +37,9 @@ export default class WordMenu extends Vue {
 </script>
 
 <style lang="scss" scoped>
-
+.trigger /deep/ .el-icon-setting {
+    // font-size: 1.5em;
+}
 </style>
 
 

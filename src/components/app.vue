@@ -75,8 +75,7 @@ export default class App extends Vue {
 .root {
     padding: 8px 0;
     font-size: 16px;
-    font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
-        Microsoft YaHei, SimSun, sans-serif;
+    font-family: Segoe UI;
 
     display: flex;
     position: absolute;

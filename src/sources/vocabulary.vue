@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h4>Vocabulary.com</h4>
+        <h2>Vocabulary.com</h2>
 
         <div v-if="isExist">
             <!-- <p>{{ vaWord.pronunciation }}</p> -->
@@ -11,36 +11,66 @@
             <p v-html="definition.short"></p>
             <p v-html="definition.long"></p>
 
-            <div v-for="(group, index) in definition.groups" :key="`group-${index}`">
-                ===
-                <div v-for="(part, index) in group.parts" :key="`part-${index}`">
-                    {{ part.name }}
+            <ul class="group-list">
+                <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
 
-                    <!-- <a class="speaker" @click.stop.prevent="playSound">
-                        <audio ref="player" controls :src="group.pronunciations.find(p => p.part === part.name).audio"></audio>
-                        <i class="el-icon-service"></i>
-                    </a> -->
+                    <h3 class="group-title">
+                        <span>{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span>
+                        </span>
+                    </h3>
 
-                    <div v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`">
-                        <!-- <p>{{ sense.part }}</p> -->
-                        {{ ++senseIndex }}
-                        <p v-html="sense.grammaticalNote"></p>
-                        <p v-html="sense.senseRegisters"></p>
-                        <p v-html="sense.definition"></p>
-                        <p v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p>
+                    <div v-for="(part, index) in group.parts" :key="`part-${index}`" class="part">
+                        <span class="part-designator" :class="part.name">{{ part.name }}</span>
 
-                        <div v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`">
-                            {{ senseIndex }}.{{ ++subsenseIndex }}
-                            <p v-html="subsense.grammaticalNote"></p>
-                            <p v-html="subsense.senseRegisters"></p>
-                            <p v-html="subsense.definition"></p>
-                            <p v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p>
-                        </div>
+                        <ul class="sense-list">
+                            <li v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`" class="sense-item">
 
-                        <hr>
+                                <span class="sense-index">{{ toRoman(senseIndex + 1) }}.</span>
+
+                                <div class="sense-content">
+                                    <p class="sense-definition-block">
+
+                                        <span v-if="sense.grammaticalNote" class="sense-gram-note">[{{ sense.grammaticalNote }}]</span>
+                                        <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
+                                        <span class="sense-definition">{{ sense.definition }}</span>
+                                    </p>
+
+
+
+                                    <div class="sense-example-list" v-if="sense.examples.length > 0">
+                                        <li v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
+                                            <p v-html="example"></p>
+                                        </li>
+                                    </div>
+
+                                    <ul class="sense-list subsense-list" v-if="sense.subsenses.length > 0">
+                                        <li v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`" class="sense-item">
+
+                                            <span class="sense-index">{{ toRoman(senseIndex + 1) }}.{{ toRoman(subsenseIndex + 1) }}</span>
+
+                                            <div class="sense-content">
+                                                <p class="sense-definition-block">
+                                                    <span v-if="subsense.grammaticalNote" class="sense-gram-note">[{{ subsense.grammaticalNote }}]</span>
+                                                    <span v-if="subsense.senseRegisters" class="sense-registers">[{{ subsense.senseRegisters }}]</span>
+                                                    <span class="sense-definition">{{ subsense.definition }}</span>
+                                                </p>
+
+                                                <div class="sense-example-list" v-if="subsense.examples.length > 0">
+                                                    <li v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
+                                                        <p v-html="example"></p>
+                                                    </li>
+                                                </div>
+                                            </div>
+
+
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
-                </div>
-            </div>
+                </li>
+            </ul>
 
             <div v-for="(pronunciation, index) in definition.pronunciations" :key="`pronunciation-${index}`">
                 {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
@@ -52,6 +82,21 @@
                     <i class="el-icon-service"></i>
                 </a>
             </div>
+
+            <!-- <a class="speaker" @click.stop.prevent="playSound">
+                <audio ref="player" controls :src="group.pronunciations.find(p => p.part === part.name).audio"></audio>
+                <i class="el-icon-service"></i>
+            </a> -->
+
+            <!-- {{ ++senseIndex }} <span class="part-designator">{{ part.name }}</span>
+            <p v-html="sense.grammaticalNote"></p>
+            <p v-html="sense.senseRegisters"></p>
+            <p v-html="sense.definition"></p> -->
+
+            <!-- <p v-html="subsense.grammaticalNote"></p>
+            <p v-html="subsense.senseRegisters"></p>
+            <p v-html="subsense.definition"></p>
+            <p v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p> -->
 
         </div>
     </div>
@@ -188,13 +233,23 @@ export default class VocabularySource extends WordSource {
                 console.log(scrape[0]);
 
                 if (scrape.length > 0) {
+                    const partMap: { [name: string]: string } = {
+                        adj: 'adjective',
+                        adv: 'adverb',
+                        n: 'noun',
+                        v: 'verb'
+                    };
+
                     let parts;
 
                     // group senses by part
-                    scrape[0].groups.forEach(
-                        (group: any) =>
-                            (group.parts = this.groupSensesByPart(group.senses))
-                    );
+                    scrape[0].groups.forEach((group: any) => {
+                        // use full name for parts
+                        group.senses.forEach(
+                            (sense: any) => (sense.part = partMap[sense.part])
+                        );
+                        group.parts = this.groupSensesByPart(group.senses);
+                    });
 
                     console.log('parts', scrape[0]);
 
@@ -242,10 +297,152 @@ export default class VocabularySource extends WordSource {
 
         return true;
     }
+
+    toRoman(num: number | string): string {
+        if (this.isString(num)) {
+            num = parseInt(num);
+        }
+
+        let result = '';
+        const decimal = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+        const roman = [
+            'M',
+            'CM',
+            'D',
+            'CD',
+            'C',
+            'XC',
+            'L',
+            'XL',
+            'X',
+            'IX',
+            'V',
+            'IV',
+            'I'
+        ];
+        for (let i = 0; i <= decimal.length; i++) {
+            while (num % decimal[i] < num) {
+                result += roman[i];
+                num -= decimal[i];
+            }
+        }
+        return result;
+    }
+
+    isString(x: any): x is string {
+        return typeof x === 'string';
+    }
 }
 </script>
 
 <style lang="scss" scoped>
+.group-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.group-item {
+    margin-top: 2em;
+}
+
+.group-title {
+    font-size: 1.5em;
+    font-weight: normal;
+    background-color: #f3f3f3;
+    padding: 0em 0.8em;
+    line-height: 2em;
+    margin: 0;
+
+    .sup {
+        position: relative;
+        bottom: 0.6em;
+        font-size: 0.7em;
+        left: 0.1em;
+    }
+}
+
+.part {
+    margin: 1.5em 0 0 0.8em;
+}
+
+.part-designator {
+    background-color: #f8b002;
+    color: white;
+    padding: 0px 4px 2px 4px;
+    display: inline-block;
+    font-style: italic;
+    font-size: 1em;
+    line-height: 1.5em;
+
+    &.noun {
+        background-color: #019875;
+        &.plural {
+            background-color: #00af86;
+        }
+    }
+
+    &.adjective {
+        background-color: #2c3e50;
+    }
+
+    &.adverb {
+        background-color: #c0392d;
+    }
+
+    &.verb {
+        background-color: #2980d9;
+    }
+}
+
+.sense-list {
+    list-style: none;
+    margin: 1em 0 0;
+    padding: 0;
+}
+
+.sense-item {
+    display: flex;
+    flex: 1;
+    margin: 1em 0 0 0;
+    border-right: 5px solid rgb(201, 201, 201);
+
+    &:hover {
+        border-color: #666;
+    }
+}
+
+.sense-index {
+    width: 1.5em;
+    font-size: 1.8em;
+    line-height: 1.5em;
+    color: #676767;
+    font-family: Segoe UI Light;
+}
+
+.sense-content {
+    margin: 1em 0 0 0;
+    flex: 1;
+    p {
+        margin: 0;
+    }
+
+    .sense-definition-block {
+    }
+}
+
+.sense-example-list {
+    margin-top: 1.5em;
+    font-family: Courier New, Courier, monospace;
+}
+
+.sense-example-item {
+    margin: 0.7em 0;
+}
+
+.subsense-list {
+    margin-right: 0.5em;
+}
 audio {
     display: none;
 }

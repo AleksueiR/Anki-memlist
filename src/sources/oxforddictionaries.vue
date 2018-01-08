@@ -171,7 +171,7 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { WordSource, WordDefinition } from './source.class';
+import { WordSource, Definition } from './source.class';
 
 const scrapeConfig = {
     groups: {
@@ -331,7 +331,7 @@ const scrapeConfig = {
 
 @Component
 export default class OxfordDictionariesSource extends WordSource {
-    definition: WordDefinition = {};
+    // definition: Definition = {};
 
     @Watch('word')
     async onWordChanged(val: Word | null) {
@@ -488,10 +488,6 @@ export default class OxfordDictionariesSource extends WordSource {
     margin: 1em 0 0 0;
     padding: 0 0.5em 0 0;
     border-right: 5px solid rgb(201, 201, 201);
-
-    &:hover {
-        border-color: #666;
-    }
 }
 
 .sense-index {

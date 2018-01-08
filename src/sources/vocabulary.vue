@@ -25,7 +25,7 @@
                         <ul class="sense-list">
                             <li v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`" class="sense-item">
 
-                                <span class="sense-index">{{ toRoman(senseIndex + 1) }}.</span>
+                                <span class="sense-index">{{ senseIndex + 1 }}</span>
 
                                 <div class="sense-content">
                                     <p class="sense-definition-block">
@@ -46,7 +46,7 @@
                                     <ul class="sense-list subsense-list" v-if="sense.subsenses.length > 0">
                                         <li v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`" class="sense-item">
 
-                                            <span class="sense-index">{{ toRoman(senseIndex + 1) }}.{{ toRoman(subsenseIndex + 1) }}</span>
+                                            <span class="sense-index">{{ senseIndex + 1 }}.{{ subsenseIndex + 1 }}</span>
 
                                             <div class="sense-content">
                                                 <p class="sense-definition-block">
@@ -116,7 +116,7 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { WordSource, WordDefinition } from './source.class';
+import { WordSource, Definition } from './source.class';
 
 const scrapeConfig = {
     short: {
@@ -212,7 +212,7 @@ const scrapeConfig = {
 
 @Component
 export default class VocabularySource extends WordSource {
-    definition: WordDefinition = {};
+    // definition: Definition = {};
 
     @Watch('word')
     async onWordChanged(val: Word | null) {
@@ -350,7 +350,7 @@ export default class VocabularySource extends WordSource {
     font-size: 1.5em;
     font-weight: normal;
     background-color: #f3f3f3;
-    padding: 0em 0.8em;
+    padding: 0em 1.5rem;
     line-height: 2em;
     margin: 0;
 
@@ -363,7 +363,7 @@ export default class VocabularySource extends WordSource {
 }
 
 .part {
-    margin: 1.5em 0 0 0.8em;
+    margin: 1.5em 0 0 1.5em;
 }
 
 .part-designator {
@@ -404,20 +404,16 @@ export default class VocabularySource extends WordSource {
 .sense-item {
     display: flex;
     flex: 1;
+    margin: 0;
     margin: 1em 0 0 0;
-    border-right: 5px solid rgb(201, 201, 201);
-
-    &:hover {
-        border-color: #666;
-    }
+    border-right: 2px solid rgb(201, 201, 201);
 }
 
 .sense-index {
-    width: 1.5em;
-    font-size: 1.8em;
-    line-height: 1.5em;
+    margin-right: 1em;
+    margin-top: 1em;
     color: #676767;
-    font-family: Segoe UI Light;
+    font-weight: bold;
 }
 
 .sense-content {

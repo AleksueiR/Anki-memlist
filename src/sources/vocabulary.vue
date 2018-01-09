@@ -2,6 +2,18 @@
     <div>
         <h2>Vocabulary.com</h2>
 
+        <source-view definition="definition">
+            <div slot="one">
+                slot one
+            </div>
+
+            |-blah-|
+
+            <div slot="two">
+                slot one
+            </div>
+        </source-view>
+
         <div v-if="isExist">
             <!-- <p>{{ vaWord.pronunciation }}</p> -->
             <!-- <p>{{ definition.short }}</p>
@@ -116,7 +128,8 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { WordSource, Definition } from './source.class';
+import { Source, Definition } from './source.class';
+import SourceView from './source-view.vue';
 
 const scrapeConfig = {
     short: {
@@ -210,8 +223,12 @@ const scrapeConfig = {
     }
 };
 
-@Component
-export default class VocabularySource extends WordSource {
+@Component({
+    components: {
+        'source-view': SourceView
+    }
+})
+export default class VocabularySource extends Source {
     // definition: Definition = {};
 
     @Watch('word')

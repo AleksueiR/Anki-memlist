@@ -8,7 +8,7 @@ import {
 } from 'vue-property-decorator';
 import { Word } from './../store/modules/words';
 
-export class WordSource extends Vue {
+export class Source extends Vue {
     @Prop() word: Word;
 
     definition: Definition = { groups: [] };

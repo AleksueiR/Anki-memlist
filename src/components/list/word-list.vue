@@ -75,9 +75,20 @@ import wordMenu from './word-menu.vue';
 export default class WordList extends Vue {
     lookup: string = '';
 
-    debounce = debounce;
+    /* async mounted(): Promise<void> {
+        window.setInterval(async () => {
+            const card: any = await anki.guiCurrentCard();
+            if (card !== null) {
+                this.lookup = card.fields.Word.value;
 
-    blah = this.debounce(this.foobar, 500);
+                const word = new Word({ text: this.lookup });
+
+                cSelectWord(this.$store, word);
+            }
+        }, 2000);
+    } */
+
+    blah = debounce(this.foobar, 500);
 
     foobar(a: any): void {
         console.log('!!!', a, this.lookup);

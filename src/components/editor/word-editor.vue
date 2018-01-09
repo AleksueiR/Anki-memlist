@@ -248,7 +248,7 @@ header {
     }
 
     .sidebar {
-        width: 15em;
+        width: 13em;
         flex-shrink: 0;
 
         .headings {

@@ -171,7 +171,7 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { WordSource, Definition } from './source.class';
+import { Source, Definition } from './source.class';
 
 const scrapeConfig = {
     groups: {
@@ -330,7 +330,7 @@ const scrapeConfig = {
 };
 
 @Component
-export default class OxfordDictionariesSource extends WordSource {
+export default class OxfordDictionariesSource extends Source {
     // definition: Definition = {};
 
     @Watch('word')

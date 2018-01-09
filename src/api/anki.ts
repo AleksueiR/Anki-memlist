@@ -3,15 +3,29 @@ import axios from 'axios';
 const BASE_URL = 'http://127.0.0.1:8765';
 
 interface AnkiConnectResponse {
-    result: JSON,
-    error: string | null
+    result: JSON;
+    error: string | null;
 }
 
 export { AnkiConnectResponse };
 
 export default {
-    async findNotes(deckName: string, fieldName: string, word: string): Promise<number[]> {
+    async guiCurrentCard(): Promise<AnkiConnectResponse> {
+        const response = await axios.post(`${BASE_URL}`, {
+            action: 'guiCurrentCard',
+            version: 5
+        });
 
+        console.log(`current card ${response.data.result}`);
+
+        return response.data.result;
+    },
+
+    async findNotes(
+        deckName: string,
+        fieldName: string,
+        word: string
+    ): Promise<number[]> {
         const response = await axios.post(`${BASE_URL}`, {
             action: 'findNotes',
             version: 5,
@@ -21,7 +35,6 @@ export default {
         });
 
         console.log(`${fieldName}:'${word}*' deck:"${deckName}"`);
-
 
         return response.data.result;
     },
@@ -56,7 +69,10 @@ export default {
         return response.data;
     },
 
-    async storeMediaFile(fileName: string, data: string): Promise<AnkiConnectResponse> {
+    async storeMediaFile(
+        fileName: string,
+        data: string
+    ): Promise<AnkiConnectResponse> {
         const response = await axios.post(`${BASE_URL}`, {
             action: 'storeMediaFile',
             version: 5,

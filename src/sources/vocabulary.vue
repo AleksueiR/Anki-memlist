@@ -1,10 +1,8 @@
 <template>
     <div>
-        <h2 id="vocabulary-source">Vocabulary.com</h2>
-
         <source-view :definition="definition" :word="word" v-if="isExist">
 
-            <section slot="before-group-list">
+            <section slot="before-group-list" class="descriptions">
                 <p v-html="shortDescription"></p>
                 <p v-html="longDescription"></p>
             </section>
@@ -381,6 +379,10 @@ export default class VocabularySource extends Source {
 </script>
 
 <style lang="scss" scoped>
+.descriptions {
+    margin: 0 1.5em;
+}
+
 .group-list {
     list-style: none;
     padding: 0;

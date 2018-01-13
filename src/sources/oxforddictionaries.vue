@@ -1,7 +1,5 @@
 <template>
     <div>
-        <h2 id="oxforddictionaries-source">Oxford Living Dictionaries</h2>
-
         <source-view :definition="definition" :word="word" v-if="isExist"></source-view>
 
         <!-- <ul class="group-list">

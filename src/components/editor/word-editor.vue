@@ -53,10 +53,9 @@
 
         <section class="container main" v-if="word">
             <section class="content scroll">
-                    <div v-for="source in sources" :key="source.id" :id="source.id">
-                        <!-- <vocabulary-source :word="word"></vocabulary-source> -->
-
-                        <component :is="source.id" :word="word"></component>
+                    <div v-for="source in sources" :key="source.id" :id="source.id" class="source-view">
+                        <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
+                        <component :is="source.id" :word="word" ></component>
                     </div>
             </section>
             <aside class="sidebar scroll">
@@ -189,24 +188,25 @@ header {
     align-items: center;
     flex-shrink: 0;
 
+    .title {
+        letter-spacing: 0px;
+        font-size: 3em;
+        text-transform: none;
+        color: black;
+        font-weight: 300;
+        display: block;
+        white-space: nowrap;
+        line-height: 64px;
+        margin: 0 0 16px 0;
+        padding: 0 1.5rem;
+    }
+
     .controls {
         flex: 1;
         display: flex;
         justify-content: flex-end;
         padding: 1em;
     }
-}
-
-.title {
-    letter-spacing: 0px;
-    font-size: 3em;
-    text-transform: none;
-    color: black;
-    font-weight: 300;
-    display: block;
-    white-space: nowrap;
-    line-height: 64px;
-    margin: 0 0 16px 0;
 }
 
 .container {
@@ -245,6 +245,29 @@ header {
 
     .content {
         flex: 1;
+
+        .source-view {
+            .title {
+                display: flex;
+                font-weight: 400;
+                font-size: 2em;
+                margin: 0 0 0 1.5rem;
+                align-items: center;
+
+                .name {
+                    flex-shrink: 0;
+                }
+
+                .divider {
+                    flex: 1;
+                    border-bottom: 1px solid #9e9e9e;
+                    height: 0.4em;
+                    margin: 0 0 0 1em;
+                }
+            }
+
+            margin: 0 0 2.5em 0;
+        }
     }
 
     .sidebar {
@@ -277,6 +300,8 @@ header {
     }
 }
 
+// TODO: find how to share this section among components
+// adds modified scroll-bar to the section
 .scroll {
     overflow: auto;
     padding-right: 16px;

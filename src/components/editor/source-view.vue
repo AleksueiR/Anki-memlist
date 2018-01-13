@@ -26,6 +26,7 @@
                     </span>
                 </h3>
 
+                <!-- main definition section -->
                 <div v-for="(part, index) in group.parts" :key="`part-${index}`" class="part">
                     <span class="part-designator" :class="part.name">{{ part.name }}</span>
 
@@ -73,25 +74,29 @@
                     </ul>
                 </div>
 
-                <section v-if="group.phrases.length > 0">
-                    <h4>Phrases</h4>
+                <section v-if="group.phrases.length > 0" class="extra phrases">
+                    <h4 class="title">Phrases</h4>
 
-                    <div v-for="(phrase, index) in group.phrases" :key="`phrase-${index}`">
-                        <h5>{{ phrase.text }}</h5>
+                    <div v-for="(phrase, index) in group.phrases" :key="`phrase-${index}`" class="phrase">
+                        <h5 class="phrase-title">{{ phrase.text }}</h5>
 
-                        <p><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</p>
+                        <span class="phrase-definition"><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</span>
 
-                        <p v-for="(example, index) in phrase.examples.slice(0, 3)" :key="`example-${index}`">{{ example }}</p>
+                        <div class="sense-example-list" v-if="phrase.examples.length > 0">
+                            <li v-for="(example, index) in phrase.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item phrase-example">
+                                <p v-html="example"></p>
+                            </li>
+                        </div>
                     </div>
                 </section>
 
-                <section>
-                    <h4>Notes</h4>
+                <section v-if="group.notes.length > 0" class="extra notes">
+                    <h4 class="title">Notes</h4>
 
-                    <div v-for="(note, index) in group.notes" :key="`note-${index}`">
-                        <h5>{{ note.title }}</h5>
+                    <div v-for="(note, index) in group.notes" :key="`note-${index}`" class="note">
+                        <h5 class="sub-title">{{ note.title }}</h5>
 
-                        <p v-for="(line, index) in note.lines" :key="`line-${index}`">{{ line }}</p>
+                        <p v-for="(line, index) in note.lines" :key="`line-${index}`" class="note-line">{{ line }}</p>
                     </div>
                 </section>
             </li>
@@ -189,7 +194,7 @@ export default class SourceView extends Vue {
 }
 
 .part {
-    margin: 1.5em 0 0 1.5em;
+    margin: 1em 1.5em 1.5em 1.5em;
 }
 
 .part-designator {
@@ -236,13 +241,12 @@ export default class SourceView extends Vue {
 
 .sense-index {
     margin-right: 1em;
-    margin-top: 1em;
     color: #676767;
     font-weight: bold;
 }
 
 .sense-content {
-    margin: 1em 0 0 0;
+    margin: 0;
     flex: 1;
     p {
         margin: 0;
@@ -253,17 +257,36 @@ export default class SourceView extends Vue {
 }
 
 .sense-example-list {
-    margin-top: 1.5em;
+    margin: 0.7em 0 0 1em;
     font-family: Courier New, Courier, monospace;
-}
 
-.sense-example-item {
-    margin: 0.7em 0;
+    .sense-example-item {
+        margin: 0.5em 0 0 0;
+    }
 }
 
 .subsense-list {
     margin-right: 0.5em;
 }
+
+.extra {
+    margin: 1em 1.5em 1.5em 1.5em;
+
+    .title {
+        margin: 0 0 0.5em 0;
+    }
+
+    .sub-title {
+        margin: 0.5em 0 0 0;
+    }
+
+    .notes {
+        .note {
+            margin: 0 0 1em 0;
+        }
+    }
+}
+
 audio {
     display: none;
 }

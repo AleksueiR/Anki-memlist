@@ -1,29 +1,21 @@
 <template>
     <div>
-        <h2>Vocabulary.com</h2>
+        <h2 id="vocabulary-source">Vocabulary.com</h2>
 
-        <source-view definition="definition">
-            <div slot="one">
-                slot one
-            </div>
+        <source-view :definition="definition" :word="word" v-if="isExist">
 
-            |-blah-|
+            <section slot="before-group-list">
+                <p v-html="shortDescription"></p>
+                <p v-html="longDescription"></p>
+            </section>
 
-            <div slot="two">
-                slot one
-            </div>
         </source-view>
 
         <div v-if="isExist">
-            <!-- <p>{{ vaWord.pronunciation }}</p> -->
-            <!-- <p>{{ definition.short }}</p>
+            <!-- <p v-html="definition.short"></p>
+            <p v-html="definition.long"></p> -->
 
-            <p>{{ definition.long }}</p> -->
-
-            <p v-html="definition.short"></p>
-            <p v-html="definition.long"></p>
-
-            <ul class="group-list">
+            <!--ul class="group-list">
                 <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
 
                     <h3 class="group-title">
@@ -46,8 +38,6 @@
                                         <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
                                         <span class="sense-definition">{{ sense.definition }}</span>
                                     </p>
-
-
 
                                     <div class="sense-example-list" v-if="sense.examples.length > 0">
                                         <li v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
@@ -82,18 +72,18 @@
                         </ul>
                     </div>
                 </li>
-            </ul>
+            </ul-->
 
-            <div v-for="(pronunciation, index) in definition.pronunciations" :key="`pronunciation-${index}`">
+            <!-- <div v-for="(pronunciation, index) in definition.pronunciations" :key="`pronunciation-${index}`">
                 {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
 
-                <!-- {{ pronunciation.audio }} -->
+
 
                 <a class="speaker" @click.stop.prevent="playSound">
                     <audio ref="player" controls :src="pronunciation.audio"></audio>
                     <i class="el-icon-service"></i>
                 </a>
-            </div>
+            </div> -->
 
             <!-- <a class="speaker" @click.stop.prevent="playSound">
                 <audio ref="player" controls :src="group.pronunciations.find(p => p.part === part.name).audio"></audio>
@@ -120,7 +110,7 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
 import { Word } from './../store/modules/words';
 
-import axios, { AxiosPromise, AxiosInstance } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 import loglevel from 'loglevel';
 const log: loglevel.Logger = loglevel.getLogger(`source`);
@@ -128,8 +118,16 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { Source, Definition } from './source.class';
-import SourceView from './source-view.vue';
+import {
+    Source,
+    Definition,
+    DefinitionGroup,
+    DefinitionPart,
+    DefinitionSense,
+    DefinitionPronunciation
+} from './source.class';
+
+import SourceView from './../components/editor/source-view.vue';
 
 const scrapeConfig = {
     short: {
@@ -140,16 +138,10 @@ const scrapeConfig = {
         sel: '.main .long',
         method: 'html'
     },
-    soundUri: {
-        sel: 'a[data-audio]',
-        attr: 'data-audio'
-    },
     pronunciations: {
         scrape: {
-            iterator: '.dynamictext a[data-audio]',
+            iterator: '.dynamictext a[data-audio]:first-child',
             data: {
-                part: '_',
-                spellings: '_',
                 audio: {
                     sel: '',
                     method: function($: any) {
@@ -158,6 +150,23 @@ const scrapeConfig = {
                         )}.mp3`;
                     }
                 }
+            }
+        }
+    },
+    wordForms: {
+        scrape: {
+            iterator:
+                '.wordforms .definitionNavigator > tbody > tr:nth-child(odd)',
+            data: function($: any) {
+                return {
+                    part: $(this)
+                        .find('.posList .pos')
+                        .text(),
+                    audio: `https://audio.vocab.com/1.0/us/${$(this)
+                        .next()
+                        .find('.variant .listen')
+                        .attr('data-audio')}.mp3`
+                };
             }
         }
     },
@@ -231,6 +240,13 @@ const scrapeConfig = {
 export default class VocabularySource extends Source {
     // definition: Definition = {};
 
+    shortDescription: string = '';
+    longDescription: string = '';
+
+    mounted(): void {
+        this.onWordChanged(this.word);
+    }
+
     @Watch('word')
     async onWordChanged(val: Word | null) {
         if (!val) {
@@ -242,62 +258,109 @@ export default class VocabularySource extends Source {
             .get(
                 `https://www.vocabulary.com/dictionary/definition.ajax?search=${val.text}&lang=en`
             )
-            .then(response => {
-                artoo.setContext(cheerio.load(response.data));
+            .then(this.normalizeDefinition);
+    }
 
-                const scrape = artoo.scrape('.centeredContent', scrapeConfig);
+    normalizeDefinition(response: AxiosResponse<any>): Definition | null {
+        // TODO: handle errors in response
+        artoo.setContext(cheerio.load(response.data));
+        const scrapes = artoo.scrape('.centeredContent', scrapeConfig);
 
-                console.log(scrape[0]);
+        if (scrapes.length === 0) {
+            log.info(`Can't find definition`);
+            return null;
+        }
 
-                if (scrape.length > 0) {
-                    const partMap: { [name: string]: string } = {
-                        adj: 'adjective',
-                        adv: 'adverb',
-                        n: 'noun',
-                        v: 'verb'
-                    };
+        const scrape = scrapes[0];
 
-                    let parts;
+        log.info(`scrape`, scrape);
 
-                    // group senses by part
-                    scrape[0].groups.forEach((group: any) => {
-                        // use full name for parts
-                        group.senses.forEach(
-                            (sense: any) => (sense.part = partMap[sense.part])
-                        );
-                        group.parts = this.groupSensesByPart(group.senses);
-                    });
+        this.shortDescription = scrape.short;
+        this.longDescription = scrape.long;
 
-                    console.log('parts', scrape[0]);
+        const partMap: { [name: string]: string } = {
+            adj: 'adjective',
+            adv: 'adverb',
+            n: 'noun',
+            v: 'verb'
+        };
 
-                    return scrape[0];
-                }
+        const scrapedDefinition: Definition = new Definition();
 
-                return null;
+        // group senses by part
+        scrape.groups.forEach((group: any, index: number) => {
+            // map short part names to their full names
+            group.senses.forEach(
+                (sense: any) => (sense.part = partMap[sense.part])
+            );
+
+            const scrapedGroup: DefinitionGroup = new DefinitionGroup(
+                this.groupSensesByPart(group.senses),
+                this.organizePronunciations(scrape, index)
+            );
+            scrapedDefinition.groups.push(scrapedGroup);
+        });
+
+        console.log('scraped groups', scrapedDefinition);
+
+        return scrapedDefinition;
+    }
+
+    organizePronunciations(
+        scrape: any,
+        groupIndex: number
+    ): DefinitionPronunciation[] {
+        const scrapedPronunciations: DefinitionPronunciation[] = [];
+
+        // If the number of word forms matches the number of groups, assume each word form belongs to a single group
+        if (scrape.wordForms.length === scrape.groups.length) {
+            const pronunciation = scrape.wordForms[groupIndex];
+            // each word form can reference several parts
+            pronunciation.part.split('').forEach((part: string) => {
+                scrapedPronunciations.push(
+                    new DefinitionPronunciation(part, [], [pronunciation.audio])
+                );
             });
+        } else if (scrape.wordForms.length > 0) {
+            scrape.wordForms.forEach((pronunciation: any) => {
+                pronunciation.part.split('').forEach((part: string) => {
+                    scrapedPronunciations.push(
+                        new DefinitionPronunciation(
+                            part,
+                            [],
+                            [pronunciation.audio]
+                        )
+                    );
+                });
+            });
+        } else {
+            const pronunciation = scrape.pronunciations[0];
+            scrapedPronunciations.push(
+                new DefinitionPronunciation('', [], [pronunciation.audio])
+            );
+        }
+
+        return scrapedPronunciations;
     }
 
-    mounted(): void {
-        this.onWordChanged(this.word);
-    }
-
-    groupSensesByPart(senses: object[]): object[] {
-        return senses.reduce((parts: any[], sense: any) => {
+    groupSensesByPart(senses: DefinitionSense[]): DefinitionPart[] {
+        return senses.reduce((parts: DefinitionPart[], sense: any) => {
+            // vocabulary.com stores `part` name on `sense` object; need to move it to `part`
             const partName: string = sense.part;
 
-            if (!parts.find((part: any) => part.name === partName)) {
-                parts.push({ name: partName, senses: [] });
+            let scrapedPart: DefinitionPart | undefined = parts.find(
+                (part: DefinitionPart) => part.name === partName
+            );
+
+            if (!scrapedPart) {
+                scrapedPart = new DefinitionPart(partName);
+                parts.push(scrapedPart);
             }
 
-            const part: {
-                name: string;
-                senses: any[];
-            } = parts.find((part: any) => part.name === partName);
-
-            part.senses.push(sense);
+            scrapedPart.senses.push(sense);
 
             return parts;
-        }, []) as object[];
+        }, []);
     }
 
     /* get normalizedWord(): string {
@@ -313,41 +376,6 @@ export default class VocabularySource extends Source {
         }
 
         return true;
-    }
-
-    toRoman(num: number | string): string {
-        if (this.isString(num)) {
-            num = parseInt(num);
-        }
-
-        let result = '';
-        const decimal = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
-        const roman = [
-            'M',
-            'CM',
-            'D',
-            'CD',
-            'C',
-            'XC',
-            'L',
-            'XL',
-            'X',
-            'IX',
-            'V',
-            'IV',
-            'I'
-        ];
-        for (let i = 0; i <= decimal.length; i++) {
-            while (num % decimal[i] < num) {
-                result += roman[i];
-                num -= decimal[i];
-            }
-        }
-        return result;
-    }
-
-    isString(x: any): x is string {
-        return typeof x === 'string';
     }
 }
 </script>

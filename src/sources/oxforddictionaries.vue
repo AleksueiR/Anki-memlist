@@ -2,10 +2,12 @@
     <div>
         <h2 id="oxforddictionaries-source">Oxford Living Dictionaries</h2>
 
-        <ul class="group-list">
-            <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
+        <source-view :definition="definition" :word="word" v-if="isExist"></source-view>
 
-                <h3 class="group-title">
+        <!-- <ul class="group-list">
+            <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item"> -->
+
+                <!-- <h3 class="group-title">
                     <span>{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span>
                     </span>
                 </h3>
@@ -55,20 +57,20 @@
                             </div>
                         </li>
                     </ul>
-                </div>
+                </div> -->
 
-                <div v-for="(pronunciation, index) in group.pronunciations" :key="`pronunciation-${index}`">
+                <!-- <div v-for="(pronunciation, index) in group.pronunciations" :key="`pronunciation-${index}`">
                     {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
 
-                    <!-- {{ pronunciation.audio }} -->
+
 
                     <a class="speaker" @click.stop.prevent="playSound">
-                        <audio ref="player" controls :src="pronunciation.audio"></audio>
+                        <audio ref="player" controls :src="pronunciation.audios[0]"></audio>
                         <i class="el-icon-service"></i>
                     </a>
-                </div>
+                </div> -->
 
-                <section v-if="group.phrases.length > 0">
+                <!-- <section v-if="group.phrases.length > 0">
                     <h4>Phrases</h4>
 
                     <div v-for="(phrase, index) in group.phrases" :key="`phrase-${index}`">
@@ -87,9 +89,9 @@
 
                         <p v-for="(line, index) in note.lines" :key="`line-${index}`">{{ line }}</p>
                     </div>
-                </section>
-            </li>
-        </ul>
+                </section> -->
+            <!-- </li>
+        </ul> -->
 
         <!-- <div v-for="(group, index) in definition.groups" :key="`group-${index}`">
 
@@ -171,6 +173,7 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
+import SourceView from './../components/editor/source-view.vue';
 import { Source, Definition } from './source.class';
 
 const scrapeConfig = {
@@ -238,9 +241,13 @@ const scrapeConfig = {
                             data: 'text'
                         }
                     },
-                    audio: {
-                        sel: '.pronunciations audio',
-                        attr: 'src'
+                    audios: {
+                        scrape: {
+                            iterator: '.pronunciations audio',
+                            data: function($: any) {
+                                return $(this).attr('src');
+                            }
+                        }
                     }
                 };
 
@@ -329,7 +336,13 @@ const scrapeConfig = {
     }
 };
 
-@Component
+// handle cross-references as definitions: see cordial / another term for liqueur
+
+@Component({
+    components: {
+        'source-view': SourceView
+    }
+})
 export default class OxfordDictionariesSource extends Source {
     // definition: Definition = {};
 

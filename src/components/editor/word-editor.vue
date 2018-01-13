@@ -79,9 +79,8 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import anki from './../../api/anki';
 
 import QuillEditor from './editor/../quill-editor.vue';
-import VASource from './../../sources/va.vue';
-import VocabularySource from './../../sources/vocabulary.vue';
-import OxfordDictionariesSource from './../../sources/oxforddictionaries.vue';
+
+import sources from './../../sources';
 
 import { EventBus, WORD_SELECTED } from './../../event-bus';
 
@@ -95,13 +94,14 @@ import {
 import wordMenu from './../list/word-menu.vue';
 
 @Component({
-    components: {
-        'va-source': VASource,
-        'vocabulary-source': VocabularySource,
-        'oxforddictionaries-source': OxfordDictionariesSource,
-        'quill-editor': QuillEditor,
-        wordMenu: wordMenu
-    }
+    components: Object.assign(
+        {},
+        {
+            wordMenu: wordMenu,
+            'quill-editor': QuillEditor
+        },
+        sources
+    )
 })
 export default class WordList extends Vue {
     @Prop() id: string;

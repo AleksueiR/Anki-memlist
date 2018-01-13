@@ -11,7 +11,7 @@ import { Word } from './../store/modules/words';
 export class Source extends Vue {
     @Prop() word: Word;
 
-    definition: Definition = { groups: [] };
+    definition: Definition | null = null;
 
     playSound(event: MouseEvent): void {
         console.log(event);
@@ -20,44 +20,53 @@ export class Source extends Vue {
     }
 }
 
-export interface Definition {
-    groups: DefinitionGroup[];
+export class Definition {
+    constructor(public groups: DefinitionGroup[] = []) {}
 }
 
-export interface DefinitionGroup {
-    parts: DefinitionPart[];
-    pronunciations: DefinitionPronunciation[];
-    notes: DefinitionNote[];
-    phrases: DefinitionPhrase[];
+export class DefinitionGroup {
+    constructor(
+        public parts: DefinitionPart[] = [],
+        public pronunciations: DefinitionPronunciation[] = [],
+        public notes: DefinitionNote[] = [],
+        public phrases: DefinitionPhrase[] = []
+    ) {}
 }
 
-export interface DefinitionPart {
-    name: string;
-    senses: DefinitionSense[];
+export class DefinitionPart {
+    constructor(
+        public name: string = '',
+        public senses: DefinitionSense[] = []
+    ) {}
 }
 
-export interface DefinitionPronunciation {
-    part: string;
-    spellings: string[];
-    audio: string;
+export class DefinitionPronunciation {
+    constructor(
+        public part: string = '',
+        public spellings: string[] = [],
+        public audios: string[] = []
+    ) {}
 }
 
-export interface DefinitionNote {
-    title: string;
-    lines: string[];
+export class DefinitionNote {
+    constructor(public title: string = '', public lines: string[] = []) {}
 }
 
-export interface DefinitionPhrase {
-    text: string;
-    senseRegisters: string;
-    definition: string;
-    examples: string[];
+export class DefinitionPhrase {
+    constructor(
+        public text: string = '',
+        public senseRegisters: string = '',
+        public definition: string = '',
+        public examples: string[] = []
+    ) {}
 }
 
-export interface DefinitionSense {
-    grammaticalNote: string;
-    senseREgisters: string;
-    definition: string;
-    examples: string[];
-    subsenses: DefinitionSense[];
+export class DefinitionSense {
+    constructor(
+        public grammaticalNote: string = '',
+        public senseREgisters: string = '',
+        public definition: string = '',
+        public examples: string[] = [],
+        public subsenses: DefinitionSense[] = []
+    ) {}
 }

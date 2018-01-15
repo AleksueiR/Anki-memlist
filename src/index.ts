@@ -19,6 +19,11 @@ Vue.use(ElementUI);
 const store: Store<State> = createStore();
 // const router = new VueRouter({ routes });
 
+import fontawesome from '@fortawesome/fontawesome';
+import { faAngleUp, faAngleDown } from '@fortawesome/fontawesome-free-solid';
+
+fontawesome.library.add(faAngleUp, faAngleDown);
+
 const rootVue = new Vue({
     el: '#app',
     store,

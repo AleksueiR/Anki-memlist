@@ -262,7 +262,7 @@ header {
                     flex: 1;
                     border-bottom: 1px solid #9e9e9e;
                     height: 0.4em;
-                    margin: 0 0 0 1em;
+                    margin: 0 1.5rem 0 1em;
                 }
             }
 

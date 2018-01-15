@@ -43,11 +43,13 @@
                                     <span class="sense-definition">{{ sense.definition }}</span>
                                 </p>
 
-                                <div class="sense-example-list" v-if="sense.examples.length > 0">
+                                <source-examples :collection="sense.examples" class="source-examples"></source-examples>
+
+                                <!-- <div class="sense-example-list" v-if="sense.examples.length > 0">
                                     <li v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
                                         <p v-html="example"></p>
                                     </li>
-                                </div>
+                                </div> -->
 
                                 <ul class="sense-list subsense-list" v-if="sense.subsenses.length > 0">
                                     <li v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`" class="sense-item">
@@ -61,11 +63,13 @@
                                                 <span class="sense-definition">{{ subsense.definition }}</span>
                                             </p>
 
-                                            <div class="sense-example-list" v-if="subsense.examples.length > 0">
+                                            <source-examples :collection="subsense.examples" class="source-examples"></source-examples>
+
+                                            <!-- <div class="sense-example-list" v-if="subsense.examples.length > 0">
                                                 <li v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
                                                     <p v-html="example"></p>
                                                 </li>
-                                            </div>
+                                            </div> -->
                                         </div>
                                     </li>
                                 </ul>
@@ -82,11 +86,13 @@
 
                         <span class="phrase-definition"><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</span>
 
-                        <div class="sense-example-list" v-if="phrase.examples.length > 0">
+                        <source-examples :collection="phrase.examples" class="source-examples"></source-examples>
+
+                        <!-- <div class="sense-example-list" v-if="phrase.examples.length > 0">
                             <li v-for="(example, index) in phrase.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item phrase-example">
                                 <p v-html="example"></p>
                             </li>
-                        </div>
+                        </div> -->
                     </div>
                 </section>
 
@@ -113,7 +119,11 @@ import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { Definition } from './../../sources/source.class';
 import { Word } from './../../store/modules/words';
 
-@Component
+import SourceExamples from './source-examples.vue';
+
+@Component({
+    components: { 'source-examples': SourceExamples }
+})
 export default class SourceView extends Vue {
     @Prop() definition: Definition;
     @Prop() word: Word;
@@ -248,12 +258,17 @@ export default class SourceView extends Vue {
 .sense-content {
     margin: 0;
     flex: 1;
+
     p {
         margin: 0;
     }
 
     .sense-definition-block {
     }
+}
+
+.source-examples {
+    margin: 0.7em 0 0 0em;
 }
 
 .sense-example-list {

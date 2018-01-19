@@ -52,13 +52,13 @@
         </div>
 
         <section class="container main" v-if="word">
-            <section class="content scroll">
+            <section class="content cm-scrollbar">
                     <div v-for="source in sources" :key="source.id" :id="source.id" class="source-view">
                         <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
                         <component :is="source.id" :word="word" ></component>
                     </div>
             </section>
-            <aside class="sidebar scroll">
+            <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
                     <li v-for="source in sources" :key="source.id" class="heading">
                         <a :href="`#${source.id}`" class="anchor">{{ source.name }}</a>
@@ -299,26 +299,4 @@ header {
         }
     }
 }
-
-// TODO: find how to share this section among components
-// adds modified scroll-bar to the section
-.scroll {
-    overflow: auto;
-    padding-right: 16px;
-
-    &::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.05);
-        transition: all 0.3s ease;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.6);
-    }
-}
 </style>
-
-

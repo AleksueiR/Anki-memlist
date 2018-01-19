@@ -1,0 +1,18 @@
+// adds modified scroll-bar to the section
+.cm-scrollbar {
+    overflow: auto;
+    padding-right: 16px;
+
+    &::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(#666, 0.6);
+    }
+}

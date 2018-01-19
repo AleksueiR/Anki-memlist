@@ -71,6 +71,11 @@ export default class App extends Vue {
 }
 </script>
 
+<style lang="scss" src="../styles/common.scss">
+
+</style>
+
+
 <style lang="scss" scoped>
 .root {
     padding: 8px 0;

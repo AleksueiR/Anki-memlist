@@ -25,7 +25,7 @@
         <!-- </el-row> -->
         <!-- <el-row> -->
             <span class="text-smaller">{{ lookupHint }}</span>
-        <section class="scroll">
+        <section class="cm-scrollbar">
                 <ul class="list">
                     <word-item
                         v-for="word in items"
@@ -231,23 +231,4 @@ export default class WordList extends Vue {
 .word-menu {
     text-align: right;
 }
-
-.scroll {
-    overflow: auto;
-
-    &::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.05);
-        transition: all 0.3s ease;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.6);
-    }
-}
 </style>
-
-

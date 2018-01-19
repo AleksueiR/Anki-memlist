@@ -1,4 +1,7 @@
-const pkg = require("./package.json");
+const pkg = require('./package.json');
+
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
+    .BundleAnalyzerPlugin;
 
 module.exports = {
     html: {
@@ -11,7 +14,7 @@ module.exports = {
         require('poi-preset-typescript')({}),
         require('poi-preset-karma')({
             port: 5001, // default
-            files: ['test/unit/*.test.ts'], // default,
+            files: ['test/unit/*.test.ts'] // default,
         })
     ],
     extendWebpack(config) {
@@ -20,9 +23,9 @@ module.exports = {
         /*config.resolve.alias
             .set('quill$', 'quill/quill.js') // vue.esm include template compiler; without it all templates need to be pre*/
 
-        config.node
-            .set('__filename', false)
-            .set('__dirname', false);
+        config.plugin('bundleAnalyzer').use(BundleAnalyzerPlugin);
+
+        config.node.set('__filename', false).set('__dirname', false);
     },
     karma: {
         mime: {

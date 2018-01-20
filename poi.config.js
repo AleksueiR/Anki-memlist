@@ -9,8 +9,10 @@ module.exports = {
         description: pkg.description,
         template: 'src/index.ejs'
     },
+    minimize: true,
+    sourceMap: false,
     presets: [
-        require('poi-preset-babel-minify')(),
+        require('poi-preset-babel-minify')({}, { comments: false }),
         require('poi-preset-typescript')({}),
         require('poi-preset-karma')({
             port: 5001, // default

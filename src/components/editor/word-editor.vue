@@ -114,7 +114,14 @@ export default class WordList extends Vue {
             name: 'Vocabulary.com',
             id: 'vocabulary-source'
         },
-        { name: 'Oxford Dictonaries', id: 'oxforddictionaries-source' }
+        {
+            name: 'Oxford Dictonaries',
+            id: 'oxforddictionaries-source'
+        },
+        {
+            name: 'Verbal Advantage',
+            id: 'verbaladvantage-source'
+        }
     ];
 
     // _word: Word | null = null;

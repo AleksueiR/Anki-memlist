@@ -1,6 +1,7 @@
 <template>
 
-    <section>
+    <section v-if="definition">
+
         <slot name="before-group-list"></slot>
 
         <ul class="group-list">
@@ -17,7 +18,7 @@
                             <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`"><span v-if="index !== 0">, </span>{{ spelling }}</span>
                         </span>
 
-                        <span class="speaker">
+                        <span class="speaker" v-if="pronunciation.audios.length > 0">
                             <a v-for="(audio, index) in pronunciation.audios" :key="`audio-${index}`" @click.stop.prevent="playSound">
                                 <audio ref="player" controls :src="audio"></audio>
                                 <i class="el-icon-service"></i>
@@ -107,6 +108,9 @@
                 </section>
             </li>
         </ul>
+
+        <slot name="after-group-list"></slot>
+
     </section>
 
 </template>
@@ -132,6 +136,10 @@ export default class SourceView extends Vue {
         console.log(event);
         (<HTMLAudioElement>(<HTMLElement>event.currentTarget)
             .firstElementChild).play();
+    }
+
+    hasSlot(name: string): boolean {
+        return typeof this.$slots[name] !== 'undefined';
     }
 }
 </script>
@@ -216,6 +224,9 @@ export default class SourceView extends Vue {
     font-style: italic;
     font-size: 1em;
     line-height: 1.5em;
+
+    // default colour for everything unusual
+    background-color: $noun-colour;
 
     &.noun {
         background-color: $noun-colour;

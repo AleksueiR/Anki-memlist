@@ -1,9 +1,9 @@
-import VASource from './va.vue';
 import VocabularySource from './vocabulary.vue';
 import OxfordDictionariesSource from './oxforddictionaries.vue';
+import VerbalAdvantageSource from './verbaladvantage.vue';
 
 export default {
-    'va-source': VASource,
     'vocabulary-source': VocabularySource,
-    'oxforddictionaries-source': OxfordDictionariesSource
+    'oxforddictionaries-source': OxfordDictionariesSource,
+    'verbaladvantage-source': VerbalAdvantageSource
 };

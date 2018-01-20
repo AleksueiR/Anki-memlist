@@ -1,6 +1,6 @@
 <template>
     <div>
-        <source-view :definition="definition" :word="word" v-if="isExist"></source-view>
+        <source-view :definition="definition" :word="word"></source-view>
 
         <!-- <ul class="group-list">
             <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item"> -->
@@ -342,8 +342,6 @@ const scrapeConfig = {
     }
 })
 export default class OxfordDictionariesSource extends Source {
-    // definition: Definition = {};
-
     @Watch('word')
     async onWordChanged(val: Word | null) {
         log.info('fsd');
@@ -380,14 +378,6 @@ export default class OxfordDictionariesSource extends Source {
 
     mounted(): void {
         this.onWordChanged(this.word);
-    }
-
-    get isExist(): boolean {
-        if (!this.definition) {
-            return false;
-        }
-
-        return true;
     }
 
     isString(x: any): x is string {

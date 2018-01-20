@@ -1,6 +1,6 @@
 <template>
     <div>
-        <source-view :definition="definition" :word="word" v-if="isExist">
+        <source-view :definition="definition" :word="word">
 
             <section slot="before-group-list" class="descriptions">
                 <p v-html="shortDescription"></p>
@@ -9,7 +9,7 @@
 
         </source-view>
 
-        <div v-if="isExist">
+        <div v-if="false">
             <!-- <p v-html="definition.short"></p>
             <p v-html="definition.long"></p> -->
 
@@ -241,10 +241,6 @@ export default class VocabularySource extends Source {
     shortDescription: string = '';
     longDescription: string = '';
 
-    mounted(): void {
-        this.onWordChanged(this.word);
-    }
-
     @Watch('word')
     async onWordChanged(val: Word | null) {
         if (!val) {
@@ -259,6 +255,10 @@ export default class VocabularySource extends Source {
                 }&lang=en`
             )
             .then(this.normalizeDefinition);
+    }
+
+    mounted(): void {
+        this.onWordChanged(this.word);
     }
 
     normalizeDefinition(response: AxiosResponse<any>): Definition | null {
@@ -365,21 +365,6 @@ export default class VocabularySource extends Source {
 
             return parts;
         }, []);
-    }
-
-    /* get normalizedWord(): string {
-        const letters = this.word.text.toLowerCase().split('');
-        letters[0] = letters[0].toUpperCase();
-
-        return letters.join('');
-    } */
-
-    get isExist(): boolean {
-        if (!this.definition) {
-            return false;
-        }
-
-        return true;
     }
 }
 </script>

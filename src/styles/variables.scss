@@ -1,0 +1,20 @@
+// colours
+
+$noun-colour: #019875;
+$plural-noun-colour: #00af86;
+$adjective-colour: #2c3e50;
+$adverb-colour: #c0392d;
+$verb-colour: #2980d9;
+
+$accent-colour: #2980b9;
+
+$primary-colour: #2c3e50;
+$dark-primary-colour: darken($primary-colour, 20%);
+$light-primary-colour: lighten($primary-colour, 20%);
+
+$secondary-colour: #f3f3f3;
+$dark-secondary-colour: darken($secondary-colour, 20%);
+
+$text-colour: #212121;
+$dark-text-colour: darken($text-colour, 20%);
+$light-text-colour: lighten($text-colour, 20%);

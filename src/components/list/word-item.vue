@@ -63,6 +63,8 @@ export default class WordItem extends Vue {
 </script>
 
 <style lang="scss" scoped>
+@import './../../styles/variables';
+
 .el-row {
     height: 36px;
     padding: 8px;
@@ -79,8 +81,6 @@ button {
 }
 
 .over {
-    background-color: #eff2f7;
+    background-color: $secondary-colour;
 }
 </style>
-
-

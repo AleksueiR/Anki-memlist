@@ -1,3 +1,9 @@
+@import './variables.scss';
+
+body {
+    color: $text-colour;
+}
+
 // adds modified scroll-bar to the section
 .cm-scrollbar {
     overflow: auto;
@@ -8,11 +14,11 @@
     }
 
     &::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.05);
+        background-color: lighten(black, 90%);
         transition: all 0.3s ease;
     }
 
     &:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(#666, 0.6);
+        background-color: lighten(black, 70%);
     }
 }

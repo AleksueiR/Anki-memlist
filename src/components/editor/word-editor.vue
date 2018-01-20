@@ -182,6 +182,7 @@ export default class WordList extends Vue {
 
 <style lang="scss" scoped>
 @import '~quill/dist/quill.core.css';
+@import './../../styles/variables';
 
 header {
     display: flex;
@@ -192,7 +193,7 @@ header {
         letter-spacing: 0px;
         font-size: 3em;
         text-transform: none;
-        color: black;
+        color: $primary-colour;
         font-weight: 300;
         display: block;
         white-space: nowrap;
@@ -227,7 +228,6 @@ header {
     }
 
     span {
-        color: #2c3e50;
         font-size: 1.2em;
     }
 
@@ -235,7 +235,7 @@ header {
         padding: 0.2em 0.4em;
         margin: 0;
         font-size: 85%;
-        background-color: rgba(27, 31, 35, 0.05);
+        background-color: $secondary-colour;
         border-radius: 3px;
     }
 }
@@ -260,7 +260,7 @@ header {
 
                 .divider {
                     flex: 1;
-                    border-bottom: 1px solid #9e9e9e;
+                    border-bottom: 1px solid darken($secondary-colour, 40%);
                     height: 0.4em;
                     margin: 0 1.5rem 0 1em;
                 }
@@ -287,13 +287,13 @@ header {
             .anchor {
                 font-size: 14px;
                 padding: 6px 20px;
-                color: #2c3e50;
+                color: $text-colour;
                 display: block;
                 text-decoration: none;
 
                 &:active,
                 &:hover {
-                    color: #2980b9;
+                    color: $accent-colour;
                 }
             }
         }

@@ -254,7 +254,9 @@ export default class VocabularySource extends Source {
 
         this.definition = await axios
             .get(
-                `https://www.vocabulary.com/dictionary/definition.ajax?search=${val.text}&lang=en`
+                `https://www.vocabulary.com/dictionary/definition.ajax?search=${
+                    val.text
+                }&lang=en`
             )
             .then(this.normalizeDefinition);
     }
@@ -304,6 +306,10 @@ export default class VocabularySource extends Source {
         return scrapedDefinition;
     }
 
+    /**
+     * Matches pronunciations to corresponding groups if possible; if not, adds all pronunciations or a single pronunciation to all the groups.
+     * @returns DefinitionPronunciation[]
+     */
     organizePronunciations(
         scrape: any,
         groupIndex: number
@@ -383,5 +389,3 @@ export default class VocabularySource extends Source {
     margin: 0 1.5em;
 }
 </style>
-
-

@@ -390,37 +390,6 @@ export default class OxfordDictionariesSource extends Source {
         return true;
     }
 
-    toRoman(num: number | string): string {
-        if (this.isString(num)) {
-            num = parseInt(num);
-        }
-
-        let result = '';
-        const decimal = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
-        const roman = [
-            'M',
-            'CM',
-            'D',
-            'CD',
-            'C',
-            'XC',
-            'L',
-            'XL',
-            'X',
-            'IX',
-            'V',
-            'IV',
-            'I'
-        ];
-        for (let i = 0; i <= decimal.length; i++) {
-            while (num % decimal[i] < num) {
-                result += roman[i];
-                num -= decimal[i];
-            }
-        }
-        return result;
-    }
-
     isString(x: any): x is string {
         return typeof x === 'string';
     }
@@ -430,5 +399,3 @@ export default class OxfordDictionariesSource extends Source {
 <style lang="scss" scoped>
 
 </style>
-
-

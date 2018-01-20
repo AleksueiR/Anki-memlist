@@ -95,6 +95,8 @@ export default class SourceView extends Vue {
 </script>
 
 <style lang="scss" scoped>
+@import './../../styles/variables';
+
 .container {
     display: flex;
 }
@@ -107,6 +109,7 @@ export default class SourceView extends Vue {
     align-items: center;
 
     button {
+        // hide border and backgroud to only show the icon on the button
         border-color: transparent;
         background-color: transparent;
         padding: 0;
@@ -123,7 +126,7 @@ export default class SourceView extends Vue {
     }
 
     .page {
-        color: rgb(102, 102, 102);
+        color: $light-text-colour;
         line-height: 1rem;
 
         &.current {
@@ -138,7 +141,7 @@ export default class SourceView extends Vue {
 
     .divider {
         height: 1px;
-        border-top: solid rgb(175, 175, 175) 1px;
+        border-top: solid $dark-secondary-colour 1px;
         width: 1em;
         display: block;
         margin: 0.3em 0;
@@ -159,5 +162,3 @@ export default class SourceView extends Vue {
     }
 }
 </style>
-
-

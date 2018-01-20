@@ -137,6 +137,8 @@ export default class SourceView extends Vue {
 </script>
 
 <style lang="scss" scoped>
+@import '../../styles/variables';
+
 .group-list {
     list-style: none;
     padding: 0;
@@ -150,7 +152,7 @@ export default class SourceView extends Vue {
 .group-title {
     font-size: 1.5em;
     font-weight: normal;
-    background-color: #f3f3f3;
+    background-color: $secondary-colour;
     padding: 0em 1.5rem;
     line-height: 2em;
     margin: 0;
@@ -184,7 +186,7 @@ export default class SourceView extends Vue {
             content: '';
             right: -1rem;
             width: 1px;
-            border-right: 1px solid rgb(201, 201, 201);
+            border-right: 1px solid $dark-secondary-colour;
         }
 
         &:last-child {
@@ -208,7 +210,6 @@ export default class SourceView extends Vue {
 }
 
 .part-designator {
-    background-color: #f8b002;
     color: white;
     padding: 0px 4px 2px 4px;
     display: inline-block;
@@ -217,22 +218,22 @@ export default class SourceView extends Vue {
     line-height: 1.5em;
 
     &.noun {
-        background-color: #019875;
+        background-color: $noun-colour;
         &.plural {
-            background-color: #00af86;
+            background-color: $plural-noun-colour;
         }
     }
 
     &.adjective {
-        background-color: #2c3e50;
+        background-color: $adjective-colour;
     }
 
     &.adverb {
-        background-color: #c0392d;
+        background-color: $adverb-colour;
     }
 
     &.verb {
-        background-color: #2980d9;
+        background-color: $verb-colour;
     }
 }
 
@@ -251,7 +252,7 @@ export default class SourceView extends Vue {
 
 .sense-index {
     margin-right: 1em;
-    color: #676767;
+    color: $light-text-colour;
     font-weight: bold;
 }
 

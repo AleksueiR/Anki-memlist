@@ -2,7 +2,7 @@ import Gists from 'gists';
 
 import { gistTokenSetting } from './../settings';
 
-import { CollectionState, WordList } from './../store/modules/collection';
+// import { CollectionState, WordList } from './../store/modules/collection';
 
 function gists(): any {
     return new Gists({
@@ -55,9 +55,9 @@ export default {
         });
 
         return gistPromise;
-    },
+    }
 
-    post2(
+    /* post2(
         data: CollectionState,
         gistId: string,
         fileName: string
@@ -104,5 +104,5 @@ export default {
         });
 
         return gistPromise;
-    }
+    } */
 };

@@ -44,6 +44,11 @@ function createWindow() {
         // when you should delete the corresponding element.
         mainWindow = null;
     });
+
+    /*  mainWindow.on('close', event => {
+        console.log('current windwo', event);
+        event.preventDefault();
+    }); */
 }
 
 // This method will be called when Electron has finished

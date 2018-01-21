@@ -3,6 +3,26 @@ import moment from 'moment';
 
 import { Word } from './../words';
 
+import electron from 'electron';
+
+electron.remote.getCurrentWindow().on('close', event => {
+    console.log('current windwo', event);
+    /* event.stopImmediatePropagation();
+    event.stopPropagation(); */
+    event.returnValue = false;
+    event.preventDefault();
+});
+
+window.onbeforeunload = e => {
+    console.log('I do not want to be closed');
+
+    // Unlike usual browsers that a message box will be prompted to users, returning
+    // a non-void value will silently cancel the close.
+    // It is recommended to use the dialog API to let the user confirm closing the
+    // application.
+    // e.returnValue = false;
+};
+
 /*
 
 fetchCollection()
@@ -16,21 +36,47 @@ fetchCollection()
         listTree: fetchCollection.listTree,
         defaultListId: fetchCollection.defaultListId
     });
+
+index.json
+list-one.json
+list-two.json
+
+
+```json
+// index.json
+
+{
+    defaultListId: string,
+    tree: [
+        {
+            listId: string,
+            items: []
+        },
+        ...
+    ]
+}
+
+```
 */
 
 export interface CollectionState {
-    lists: WordList[];
-    tree: ListTree[];
-    defaultListId: string | null;
+    index: CollectionIndex;
+    lists: CollectionList[];
 
-    selectedLists: WordList[];
+    selectedLists: CollectionList[];
     selectedWords: Word[];
 }
 
-export class WordList {
+export interface CollectionIndex {
+    defaultListId: string | null;
+
+    tree: ListTree[];
+}
+
+export class CollectionList {
     id: string;
     name: string;
-    dateAdded: number;
+    readonly dateCreated: number;
 
     pin: boolean = false;
     hidden: boolean = false;
@@ -50,15 +96,16 @@ export class WordList {
     constructor(name: string) {
         this.id = uniqid.time();
         this.name = name;
+        this.dateCreated = moment.now();
     }
 }
 
 export class ListTree {
-    wordListId: string;
+    listId: string;
     items: ListTree[];
 
-    constructor(wordList: WordList) {
-        this.wordListId = wordList.id;
+    constructor(list: CollectionList) {
+        this.listId = list.id;
         this.items = [];
     }
 }
@@ -66,10 +113,10 @@ export class ListTree {
 class RootCollection {
     defaultWordList: string;
     structure: ListTree[] = [];
-    lists: WordList[];
+    lists: CollectionList[];
 
     constructor() {
-        const defaultWordList = new WordList('blah');
+        const defaultWordList = new CollectionList('blah');
         const listTree = new ListTree(defaultWordList);
 
         this.lists.push(defaultWordList);
@@ -82,10 +129,10 @@ const a: RootCollection = {
     lists: [],
     structure: [
         {
-            wordListId: 'one',
+            listId: 'one',
             items: [
                 {
-                    wordListId: 'two',
+                    listId: 'two',
                     items: []
                 }
             ]

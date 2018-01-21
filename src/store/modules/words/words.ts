@@ -69,6 +69,12 @@ const mutations = {
     // stores Word collection in the WordsState store
     keepWords(state: WordsState, { items }: { items: Word[] }) {
         state.items = items.map(item => new Word(item));
+
+        // state cannot be replaced directly
+        /* state = {
+            items: items.map(item => new Word(item)),
+            selectedItem: null
+        }; */
     },
 
     addWord(state: WordsState, word: Word) {

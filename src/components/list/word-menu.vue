@@ -1,5 +1,5 @@
 <template>
-    <el-dropdown trigger="click" class="trigger">
+    <el-dropdown trigger="click" class="trigger" :show-timeout="0">
         <el-button icon="el-icon-setting"></el-button>
         <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="openSettings($store, true)">Settigns</el-dropdown-item>
@@ -41,5 +41,3 @@ export default class WordMenu extends Vue {
     // font-size: 1.5em;
 }
 </style>
-
-

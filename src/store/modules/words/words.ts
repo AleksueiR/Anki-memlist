@@ -27,12 +27,25 @@ const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
         console.log('fetchwords');
 
-        cKeepWords(context, {
+        try {
+            const fetchedState: WordsState = await gists.get<WordsState>(
+                gistIdSetting.get(),
+                gistFileNameSetting.get()
+            );
+
+            mutations.keepWords(context.state, {
+                items: fetchedState.items
+            });
+        } catch (error) {
+            console.log('error', error);
+        }
+
+        /* cKeepWords(context, {
             items: (await gists.get<WordsState>(
                 gistIdSetting.get(),
                 gistFileNameSetting.get()
             )).items
-        });
+        }); */
     },
 
     async syncWords(context: WordsContext): Promise<void> {
@@ -48,6 +61,9 @@ const actions = {
 const mutations = {
     selectWord(state: WordsState, item: Word | null) {
         state.selectedItem = item;
+
+        // window.setTimeout(() => (state.selectedItem = item), 1000);
+        // on mutations, can trigger actions to fetch some data
     },
 
     // stores Word collection in the WordsState store

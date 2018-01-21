@@ -9,7 +9,7 @@ module.exports = {
         description: pkg.description,
         template: 'src/index.ejs'
     },
-    minimize: true,
+    // minimize: true,
     sourceMap: false,
     presets: [
         require('poi-preset-babel-minify')({}, { comments: false }),

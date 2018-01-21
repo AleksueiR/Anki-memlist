@@ -28,6 +28,8 @@ import {
 } from './../store/modules/app';
 import { dFetchWods } from './../store/modules/words';
 
+import { dInitCollection } from './../store/modules/collection';
+
 import { areSettingsValid } from './../settings';
 
 @Component({
@@ -63,6 +65,7 @@ export default class App extends Vue {
     init(): void {
         if (areSettingsValid()) {
             console.log('sdfsd');
+            dInitCollection(this.$store);
             dFetchWods(this.$store);
         } else {
             cOpenSettings(this.$store, true);

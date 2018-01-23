@@ -5,6 +5,8 @@ import { Word } from './../words';
 
 import electron from 'electron';
 
+// remote module has a limitation which prevents preventing the close event
+// see https://github.com/electron/electron/issues/4473 and https://github.com/electron/electron/issues/3362
 electron.remote.getCurrentWindow().on('close', event => {
     console.log('current windwo', event);
     /* event.stopImmediatePropagation();
@@ -22,42 +24,6 @@ window.onbeforeunload = e => {
     // application.
     // e.returnValue = false;
 };
-
-/*
-
-fetchCollection()
-    fetchedCollection = (await gists.get<WordsState>(
-            gistIdSetting.get(),
-            gistFileNameSetting.get()
-        ))
-
-    mutations.populateCollection(context.state, {
-        lists: fetchedCollection.lists,
-        listTree: fetchCollection.listTree,
-        defaultListId: fetchCollection.defaultListId
-    });
-
-index.json
-list-one.json
-list-two.json
-
-
-```json
-// index.json
-
-{
-    defaultListId: string,
-    tree: [
-        {
-            listId: string,
-            items: []
-        },
-        ...
-    ]
-}
-
-```
-*/
 
 export interface CollectionState {
     index: CollectionIndex;
@@ -85,18 +51,16 @@ export class CollectionList {
     sortBy: 'name' | 'date' = 'name';
     sortDirection: 'asc' | 'des' = 'asc';
 
-    words: Word[] = [];
+    readonly words: Word[] = [];
     notes: string = '';
-    /**
-     * Creates an instance of WordList.
-     * fsdfsdf
-     * @param {string} name
-     * @memberof WordList
-     */
+
     constructor(name: string) {
         this.id = uniqid.time();
         this.name = name;
         this.dateCreated = moment.now();
+
+        this.words.push(new Word({ text: 'dfs' }));
+        this.words = [];
     }
 }
 
@@ -109,7 +73,7 @@ export class ListTree {
         this.items = [];
     }
 }
-
+/* 
 class RootCollection {
     defaultWordList: string;
     structure: ListTree[] = [];
@@ -138,7 +102,7 @@ const a: RootCollection = {
             ]
         }
     ]
-};
+}; */
 
 /*
 

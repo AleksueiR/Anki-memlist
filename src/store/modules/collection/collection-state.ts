@@ -1,8 +1,6 @@
 import uniqid from 'uniqid';
 import moment from 'moment';
 
-import { Word } from './../words';
-
 import electron from 'electron';
 import WordList from '../../../components/editor/word-editor.vue';
 
@@ -26,12 +24,14 @@ window.onbeforeunload = e => {
     // e.returnValue = false;
 };
 
-interface CollectionStateOptions {
+// overloading constructors https://stackoverflow.com/a/40976608
+
+export interface CollectionStateOptions {
     index?: CollectionIndex;
     lists?: CollectionList[];
 
     selectedLists?: CollectionList[];
-    selectedWords?: Word[];
+    selectedWords?: CollectionWord[];
 }
 
 export class CollectionState {
@@ -39,7 +39,7 @@ export class CollectionState {
     lists: CollectionList[];
 
     readonly selectedLists: CollectionList[];
-    readonly selectedWords: Word[];
+    readonly selectedWords: CollectionWord[];
 
     constructor(options: CollectionStateOptions = {}) {
         const {
@@ -56,9 +56,9 @@ export class CollectionState {
     }
 }
 
-interface CollectionIndexOptions {
+export interface CollectionIndexOptions {
     defaultListId?: string | null;
-    tree?: ListTree;
+    tree?: CollectionTree;
     dateCreated?: number;
     dateModified?: number;
 }
@@ -66,7 +66,7 @@ interface CollectionIndexOptions {
 export class CollectionIndex {
     protected _defaultListId: string | null;
 
-    readonly tree: ListTree;
+    readonly tree: CollectionTree;
 
     readonly dateCreated: number;
     dateModified: number;
@@ -80,7 +80,7 @@ export class CollectionIndex {
         } = options;
 
         this.defaultListId = defaultListId;
-        this.tree = new ListTree(tree, this);
+        this.tree = new CollectionTree(tree, this);
         this.dateCreated = dateCreated;
         this.dateModified = dateModified;
     }
@@ -90,32 +90,36 @@ export class CollectionIndex {
         this.update();
     }
 
+    get defaultListId(): string | null {
+        return this._defaultListId;
+    }
+
     update(): void {
         this.dateModified = moment.now();
     }
 }
 
-interface ListTreeOptions {
+export interface CollectionTreeOptions {
     listId?: string;
-    items?: ListTree[];
+    items?: CollectionTree[];
 }
 
-export class ListTree {
+export class CollectionTree {
     readonly listId: string;
-    readonly items: ListTree[];
+    readonly items: CollectionTree[];
 
     readonly root: CollectionIndex;
 
-    constructor(options: ListTreeOptions = {}, root: CollectionIndex) {
+    constructor(options: CollectionTreeOptions = {}, root: CollectionIndex) {
         const { listId = `I'm root`, items = [] } = options;
 
         this.listId = listId;
-        this.items = items.map(item => new ListTree(item, root));
+        this.items = items.map(item => new CollectionTree(item, root));
         this.root = root;
     }
 
     addList?(list: CollectionList): void {
-        this.items.push(new ListTree({ listId: list.id }, this.root));
+        this.items.push(new CollectionTree({ listId: list.id }, this.root));
         this.root.update();
     }
 
@@ -124,10 +128,10 @@ export class ListTree {
     }
 }
 
-type SortBy = 'name' | 'date';
-type SortDirection = 'asc' | 'des';
+export type CollectionSortBy = 'name' | 'date';
+export type CollectionSortDirection = 'asc' | 'des';
 
-interface CollectionListOptions {
+export interface CollectionListOptions {
     readonly id?: string;
     name?: string;
     readonly dateCreated?: number;
@@ -137,10 +141,10 @@ interface CollectionListOptions {
     hidden?: boolean;
     colour?: string;
 
-    sortBy?: SortBy;
-    sortDirection?: SortDirection;
+    sortBy?: CollectionSortBy;
+    sortDirection?: CollectionSortDirection;
 
-    readonly words?: Word[];
+    readonly words?: CollectionWord[];
     notes?: string;
 }
 
@@ -154,10 +158,10 @@ export class CollectionList {
     private _hidden: boolean;
     private _colour: string;
 
-    private _sortBy: SortBy;
-    private _sortDirection: SortDirection;
+    private _sortBy: CollectionSortBy;
+    private _sortDirection: CollectionSortDirection;
 
-    readonly words: Word[];
+    readonly words: CollectionWord[];
     private _notes: string;
 
     constructor(options: CollectionListOptions = {}) {
@@ -198,9 +202,17 @@ export class CollectionList {
         this.update();
     }
 
+    get name(): string {
+        return this._name;
+    }
+
     set pin(value: boolean) {
         this._pin = value;
         this.update();
+    }
+
+    get pin(): boolean {
+        return this._pin;
     }
 
     set hidden(value: boolean) {
@@ -208,19 +220,35 @@ export class CollectionList {
         this.update();
     }
 
+    get hidden(): boolean {
+        return this._hidden;
+    }
+
     set colour(value: string) {
         this._colour = value;
         this.update();
     }
 
-    set sortBy(value: SortBy) {
+    get colour(): string {
+        return this._colour;
+    }
+
+    set sortBy(value: CollectionSortBy) {
         this._sortBy = value;
         this.update();
     }
 
-    set sortDirection(value: SortDirection) {
+    get sortBy(): CollectionSortBy {
+        return this._sortBy;
+    }
+
+    set sortDirection(value: CollectionSortDirection) {
         this._sortDirection = value;
         this.update();
+    }
+
+    get sortDirection(): CollectionSortDirection {
+        return this._sortDirection;
     }
 
     set notes(value: string) {
@@ -228,12 +256,16 @@ export class CollectionList {
         this.update();
     }
 
-    addWord(word: Word): void {
+    get notes(): string {
+        return this._notes;
+    }
+
+    addWord(word: CollectionWord): void {
         this.words.push(word);
         this.update();
     }
 
-    removeWord(word: Word): void {
+    removeWord(word: CollectionWord): void {
         // TODO: implement
         this.update();
     }
@@ -243,56 +275,74 @@ export class CollectionList {
     }
 }
 
-/*
-class RootCollection {
-    defaultWordList: string;
-    structure: ListTree[] = [];
-    lists: CollectionList[];
+export interface CollectionWordOptions {
+    id?: string;
 
-    constructor() {
-        const defaultWordList = new CollectionList('blah');
-        const listTree = new ListTree(defaultWordList);
+    text?: string;
+    archived?: boolean;
+    notes?: string;
 
-        this.lists.push(defaultWordList);
-        this.structure.push(listTree);
-    }
+    dateAdded?: number;
+    dateModified?: number;
 }
 
-const a: RootCollection = {
-    defaultWordList: '',
-    lists: [],
-    structure: [
-        {
-            listId: 'one',
-            items: [
-                {
-                    listId: 'two',
-                    items: []
-                }
-            ]
-        }
-    ]
-}; */
+export class CollectionWord {
+    readonly id: string;
 
-/*
+    _text: string;
+    _archived: boolean;
+    _notes: string;
+    //noteIds: string[];
 
-- load collection hierarchy
-- renderd hierarchy
-- load default-selected list
-- render list items
+    readonly dateAdded: number;
+    dateModified: number;
 
+    constructor(options: CollectionWordOptions = {}) {
+        const {
+            id = uniqid.time(),
+            text = '',
+            archived = false,
+            notes = '',
+            dateAdded = moment.now(),
+            dateModified = moment.now()
+        } = options;
 
+        this.id = id;
+        this.text = text;
+        this.archived = archived;
+        this.notes = notes;
+        this.dateAdded = dateAdded;
+        this.dateAdded = dateModified;
+    }
 
+    set text(value: string) {
+        this._text = value;
+        this.update();
+    }
 
-*/
+    get text(): string {
+        return this._text;
+    }
 
-/* function moveList(
-    list: WordList,
-    target: WordList,
-    targetIndex: number
-): void {} */
+    set archived(value: boolean) {
+        this._archived = value;
+        this.update();
+    }
 
-/* listId  parentListId    index
-one     two             2
-two     three           3
-four    five            4 */
+    get archived(): boolean {
+        return this._archived;
+    }
+
+    set notes(value: string) {
+        this._notes = value;
+        this.update();
+    }
+
+    get notes(): string {
+        return this._notes;
+    }
+
+    private update(): void {
+        this.dateModified = moment.now();
+    }
+}

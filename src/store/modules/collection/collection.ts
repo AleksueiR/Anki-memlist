@@ -1,18 +1,15 @@
 import { ActionContext, Store } from 'vuex';
-import { getStoreAccessors } from 'vuex-typescript';
 
-import gists from './../../../api/gists';
 import storage from './../../../api/storage';
-
 import {
     CollectionState,
     CollectionIndex,
     CollectionList,
-    CollectionTree
+    CollectionTree,
+    CollectionWord
 } from './collection-state';
 import { State as RootState } from './../../state';
-
-import { CollectionWord } from './index';
+import { isArray } from 'util';
 
 type CollectionContext = ActionContext<CollectionState, RootState>;
 
@@ -20,15 +17,6 @@ const state: CollectionState = new CollectionState();
 
 // getters
 const getters = {
-    /* isImportOpen: (state: AppState): boolean => state.isImportOpen,
-    isSettingsOpen: (state: AppState): boolean => state.isSettingsOpen */
-
-    // collectionIndex: (state: CollectionState): CollectionState => state,
-    getIndex: (state: CollectionState): CollectionIndex => state.index,
-    // getLists: (state: CollectionState): CollectionList[] => state.lists,
-
-    getLists: (state: CollectionState): CollectionList[] => state.lists,
-
     getPooledWords: (state: CollectionState): CollectionWord[] => {
         const pooledWords = (<CollectionWord[]>[]).concat(
             ...state.selectedLists.map(list => list.words)
@@ -44,25 +32,82 @@ const getters = {
 
 // actions
 const actions = {
-    async fetchCollectionIndex(context: CollectionContext): Promise<void> {
+    async fetchIndex(context: CollectionContext): Promise<void> {
+        let index: CollectionIndex = state.index;
+
         const hasCollection = await storage.hasCollection();
 
         if (!hasCollection) {
-            dStashCollection(context);
+            actions.writeCollection(context);
         } else {
-            console.log('collection exists');
+            index = await storage.loadIndex();
+        }
+
+        context.commit('SET_INDEX', index);
+
+        if (state.index.defaultListId !== null) {
+            actions.fetchList(context, state.index.defaultListId);
         }
     },
 
-    stashCollection(context: CollectionContext): void {
+    async fetchList(context: CollectionContext, listId: string): Promise<void> {
+        let list: CollectionList = await storage.loadList(listId);
+
+        if (!list) {
+            return;
+        }
+
+        context.commit('SET_LIST', list);
+    },
+
+    writeCollection(context: CollectionContext): void {
         storage.saveCollection(state);
+    },
+
+    writeIndex(context: CollectionContext): void {
+        storage.saveIndex(state.index);
+    },
+
+    /**
+     *
+     *
+     * @param {CollectionContext} context
+     * @param {(CollectionList | CollectionList[])} list
+     * @param {boolean} [writeIndex=false] if `true`, the collection index will be written as well
+     */
+    writeList(
+        context: CollectionContext,
+        list: CollectionList | CollectionList[],
+        writeIndex: boolean = false
+    ): void {
+        if (writeIndex) {
+            actions.writeIndex(context);
+        }
+
+        if (isArray(list)) {
+            list.forEach(l => storage.saveList(l));
+        }
+
+        // TODO: use a guard check
+        storage.saveList(list as CollectionList);
+    },
+
+    addList(context: CollectionContext, list: CollectionList): void {
+        context.commit('SET_LIST_POSITION', { tree: state.index.tree, list });
+        context.commit('SET_LIST', list);
+
+        if (!state.index.defaultListId) {
+            context.commit('SET_DEFAULT_LIST', list);
+        }
+
+        actions.writeList(context, list, true);
     },
 
     async selectList(
         context: CollectionContext,
         listId: string
     ): Promise<void> {
-        let list: CollectionList | null = getters.getList(
+        /* let list: CollectionList | null = getters.getList(
             context.state,
             listId
         );
@@ -72,11 +117,11 @@ const actions = {
             cSTORE_LIST(context, list);
         }
 
-        cSELECT_LIST(context, list);
+        cSELECT_LIST(context, list); */
     },
 
     deselectList(context: CollectionContext, listId: string): void {
-        let list: CollectionList | null = getters.getList(
+        /* let list: CollectionList | null = getters.getList(
             context.state,
             listId
         );
@@ -84,7 +129,7 @@ const actions = {
         if (!list) {
             return;
         }
-        cDESELECT_LIST(context, list);
+        cDESELECT_LIST(context, list); */
     },
 
     /* loadList(context: CollectionContext, listId: string): CollectionList {
@@ -144,6 +189,25 @@ const actions = {
 
 // mutations
 const mutations = {
+    SET_INDEX(state: CollectionState, index: CollectionIndex): void {
+        state.index = index;
+    },
+
+    SET_LIST(state: CollectionState, list: CollectionList): void {
+        state.lists.push(list);
+    },
+
+    SET_DEFAULT_LIST(state: CollectionState, list: CollectionList): void {
+        state.index.defaultListId = list.id;
+    },
+
+    SET_LIST_POSITION(
+        state: CollectionState,
+        { tree, list }: { tree: CollectionTree; list: CollectionList }
+    ): void {
+        tree.addList(list);
+    },
+
     SELECT_LIST(state: CollectionState, list: CollectionList): void {
         state.selectedLists.push(list);
     },
@@ -170,27 +234,3 @@ export const collection = {
     actions,
     mutations
 };
-
-const { commit, read, dispatch } = getStoreAccessors<
-    CollectionState,
-    RootState
->('collection');
-
-// getter
-/* export const rIsImportOpen = read(getters.isImportOpen);
-export const rIsSettingsOpen = read(getters.isSettingsOpen); */
-//export const rCollectionIndex = read(getters.collectionIndex);
-export const rGetIndex = read(getters.getIndex);
-export const rGetList = read(getters.getLists);
-export const rGetPooledWords = read(getters.getPooledWords);
-
-// action
-export const dInitCollection = dispatch(actions.initCollection);
-
-export const dStashCollection = dispatch(actions.stashCollection);
-
-//mutations
-/* export const cOpenImport = commit(mutations.openImport);
-export const cOpenSettings = commit(mutations.openSettings); */
-const cSELECT_LIST = commit(mutations.SELECT_LIST);
-const cDESELECT_LIST = commit(mutations.DESELECT_LIST);

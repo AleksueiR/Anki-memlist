@@ -101,6 +101,16 @@ export class CollectionIndex {
     update(): void {
         this.dateModified = moment.now();
     }
+
+    get safeJSON(): CollectionIndexOptions {
+        return {
+            id: this.id,
+            defaultListId: this.defaultListId,
+            tree: this.tree.safeJSON as CollectionTree,
+            dateCreated: this.dateCreated,
+            dateModified: this.dateModified
+        };
+    }
 }
 
 export interface CollectionTreeOptions {
@@ -112,19 +122,19 @@ export class CollectionTree {
     readonly listId: string;
     readonly items: CollectionTree[];
 
+    private root: CollectionIndex;
+
     constructor(options: CollectionTreeOptions = {}, root: CollectionIndex) {
         const { listId = `I'm root`, items = [] } = options;
 
         this.listId = listId;
         this.items = items.map(item => new CollectionTree(item, root));
 
-        this._getRoot = () => root;
+        this.root = root;
     }
 
     addList(list: CollectionList): void {
-        this.items.push(
-            new CollectionTree({ listId: list.id }, this._getRoot())
-        );
+        this.items.push(new CollectionTree({ listId: list.id }, this.root));
         this.update();
     }
 
@@ -132,10 +142,15 @@ export class CollectionTree {
         // TODO: implement
     }
 
-    private _getRoot: () => CollectionIndex;
-
     update(): void {
-        this._getRoot().update();
+        this.root.update();
+    }
+
+    get safeJSON(): CollectionTreeOptions {
+        return {
+            listId: this.listId,
+            items: this.items.map(item => item.safeJSON) as CollectionTree[]
+        };
     }
 }
 
@@ -284,6 +299,22 @@ export class CollectionList {
     private update(): void {
         this.dateModified = moment.now();
     }
+
+    get safeJSON(): CollectionListOptions {
+        return {
+            id: this.id,
+            name: this.name,
+            dateCreated: this.dateCreated,
+            dateModified: this.dateModified,
+            pin: this.pin,
+            hidden: this.hidden,
+            colour: this.colour,
+            sortBy: this.sortBy,
+            sortDirection: this.sortDirection,
+            words: this.words.map(word => word.safeJSON) as CollectionWord[],
+            notes: this.notes
+        };
+    }
 }
 
 export interface CollectionWordOptions {
@@ -368,5 +399,17 @@ export class CollectionWord {
 
     private update(): void {
         this.dateModified = moment.now();
+    }
+
+    get safeJSON(): CollectionWordOptions {
+        return {
+            id: this.id,
+            text: this.text,
+            archived: this.archived,
+            favourite: this.favourite,
+            notes: this.notes,
+            dateAdded: this.dateAdded,
+            dateModified: this.dateModified
+        };
     }
 }

@@ -86,7 +86,7 @@ const local: Storage = {
 
     saveIndex(index: CollectionIndex): Promise<void> {
         const promise = new Promise<void>((resolve, reject) => {
-            jsonStorage.set(indexFileName(), index, error => {
+            jsonStorage.set(indexFileName(), index.safeJSON, error => {
                 // TODO: handle errors
                 resolve();
             });
@@ -97,7 +97,7 @@ const local: Storage = {
 
     saveList(list: CollectionList): Promise<void> {
         const promise = new Promise<void>((resolve, reject) => {
-            jsonStorage.set(listFileName(list.id), list, error => {
+            jsonStorage.set(listFileName(list.id), list.safeJSON, error => {
                 // TODO: handle errors
                 resolve();
             });

@@ -2,22 +2,27 @@
 
     <section class="root">
         <!-- {{ collectionIndex }} -->
-        {{ isSettingsOpen2() }}
-        {{ isSettingsOpen }}
+        index {{ index.safeJSON }}
+        <br>
+        lists
+        <div v-for="list in lists" :key="list.id"> {{ list.safeJSON }} </div>
         <!-- {{ getters.rIsSettingsOpen }} -->
-        <word-list class="word-list"></word-list>
+        <!-- <word-list class="word-list"></word-list>
 
         <word-editor class="word-editor"></word-editor>
 
         <settings :isOpen.sync="isSettingsOpen"></settings>
-        <bulk-import :isOpen.sync="isImportOpen"></bulk-import>
+        <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
+
+        <input v-model="blah" type="text" width="50">
+        <button @click="qqq">asve</button>
     </section>
 
 </template>
 
 <script lang='ts'>
-import Vue from 'vue';
-import { Component, Watch } from 'vue-property-decorator';
+import { Vue, Component, Watch } from 'vue-property-decorator';
+import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import wordList from './list/word-list.vue';
 import wordEditor from './editor/word-editor.vue';
@@ -29,14 +34,19 @@ import {
     rIsSettingsOpen,
     cOpenSettings
 } from './../store/modules/app';
+
 import { dFetchWods } from './../store/modules/words';
 
-import {
-    dInitCollection,
-    rCollectionIndex
-} from './../store/modules/collection';
+// import { dInitCollection } from './../store/modules/collection';
 
 import { areSettingsValid } from './../settings';
+import {
+    CollectionIndex,
+    CollectionList
+} from '../store/modules/collection/index';
+
+const CollectionState = namespace('collection', State);
+const CollectionAction = namespace('collection', Action);
 
 @Component({
     components: {
@@ -48,6 +58,21 @@ import { areSettingsValid } from './../settings';
     }
 })
 export default class App extends Vue {
+    /* @ModuleGetter('items') wordItems: any[];
+    @Mutation('selectWord') selectWord: (item: string | null) => void; */
+
+    @CollectionState('index') index: CollectionIndex;
+    @CollectionState('lists') lists: CollectionList[];
+
+    @CollectionAction('fetchIndex') fetchIndex: () => void;
+    @CollectionAction('addList') addList: (list: CollectionList) => void;
+
+    blah: string = '';
+
+    qqq(event: Event) {
+        this.addList(new CollectionList({ name: this.blah }));
+    }
+
     @Watch('isSettingsOpen')
     onIsSettingsOpenChange(value: boolean): void {
         console.log('!!!!');
@@ -66,21 +91,23 @@ export default class App extends Vue {
 
     mounted(): void {
         this.init();
+        console.log('fetch index');
+        this.fetchIndex();
     }
 
     init(): void {
         if (areSettingsValid()) {
             console.log('sdfsd');
-            dInitCollection(this.$store); //!!
+            // dInitCollection(this.$store); //!!
             dFetchWods(this.$store);
         } else {
             cOpenSettings(this.$store, true);
         }
     }
 
-    get collectionIndex() {
+    /* get collectionIndex() {
         return rCollectionIndex(this.$store);
-    }
+    } */
 }
 </script>
 

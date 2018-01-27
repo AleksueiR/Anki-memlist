@@ -57,6 +57,7 @@ export class CollectionState {
 }
 
 export interface CollectionIndexOptions {
+    id?: string;
     defaultListId?: string | null;
     tree?: CollectionTree;
     dateCreated?: number;
@@ -64,6 +65,7 @@ export interface CollectionIndexOptions {
 }
 
 export class CollectionIndex {
+    readonly id: string;
     protected _defaultListId: string | null;
 
     readonly tree: CollectionTree;
@@ -73,12 +75,14 @@ export class CollectionIndex {
 
     constructor(options: CollectionIndexOptions = {}) {
         const {
+            id = uniqid.time(),
             defaultListId = null,
             tree = {},
             dateCreated = moment.now(),
             dateModified = moment.now()
         } = options;
 
+        this.id = id;
         this.defaultListId = defaultListId;
         this.tree = new CollectionTree(tree, this);
         this.dateCreated = dateCreated;
@@ -108,23 +112,30 @@ export class CollectionTree {
     readonly listId: string;
     readonly items: CollectionTree[];
 
-    readonly root: CollectionIndex;
-
     constructor(options: CollectionTreeOptions = {}, root: CollectionIndex) {
         const { listId = `I'm root`, items = [] } = options;
 
         this.listId = listId;
         this.items = items.map(item => new CollectionTree(item, root));
-        this.root = root;
+
+        this._getRoot = () => root;
     }
 
-    addList?(list: CollectionList): void {
-        this.items.push(new CollectionTree({ listId: list.id }, this.root));
-        this.root.update();
+    addList(list: CollectionList): void {
+        this.items.push(
+            new CollectionTree({ listId: list.id }, this._getRoot())
+        );
+        this.update();
     }
 
     removeList(list: CollectionList): void {
         // TODO: implement
+    }
+
+    private _getRoot: () => CollectionIndex;
+
+    update(): void {
+        this._getRoot().update();
     }
 }
 
@@ -280,6 +291,7 @@ export interface CollectionWordOptions {
 
     text?: string;
     archived?: boolean;
+    favourite?: boolean;
     notes?: string;
 
     dateAdded?: number;
@@ -291,6 +303,7 @@ export class CollectionWord {
 
     _text: string;
     _archived: boolean;
+    _favourite: boolean;
     _notes: string;
     //noteIds: string[];
 
@@ -302,6 +315,7 @@ export class CollectionWord {
             id = uniqid.time(),
             text = '',
             archived = false,
+            favourite = false,
             notes = '',
             dateAdded = moment.now(),
             dateModified = moment.now()
@@ -310,6 +324,7 @@ export class CollectionWord {
         this.id = id;
         this.text = text;
         this.archived = archived;
+        this.favourite = favourite;
         this.notes = notes;
         this.dateAdded = dateAdded;
         this.dateAdded = dateModified;
@@ -331,6 +346,15 @@ export class CollectionWord {
 
     get archived(): boolean {
         return this._archived;
+    }
+
+    set favourite(value: boolean) {
+        this._favourite = value;
+        this.update();
+    }
+
+    get favourite(): boolean {
+        return this._favourite;
     }
 
     set notes(value: string) {

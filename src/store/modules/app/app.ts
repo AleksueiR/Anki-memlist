@@ -44,6 +44,8 @@ const { commit, read, dispatch } = getStoreAccessors<AppState, RootState>(
     'app'
 );
 
+export { getters };
+
 // getter
 export const rIsImportOpen = read(getters.isImportOpen);
 export const rIsSettingsOpen = read(getters.isSettingsOpen);

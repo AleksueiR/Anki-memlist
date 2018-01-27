@@ -52,6 +52,7 @@
         "vuetify": "^0.16.9",
         "vuetype": "^0.2.2",
         "vuex": "^3.0.1",
+        "vuex-class": "^0.3.0",
         "vuex-typescript": "^2.0.1",
         "webpack-bundle-analyzer": "^2.9.2"
     },

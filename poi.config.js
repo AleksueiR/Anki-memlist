@@ -25,7 +25,7 @@ module.exports = {
         /*config.resolve.alias
             .set('quill$', 'quill/quill.js') // vue.esm include template compiler; without it all templates need to be pre*/
 
-        config.plugin('bundleAnalyzer').use(BundleAnalyzerPlugin);
+        // config.plugin('bundleAnalyzer').use(BundleAnalyzerPlugin);
 
         config.node.set('__filename', false).set('__dirname', false);
     },

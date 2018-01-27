@@ -1,7 +1,10 @@
 <template>
 
     <section class="root">
-
+        <!-- {{ collectionIndex }} -->
+        {{ isSettingsOpen2() }}
+        {{ isSettingsOpen }}
+        <!-- {{ getters.rIsSettingsOpen }} -->
         <word-list class="word-list"></word-list>
 
         <word-editor class="word-editor"></word-editor>
@@ -28,7 +31,10 @@ import {
 } from './../store/modules/app';
 import { dFetchWods } from './../store/modules/words';
 
-import { dInitCollection } from './../store/modules/collection';
+import {
+    dInitCollection,
+    rCollectionIndex
+} from './../store/modules/collection';
 
 import { areSettingsValid } from './../settings';
 
@@ -65,11 +71,15 @@ export default class App extends Vue {
     init(): void {
         if (areSettingsValid()) {
             console.log('sdfsd');
-            dInitCollection(this.$store);
+            dInitCollection(this.$store); //!!
             dFetchWods(this.$store);
         } else {
             cOpenSettings(this.$store, true);
         }
+    }
+
+    get collectionIndex() {
+        return rCollectionIndex(this.$store);
     }
 }
 </script>

@@ -8,50 +8,118 @@ import {
     CollectionState,
     CollectionIndex,
     CollectionList,
-    ListTree
+    CollectionTree
 } from './collection-state';
 import { State as RootState } from './../../state';
 
-import { gistIdSetting, gistFileNameSetting } from './../../../settings';
-import { Word } from '../words/index';
+import { CollectionWord } from './index';
 
 type CollectionContext = ActionContext<CollectionState, RootState>;
 
-const state: CollectionState = {
-    index: { defaultListId: null, tree: [] },
-    lists: [],
-
-    selectedLists: [],
-    selectedWords: []
-};
+const state: CollectionState = new CollectionState();
 
 // getters
-// retuns Word collection from the WordsState store
 const getters = {
     /* isImportOpen: (state: AppState): boolean => state.isImportOpen,
     isSettingsOpen: (state: AppState): boolean => state.isSettingsOpen */
+
+    // collectionIndex: (state: CollectionState): CollectionState => state,
+    getIndex: (state: CollectionState): CollectionIndex => state.index,
+    // getLists: (state: CollectionState): CollectionList[] => state.lists,
+
+    getLists: (state: CollectionState): CollectionList[] => state.lists,
+
+    getPooledWords: (state: CollectionState): CollectionWord[] => {
+        const pooledWords = (<CollectionWord[]>[]).concat(
+            ...state.selectedLists.map(list => list.words)
+        );
+
+        /* state.selectedLists.reduce((pooledWords: CollectionWord[], selectedList: CollectionList) => {
+            return pooledWords.concat(selectedList.words)
+        },[]); */
+
+        return pooledWords;
+    }
 };
 
 // actions
 const actions = {
+    async fetchCollectionIndex(context: CollectionContext): Promise<void> {
+        const hasCollection = await storage.hasCollection();
+
+        if (!hasCollection) {
+            dStashCollection(context);
+        } else {
+            console.log('collection exists');
+        }
+    },
+
+    stashCollection(context: CollectionContext): void {
+        storage.saveCollection(state);
+    },
+
+    async selectList(
+        context: CollectionContext,
+        listId: string
+    ): Promise<void> {
+        let list: CollectionList | null = getters.getList(
+            context.state,
+            listId
+        );
+
+        if (!list) {
+            list = await storage.loadList(listId);
+            cSTORE_LIST(context, list);
+        }
+
+        cSELECT_LIST(context, list);
+    },
+
+    deselectList(context: CollectionContext, listId: string): void {
+        let list: CollectionList | null = getters.getList(
+            context.state,
+            listId
+        );
+
+        if (!list) {
+            return;
+        }
+        cDESELECT_LIST(context, list);
+    },
+
+    /* loadList(context: CollectionContext, listId: string): CollectionList {
+        storage.loadList(listId)
+    }, */
+
     async initCollection(context: CollectionContext) {
         const hasCollection = await storage.hasCollection();
 
         if (!hasCollection) {
             console.log('init collection');
-            const list = new CollectionList('default');
-            const tree = new ListTree(list);
 
+            const collectionIndex = state.index;
+
+            const list = new CollectionList({ name: 'default' });
             state.lists.push(list);
-            state.index.tree.push(tree);
-            state.index.defaultListId = list.id;
+            collectionIndex.tree.addList(list);
+            collectionIndex.defaultListId = list.id;
 
-            storage.initCollection(state);
+            storage.saveCollection(state);
         } else {
             console.log('collection exists');
         }
 
-        const index = await storage.getIndex();
+        const loadedState = await storage.loadCollection();
+        state.index = loadedState.index;
+        state.lists = loadedState.lists;
+
+        state.lists[0].addWord(
+            new CollectionWord({ text: 'word' + new Date().getMilliseconds() })
+        );
+        storage.saveList(state.lists[0]);
+
+        console.log('state2', loadedState);
+        /* const index = await storage.getIndex();
         const list = await storage.getList(index.defaultListId!);
 
         state.index = index;
@@ -68,7 +136,7 @@ const actions = {
         ) as ListTree;
         tr.items.push(new ListTree(newList));
         storage.saveList(newList);
-        storage.saveIndex(state.index);
+        storage.saveIndex(state.index); */
 
         // gists.post2(state, gistIdSetting.get(), gistFileNameSetting.get());
     }
@@ -76,6 +144,16 @@ const actions = {
 
 // mutations
 const mutations = {
+    SELECT_LIST(state: CollectionState, list: CollectionList): void {
+        state.selectedLists.push(list);
+    },
+
+    DESELECT_LIST(state: CollectionState, list: CollectionList): void {
+        const index = state.selectedLists.indexOf(list);
+
+        state.selectedLists.splice(index, 1);
+    }
+
     /* openImport(state: AppState, value: boolean): void {
         state.isImportOpen = value;
     },
@@ -101,10 +179,18 @@ const { commit, read, dispatch } = getStoreAccessors<
 // getter
 /* export const rIsImportOpen = read(getters.isImportOpen);
 export const rIsSettingsOpen = read(getters.isSettingsOpen); */
+//export const rCollectionIndex = read(getters.collectionIndex);
+export const rGetIndex = read(getters.getIndex);
+export const rGetList = read(getters.getLists);
+export const rGetPooledWords = read(getters.getPooledWords);
 
 // action
 export const dInitCollection = dispatch(actions.initCollection);
 
+export const dStashCollection = dispatch(actions.stashCollection);
+
 //mutations
 /* export const cOpenImport = commit(mutations.openImport);
 export const cOpenSettings = commit(mutations.openSettings); */
+const cSELECT_LIST = commit(mutations.SELECT_LIST);
+const cDESELECT_LIST = commit(mutations.DESELECT_LIST);

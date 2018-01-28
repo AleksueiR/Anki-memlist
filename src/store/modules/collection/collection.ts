@@ -34,30 +34,29 @@ const getters = {
 const actions = {
     async fetchIndex(context: CollectionContext): Promise<void> {
         let index: CollectionIndex = state.index;
+        let lists: Map<string, CollectionList> = state.lists;
 
         const hasCollection = await storage.hasCollection();
 
         if (!hasCollection) {
             actions.writeCollection(context);
         } else {
-            index = await storage.loadIndex();
+            ({ index, lists } = await storage.loadCollection());
         }
 
         context.commit('SET_INDEX', index);
+        context.commit('SET_LISTS', lists);
 
-        if (state.index.defaultListId !== null) {
-            actions.fetchList(context, state.index.defaultListId);
-        }
-    },
-
-    async fetchList(context: CollectionContext, listId: string): Promise<void> {
-        let list: CollectionList = await storage.loadList(listId);
-
-        if (!list) {
+        if (state.index.defaultListId === null) {
             return;
         }
 
-        context.commit('SET_LIST', list);
+        const defaultList = state.lists.get(state.index.defaultListId);
+        if (defaultList === undefined) {
+            return;
+        }
+
+        context.commit('SELECT_LIST', defaultList);
     },
 
     writeCollection(context: CollectionContext): void {
@@ -72,119 +71,103 @@ const actions = {
      *
      *
      * @param {CollectionContext} context
-     * @param {(CollectionList | CollectionList[])} list
+     * @param {(string | string[])} listId
      * @param {boolean} [writeIndex=false] if `true`, the collection index will be written as well
      */
-    writeList(
-        context: CollectionContext,
-        list: CollectionList | CollectionList[],
-        writeIndex: boolean = false
-    ): void {
-        if (writeIndex) {
-            actions.writeIndex(context);
+    writeList(context: CollectionContext, listId: string | string[]): void {
+        if (isArray(listId)) {
+            listId.forEach(lId => _writeList(lId));
+        } else {
+            _writeList(listId);
         }
 
-        if (isArray(list)) {
-            list.forEach(l => storage.saveList(l));
-        }
+        function _writeList(lId: string) {
+            const list = state.lists.get(lId);
+            if (list === undefined) {
+                return;
+            }
 
-        // TODO: use a guard check
-        storage.saveList(list as CollectionList);
+            storage.saveList(list as CollectionList);
+        }
     },
 
     addList(context: CollectionContext, list: CollectionList): void {
-        context.commit('SET_LIST_POSITION', { tree: state.index.tree, list });
-        context.commit('SET_LIST', list);
+        // context.commit('ADD_LIST_TO_TREE', { tree: state.index.tree, list });
+        context.commit('ADD_LIST_TO_TREE', {
+            tree: state.index.tree,
+            list
+        });
 
         if (!state.index.defaultListId) {
             context.commit('SET_DEFAULT_LIST', list);
         }
 
-        actions.writeList(context, list, true);
+        actions.writeList(context, list.id);
+        actions.writeIndex(context);
+    },
+
+    removeList(context: CollectionContext, listId: string): void {
+        // find its tree parent
+        // context.commit('REMOVE_LIST_FROM_TREE', { tree: state.index.tree, list });
+    },
+
+    setDefaultList(context: CollectionContext, listId: string): void {
+        const list = state.lists.get(listId);
+        if (list === undefined) {
+            return;
+        }
+
+        context.commit('SET_DEFAULT_LIST', list);
     },
 
     async selectList(
         context: CollectionContext,
-        listId: string
-    ): Promise<void> {
-        /* let list: CollectionList | null = getters.getList(
-            context.state,
-            listId
-        );
+        options: { listId: string; annex: boolean }
+    ) {
+        const { listId, annex = false } = options;
 
-        if (!list) {
-            list = await storage.loadList(listId);
-            cSTORE_LIST(context, list);
+        if (!annex) {
+            context.commit('DESELECT_ALL_LISTS');
         }
 
-        cSELECT_LIST(context, list); */
+        const list = state.lists.get(listId);
+        if (list === undefined) {
+            return;
+        }
+
+        context.commit('SELECT_LIST', list);
     },
 
     deselectList(context: CollectionContext, listId: string): void {
-        /* let list: CollectionList | null = getters.getList(
-            context.state,
-            listId
-        );
-
-        if (!list) {
+        const list = state.lists.get(listId);
+        if (list === undefined) {
             return;
         }
-        cDESELECT_LIST(context, list); */
+
+        context.commit('DESELECT_LIST', list);
     },
 
-    /* loadList(context: CollectionContext, listId: string): CollectionList {
-        storage.loadList(listId)
-    }, */
+    deselectAllLists(context: CollectionContext): void {
+        context.commit('DESELECT_ALL_LISTS');
+    },
 
-    async initCollection(context: CollectionContext) {
-        const hasCollection = await storage.hasCollection();
+    // #region EDIT LIST
 
-        if (!hasCollection) {
-            console.log('init collection');
-
-            const collectionIndex = state.index;
-
-            const list = new CollectionList({ name: 'default' });
-            state.lists.push(list);
-            collectionIndex.tree.addList(list);
-            collectionIndex.defaultListId = list.id;
-
-            storage.saveCollection(state);
-        } else {
-            console.log('collection exists');
+    editListName(
+        context: CollectionContext,
+        { listId, name }: { listId: string; name: string }
+    ): void {
+        const list = state.lists.get(listId);
+        if (list === undefined) {
+            return;
         }
 
-        const loadedState = await storage.loadCollection();
-        state.index = loadedState.index;
-        state.lists = loadedState.lists;
+        context.commit('EDIT_LIST_NAME', { list, name });
 
-        state.lists[0].addWord(
-            new CollectionWord({ text: 'word' + new Date().getMilliseconds() })
-        );
-        storage.saveList(state.lists[0]);
-
-        console.log('state2', loadedState);
-        /* const index = await storage.getIndex();
-        const list = await storage.getList(index.defaultListId!);
-
-        state.index = index;
-        state.lists.push(list);
-
-        console.log('index', index, 'list', list);
-
-        list.words.push(new Word({ text: 'sfs' }));
-        storage.saveList(list);
-
-        const newList = new CollectionList('new list');
-        const tr = state.index.tree.find(
-            tree => tree.listId === list.id
-        ) as ListTree;
-        tr.items.push(new ListTree(newList));
-        storage.saveList(newList);
-        storage.saveIndex(state.index); */
-
-        // gists.post2(state, gistIdSetting.get(), gistFileNameSetting.get());
+        actions.writeList(context, list.id);
     }
+
+    // #endregion
 };
 
 // mutations
@@ -193,38 +176,63 @@ const mutations = {
         state.index = index;
     },
 
-    SET_LIST(state: CollectionState, list: CollectionList): void {
-        state.lists.push(list);
+    SET_LISTS(
+        state: CollectionState,
+        lists: Map<string, CollectionList>
+    ): void {
+        state.lists = lists;
     },
 
     SET_DEFAULT_LIST(state: CollectionState, list: CollectionList): void {
         state.index.defaultListId = list.id;
     },
 
-    SET_LIST_POSITION(
+    ADD_LIST_TO_TREE(
         state: CollectionState,
         { tree, list }: { tree: CollectionTree; list: CollectionList }
     ): void {
         tree.addList(list);
+        state.lists.set(list.id, list);
     },
 
     SELECT_LIST(state: CollectionState, list: CollectionList): void {
+        // do not select the same list twice
+        const index = state.selectedLists.findIndex(
+            selectedList => selectedList.id === list.id
+        );
+        if (index !== -1) {
+            return;
+        }
+
         state.selectedLists.push(list);
     },
 
     DESELECT_LIST(state: CollectionState, list: CollectionList): void {
-        const index = state.selectedLists.indexOf(list);
+        const index = state.selectedLists.findIndex(
+            selectedList => selectedList.id === list.id
+        );
+
+        if (index === -1) {
+            return;
+        }
 
         state.selectedLists.splice(index, 1);
-    }
-
-    /* openImport(state: AppState, value: boolean): void {
-        state.isImportOpen = value;
     },
 
-    openSettings(state: AppState, value: boolean): void {
-        state.isSettingsOpen = value;
-    } */
+    DESELECT_ALL_LISTS(state: CollectionState): void {
+        state.selectedLists.splice(0);
+    },
+
+    // #region EDIT LIST
+
+    EDIT_LIST_NAME(
+        state: CollectionState,
+        { list, name }: { list: CollectionList; name: string }
+    ): void {
+        list.name = name;
+    }
+
+    // #endregion
 };
 
 export const collection = {
@@ -234,3 +242,14 @@ export const collection = {
     actions,
     mutations
 };
+
+/**
+ * A helper function to get a CollectionList by its ide from the lists array.
+ * TODO: use a dictionary for fast lookup as specified here: https://forum.vuejs.org/t/error-form-binding-with-vuex-do-not-mutate-vuex-store-state-outside-mutation-handlers/11941/8
+ *
+ * @param {string} listId
+ * @returns {(CollectionList | null)}
+ */
+/* function state.lists.get(listId: string): CollectionList | null {
+    return state.lists.find(l => l.id === listId) || null;
+} */

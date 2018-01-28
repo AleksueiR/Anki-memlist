@@ -28,7 +28,7 @@ window.onbeforeunload = e => {
 
 export interface CollectionStateOptions {
     index?: CollectionIndex;
-    lists?: CollectionList[];
+    lists?: Map<string, CollectionList>;
 
     selectedLists?: CollectionList[];
     selectedWords?: CollectionWord[];
@@ -36,7 +36,8 @@ export interface CollectionStateOptions {
 
 export class CollectionState {
     index: CollectionIndex;
-    lists: CollectionList[];
+
+    lists: Map<string, CollectionList>;
 
     readonly selectedLists: CollectionList[];
     readonly selectedWords: CollectionWord[];
@@ -44,7 +45,7 @@ export class CollectionState {
     constructor(options: CollectionStateOptions = {}) {
         const {
             index = new CollectionIndex(),
-            lists = [],
+            lists = new Map(),
             selectedLists = [],
             selectedWords = []
         } = options;
@@ -96,6 +97,28 @@ export class CollectionIndex {
 
     get defaultListId(): string | null {
         return this._defaultListId;
+    }
+
+    get flatTree(): string[] {
+        /* Pre-order tree traversal visits each node using stack.
+        Checks if leaf node based on children === null otherwise
+        pushes all children into stack and continues traversal. */
+
+        const stack: CollectionTree[] = [];
+        const array: string[] = [];
+
+        stack.push.apply(stack, this.tree.items);
+
+        while (stack.length !== 0) {
+            const node = stack.pop()!;
+
+            array.push(node.listId);
+            if (node.items.length !== 0) {
+                stack.push.apply(stack, node.items.slice().reverse());
+            }
+        }
+
+        return array;
     }
 
     update(): void {

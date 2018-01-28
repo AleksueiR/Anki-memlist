@@ -3,7 +3,7 @@ declare module 'blots/block'; */
 
 declare module 'gists';
 
-declare module 'element-ui';
+// declare module 'element-ui';
 
 declare module 'quill-image-drop-module';
 

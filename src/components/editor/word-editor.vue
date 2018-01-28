@@ -267,7 +267,7 @@ header {
 
                 .divider {
                     flex: 1;
-                    border-bottom: 1px solid darken($secondary-colour, 40%);
+                    border-bottom: 1px solid $even-darker-secondary-colour;
                     height: 0.4em;
                     margin: 0 1.5rem 0 1em;
                 }

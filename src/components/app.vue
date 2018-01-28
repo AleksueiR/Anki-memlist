@@ -1,12 +1,33 @@
 <template>
 
     <section class="root">
-        <!-- {{ collectionIndex }} -->
-        index {{ index.safeJSON }}
-        <br>
-        lists
-        <div v-for="list in lists" :key="list.id"> {{ list.safeJSON }} </div>
-        <!-- {{ getters.rIsSettingsOpen }} -->
+
+        <collection-view></collection-view>
+
+        <div>
+
+            index {{ index.safeJSON }}
+            <br>
+            selectedLists
+            {{ selectedLists.length }}
+            <div v-for="list in selectedLists" :key="list.id"> {{ list.safeJSON }} </div>
+
+            <!-- <ul>
+                <li v-for="l in index.tree.items" :key="l.listId"><button @click="selectList({ listId: l.listId })">
+                    {{ getListName(l.listId) }}</button></li>
+            </ul> -->
+
+            <hr>
+            <!-- lists
+            <div v-for="list in lists" :key="list.id"> {{ list.safeJSON }} </div> -->
+            {{ index.tree.safeJSON }}
+
+
+
+
+            <!--  -->
+        </div>
+
         <!-- <word-list class="word-list"></word-list>
 
         <word-editor class="word-editor"></word-editor>
@@ -24,6 +45,7 @@
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
+import collectionView from './collection/collection-view.vue';
 import wordList from './list/word-list.vue';
 import wordEditor from './editor/word-editor.vue';
 import settings from './dialogs/settings.vue';
@@ -41,15 +63,18 @@ import { dFetchWods } from './../store/modules/words';
 
 import { areSettingsValid } from './../settings';
 import {
+    CollectionState,
     CollectionIndex,
-    CollectionList
+    CollectionList,
+    CollectionTree
 } from '../store/modules/collection/index';
 
-const CollectionState = namespace('collection', State);
-const CollectionAction = namespace('collection', Action);
+const StateCL = namespace('collection', State);
+const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
+        collectionView,
         wordList,
         wordEditor,
 
@@ -61,11 +86,19 @@ export default class App extends Vue {
     /* @ModuleGetter('items') wordItems: any[];
     @Mutation('selectWord') selectWord: (item: string | null) => void; */
 
-    @CollectionState('index') index: CollectionIndex;
-    @CollectionState('lists') lists: CollectionList[];
+    @StateCL('index') index: CollectionIndex;
+    @StateCL('lists') lists: Map<string, CollectionList>;
 
-    @CollectionAction('fetchIndex') fetchIndex: () => void;
-    @CollectionAction('addList') addList: (list: CollectionList) => void;
+    /* @StateCL((state: CollectionState) =>
+        Array.from(state.lists.values())
+    )
+    lists: CollectionList[]; */
+
+    @StateCL('selectedLists') selectedLists: CollectionList[];
+
+    @ActionCL('fetchIndex') fetchIndex: () => void;
+    @ActionCL('addList') addList: (list: CollectionList) => void;
+    @ActionCL('selectList') selectList: (options: { listId: string }) => void;
 
     blah: string = '';
 

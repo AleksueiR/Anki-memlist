@@ -38,43 +38,20 @@ const local: Storage = {
     async loadCollection(): Promise<CollectionState> {
         const index = await this.loadIndex();
 
-        const listPromises = convertTreeToList(index.tree).map(listId =>
+        const listPromises = index.flatTree.map(listId =>
             this.loadList(listId)
         );
-        const lists = await Promise.all(listPromises);
+
+        const listArray = await Promise.all(listPromises);
+        const lists = new Map(
+            listArray.map<[string, CollectionList]>(list => [list.id, list])
+        );
 
         return Promise.resolve(new CollectionState({ index, lists }));
-
-        /**
-         * Pre-order tree traversal visits each node using stack.
-         * Checks if leaf node based on children === null otherwise
-         * pushes all children into stack and continues traversal.
-         *
-         * @param {CollectionTree} root deserialized JSON root to begin traversal
-         * @returns {string[]} final array of nodes in order
-         */
-        function convertTreeToList(root: CollectionTree): string[] {
-            const stack: CollectionTree[] = [];
-            const array: string[] = [];
-
-            stack.push(root);
-
-            while (stack.length !== 0) {
-                const node = stack.pop()!;
-
-                if (node.items.length === 0) {
-                    array.push(node.listId);
-                } else {
-                    stack.push.apply(stack, node.items.slice().reverse());
-                }
-            }
-
-            return array;
-        }
     },
 
     saveCollection(state: CollectionState): Promise<void> {
-        const promises: Promise<void>[] = state.lists.map(
+        const promises: Promise<void>[] = Array.from(state.lists.values()).map(
             (list: CollectionList) => local.saveList(list)
         );
 

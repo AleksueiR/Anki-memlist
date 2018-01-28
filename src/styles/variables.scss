@@ -14,6 +14,7 @@ $light-primary-colour: lighten($primary-colour, 20%);
 
 $secondary-colour: #f3f3f3;
 $dark-secondary-colour: darken($secondary-colour, 20%);
+$even-darker-secondary-colour: darken($secondary-colour, 40%);
 
 $text-colour: #212121;
 $dark-text-colour: darken($text-colour, 20%);

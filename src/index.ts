@@ -1,3 +1,9 @@
+import devtools from '@vue/devtools';
+
+if (process.env.NODE_ENV === 'development') {
+    devtools.connect(/* host */);
+}
+
 import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 // import VueRouter from 'vue-router';

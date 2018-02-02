@@ -18,15 +18,30 @@ const state: CollectionState = new CollectionState();
 // getters
 const getters = {
     getPooledWords: (state: CollectionState): CollectionWord[] => {
+        if (state.selectedLists.length === 0) {
+            return [];
+        }
+
+        console.log('update tppool', state.selectedLists[0]);
+
         const pooledWords = (<CollectionWord[]>[]).concat(
-            ...state.selectedLists.map(list => list.words)
+            ...state.selectedLists.map(list =>
+                list.index.map(wordId => list.words.get(wordId)!)
+            )
         );
+
+        return pooledWords;
+        // return state.selectedLists[0].index;
+
+        /* const pooledWords = (<CollectionWord[]>[]).concat(
+            ...state.selectedLists.map(list => Array.from(list.words.values()))
+        );
+
+        return pooledWords; */
 
         /* state.selectedLists.reduce((pooledWords: CollectionWord[], selectedList: CollectionList) => {
             return pooledWords.concat(selectedList.words)
         },[]); */
-
-        return pooledWords;
     }
 };
 
@@ -39,6 +54,7 @@ const actions = {
         const hasCollection = await storage.hasCollection();
 
         if (!hasCollection) {
+            actions.addList(context, new CollectionList());
             actions.writeCollection(context);
         } else {
             ({ index, lists } = await storage.loadCollection());
@@ -92,12 +108,13 @@ const actions = {
     },
 
     addList(context: CollectionContext, list: CollectionList): void {
-        // context.commit('ADD_LIST_TO_TREE', { tree: state.index.tree, list });
-        context.commit('ADD_LIST_TO_TREE', {
+        // context.commit('ADD_LIST', { tree: state.index.tree, list });
+        context.commit('ADD_LIST', {
             tree: state.index.tree,
             list
         });
 
+        // if this is a first list added, make it default
         if (!state.index.defaultListId) {
             context.commit('SET_DEFAULT_LIST', list);
         }
@@ -120,7 +137,7 @@ const actions = {
         context.commit('SET_DEFAULT_LIST', list);
     },
 
-    async selectList(
+    selectList(
         context: CollectionContext,
         options: { listId: string; annex: boolean }
     ) {
@@ -153,7 +170,7 @@ const actions = {
 
     // #region EDIT LIST
 
-    editListName(
+    renameList(
         context: CollectionContext,
         { listId, name }: { listId: string; name: string }
     ): void {
@@ -162,9 +179,85 @@ const actions = {
             return;
         }
 
-        context.commit('EDIT_LIST_NAME', { list, name });
+        context.commit('RENAME_LIST', { list, name });
 
         actions.writeList(context, list.id);
+    },
+
+    addWord(
+        context: CollectionContext,
+        { listId, word }: { listId: string; word: CollectionWord }
+    ): void {
+        const list = state.lists.get(listId);
+        if (list === undefined) {
+            return;
+        }
+
+        context.commit('ADD_WORD', { list, word });
+
+        actions.writeList(context, list.id);
+    },
+
+    removeWord(context: CollectionContext, options: { wordId: string }): void {
+        const list = Array.from(state.lists.values()).find(list =>
+            list.words.has(options.wordId)
+        );
+        if (!list) {
+            return;
+        }
+
+        const word = list.words.get(options.wordId);
+
+        if (!word) {
+            return;
+        }
+
+        context.commit('REMOVE_WORD', { list, word });
+        actions.writeList(context, list.id);
+    },
+
+    // #endregion
+
+    // #region EDIT WORD
+
+    selectWord(
+        context: CollectionContext,
+        options: { wordId: string; annex: boolean }
+    ) {
+        const { wordId, annex = false } = options;
+
+        if (!annex) {
+            context.commit('DESELECT_ALL_WORDS');
+        }
+
+        const word: CollectionWord = context.getters.getPooledWords.find(
+            (word: CollectionWord) => word.id === wordId
+        );
+
+        //const word = state.lists.get(listId);
+        if (word === undefined) {
+            return;
+        }
+
+        context.commit('SELECT_WORD', word);
+    },
+
+    deselectWord(
+        context: CollectionContext,
+        options: { wordId: string }
+    ): void {
+        const word: CollectionWord = context.getters.getPooledWords.find(
+            (word: CollectionWord) => word.id === options.wordId
+        );
+        if (word === undefined) {
+            return;
+        }
+
+        context.commit('DESELECT_WORD', word);
+    },
+
+    deselectAllWords(context: CollectionContext): void {
+        context.commit('DESELECT_ALL_Words');
     }
 
     // #endregion
@@ -187,12 +280,11 @@ const mutations = {
         state.index.defaultListId = list.id;
     },
 
-    ADD_LIST_TO_TREE(
+    ADD_LIST(
         state: CollectionState,
         { tree, list }: { tree: CollectionTree; list: CollectionList }
     ): void {
-        tree.addList(list);
-        state.lists.set(list.id, list);
+        state.addList(tree, list);
     },
 
     SELECT_LIST(state: CollectionState, list: CollectionList): void {
@@ -225,11 +317,57 @@ const mutations = {
 
     // #region EDIT LIST
 
-    EDIT_LIST_NAME(
+    RENAME_LIST(
         state: CollectionState,
         { list, name }: { list: CollectionList; name: string }
     ): void {
         list.name = name;
+    },
+
+    ADD_WORD(
+        state: CollectionState,
+        { list, word }: { list: CollectionList; word: CollectionWord }
+    ): void {
+        list.addWord(word);
+    },
+
+    REMOVE_WORD(
+        state: CollectionState,
+        { list, word }: { list: CollectionList; word: CollectionWord }
+    ): void {
+        list.removeWord(word);
+    },
+
+    // #endregion
+
+    // #region EDIT WORD
+
+    SELECT_WORD(state: CollectionState, word: CollectionWord): void {
+        // do not select the same list twice
+        const index = state.selectedWords.findIndex(
+            selectedWord => selectedWord.id === word.id
+        );
+        if (index !== -1) {
+            return;
+        }
+
+        state.selectedWords.push(word);
+    },
+
+    DESELECT_WORD(state: CollectionState, word: CollectionWord): void {
+        const index = state.selectedWords.findIndex(
+            selectedWord => selectedWord.id === word.id
+        );
+
+        if (index === -1) {
+            return;
+        }
+
+        state.selectedWords.splice(index, 1);
+    },
+
+    DESELECT_ALL_WORDS(state: CollectionState): void {
+        state.selectedWords.splice(0);
     }
 
     // #endregion

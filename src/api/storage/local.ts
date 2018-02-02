@@ -7,7 +7,8 @@ import {
     CollectionList,
     CollectionTree,
     CollectionIndexOptions,
-    CollectionListOptions
+    CollectionListOptions,
+    CollectionWord
 } from '../../store/modules/collection/index';
 
 /* console.log('padht', jsonStorage.getDataPath());
@@ -102,6 +103,13 @@ const local: Storage = {
             jsonStorage.get(
                 listFileName(listId),
                 (error, data: CollectionListOptions) => {
+                    // convert word dictionary into a proper Map of CollectionWord object
+                    data.words = new Map(
+                        Array.from(Object.values(data.words)).map<
+                            [string, CollectionWord]
+                        >(word => [word.id, new CollectionWord(word)])
+                    );
+
                     // TODO: handle errors
                     resolve(new CollectionList(data));
                 }

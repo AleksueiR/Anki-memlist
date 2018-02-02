@@ -55,6 +55,11 @@ export class CollectionState {
         this.selectedLists = selectedLists;
         this.selectedWords = selectedWords;
     }
+
+    addList(tree: CollectionTree, list: CollectionList): void {
+        tree.addList(list);
+        this.lists.set(list.id, list);
+    }
 }
 
 export interface CollectionIndexOptions {
@@ -181,9 +186,9 @@ export type CollectionSortBy = 'name' | 'date';
 export type CollectionSortDirection = 'asc' | 'des';
 
 export interface CollectionListOptions {
-    readonly id?: string;
+    id?: string;
     name?: string;
-    readonly dateCreated?: number;
+    dateCreated?: number;
     dateModified?: number;
 
     pin?: boolean;
@@ -193,7 +198,8 @@ export interface CollectionListOptions {
     sortBy?: CollectionSortBy;
     sortDirection?: CollectionSortDirection;
 
-    readonly words?: CollectionWord[];
+    index?: string[];
+    words?: Map<string, CollectionWord>;
     notes?: string;
 }
 
@@ -210,7 +216,8 @@ export class CollectionList {
     private _sortBy: CollectionSortBy;
     private _sortDirection: CollectionSortDirection;
 
-    readonly words: CollectionWord[];
+    readonly index: string[];
+    readonly words: Map<string, CollectionWord>;
     private _notes: string;
 
     constructor(options: CollectionListOptions = {}) {
@@ -224,7 +231,8 @@ export class CollectionList {
             colour = '#fff',
             sortBy = 'name',
             sortDirection = 'asc',
-            words = [],
+            index = [] as string[],
+            words = new Map<string, CollectionWord>(),
             notes = ''
         } = options;
 
@@ -238,6 +246,7 @@ export class CollectionList {
         this.sortBy = sortBy;
         this.sortDirection = sortDirection;
         this.words = words;
+        this.index = index;
         this.notes = notes;
     }
 
@@ -310,12 +319,17 @@ export class CollectionList {
     }
 
     addWord(word: CollectionWord): void {
-        this.words.push(word);
+        this.index.push(word.id);
+        this.words.set(word.id, word);
         this.update();
     }
 
     removeWord(word: CollectionWord): void {
-        // TODO: implement
+        this.words.delete(word.id);
+
+        const index = this.index.indexOf(word.id);
+        this.index.splice(index, 1);
+
         this.update();
     }
 
@@ -324,6 +338,19 @@ export class CollectionList {
     }
 
     get safeJSON(): CollectionListOptions {
+        // convert Map into a safe, regular JSON object for storage
+        const words = Array.from(this.words.values()).reduce(
+            (
+                map: { [name: string]: CollectionWordOptions },
+                word: CollectionWord,
+                {}
+            ) => {
+                map[word.id] = word.safeJSON;
+                return map;
+            },
+            {}
+        );
+
         return {
             id: this.id,
             name: this.name,
@@ -334,7 +361,8 @@ export class CollectionList {
             colour: this.colour,
             sortBy: this.sortBy,
             sortDirection: this.sortDirection,
-            words: this.words.map(word => word.safeJSON) as CollectionWord[],
+            index: this.index,
+            words: words as Map<string, CollectionWord>,
             notes: this.notes
         };
     }

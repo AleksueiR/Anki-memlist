@@ -1,50 +1,91 @@
 <template>
-    <div class="container">
-        <!-- <el-row>
-            <el-col> -->
-                <section class="lookup">
-                    <el-input
-                        @keyup.enter.native="addOrEditWord()"
-                        @keyup.esc.native="clearLookup"
-                        @input="blah"
-                        v-model.trim="lookup"
-                        label="Lookup"
-                        placeholder="type a word"
-                        suffix-icon="el-icon-edit"
-                        autofocus
-                        :hint="lookupHint"
-                        :clearable="true">
-                    </el-input>
-                </section>
 
+    <section class="list-view">
 
-            <!-- </el-col> -->
-            <!-- <el-col :span="2" class="word-menu">
-                <word-menu></word-menu>
-            </el-col> -->
-        <!-- </el-row> -->
-        <!-- <el-row> -->
-            <span class="text-smaller">{{ lookupHint }}</span>
-        <section class="cm-scrollbar">
-                <ul class="list">
-                    <word-item
-                        v-for="word in items"
-                        :key="word.text"
-                        @archive="archiveWord"
-                        @edit="editWord"
-                        @select="selectWord"
-                        v-on:remove="removeWord"
-                        v-bind:word="word"></word-item>
-                </ul>
+        <section class="lookup">
+            <el-input
+                @keyup.enter.native="addOrEditWord()"
+                @keyup.esc.native="clearLookup"
+                @input="blah"
+                v-model.trim="lookup"
+                label="Lookup"
+                placeholder="type a word"
+                suffix-icon="el-icon-edit"
+                autofocus
+                :hint="lookupHint"
+                :clearable="true">
+            </el-input>
         </section>
-        <!-- </el-row> -->
-    </div>
+
+        <span class="text-smaller">{{ lookupHint }}</span>
+
+        <section class="cm-scrollbar">
+            <ul class="list">
+                <list-item
+                    v-for="word in getPooledWords"
+                    :key="word.id"
+                    @archive="archiveWord"
+                    @edit="editWord"
+                    v-on:remove="removeWord"
+                    :word="word"></list-item>
+            </ul>
+        </section>
+
+        <!-- {{ selectedLists[0].index.length }} -->
+        <!-- {{ getPooledWords.length }}
+
+        <div v-for="word in getPooledWords" :key="word.id">{{ word.text }}</div> -->
+
+        <div class="container" v-if="false">
+            <!-- <el-row>
+                <el-col> -->
+
+                    <section class="lookup">
+                        <el-input
+                            @keyup.enter.native="addOrEditWord()"
+                            @keyup.esc.native="clearLookup"
+                            @input="blah"
+                            v-model.trim="lookup"
+                            label="Lookup"
+                            placeholder="type a word"
+                            suffix-icon="el-icon-edit"
+                            autofocus
+                            :hint="lookupHint"
+                            :clearable="true">
+                        </el-input>
+                    </section>
+
+
+                <!-- </el-col> -->
+                <!-- <el-col :span="2" class="word-menu">
+                    <word-menu></word-menu>
+                </el-col> -->
+            <!-- </el-row> -->
+            <!-- <el-row> -->
+                <span class="text-smaller">{{ lookupHint }}</span>
+            <section class="cm-scrollbar">
+                    <ul class="list">
+                        <word-item
+                            v-for="word in items"
+                            :key="word.text"
+                            @archive="archiveWord"
+                            @edit="editWord"
+                            @select="selectWord"
+                            v-on:remove="removeWord"
+                            v-bind:word="word"></word-item>
+                    </ul>
+            </section>
+            <!-- </el-row> -->
+        </div>
+
+    </section>
 
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import debounce from 'lodash/debounce';
 
@@ -63,16 +104,34 @@ import {
     cAddWord
 } from './../../store/modules/words';
 
-import wordItem from './word-item.vue';
-import wordMenu from './word-menu.vue';
+import listItem from './list-item.vue';
+/* import wordMenu from './word-menu.vue'; */
+
+import {
+    CollectionList,
+    CollectionWord
+} from '../../store/modules/collection/index';
+
+const StateCL = namespace('collection', State);
+const GetterCL = namespace('collection', Getter);
+const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        wordItem,
-        wordMenu
+        listItem
+        //wordMenu
     }
 })
 export default class WordList extends Vue {
+    @StateCL selectedLists: CollectionList[];
+
+    @GetterCL getPooledWords: CollectionList[];
+
+    @ActionCL
+    addWord: (payload: { listId: string; word: CollectionWord }) => void;
+    @ActionCL
+    selectWord: (payload: { wordId: string; annex?: Boolean }) => void;
+
     lookup: string = '';
 
     /* async mounted(): Promise<void> {
@@ -169,11 +228,17 @@ export default class WordList extends Vue {
     }
 
     addOrEditWord(): void {
-        if (this.isLookupNew) {
+        const listId = this.selectedLists[0].id;
+        const word = new CollectionWord({ text: this.lookup });
+
+        this.addWord({ listId, word });
+        this.selectWord({ wordId: word.id });
+
+        /* if (this.isLookupNew) {
             this.addNewWord();
         } else {
             this.editWord(this.items[0]);
-        }
+        } */
     }
 
     clearLookup(): void {
@@ -198,9 +263,9 @@ export default class WordList extends Vue {
         //EventBus.$emit(WORD_SELECTED, word);
     }
 
-    selectWord(word: Word): void {
+    /* selectWord(word: Word): void {
         cSelectWord(this.$store, word);
-    }
+    } */
 
     removeWord(word: Word): void {
         cRemoveWord(this.$store, word);
@@ -210,10 +275,20 @@ export default class WordList extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.container {
+.list-view {
+    width: 15em;
+    flex-shrink: 0;
+    margin-right: 16px;
+
     display: flex;
     flex-direction: column;
 }
+
+/* .container {
+    display: flex;
+    flex-direction: column;
+}
+ */
 
 .lookup {
     height: 4em;

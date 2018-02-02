@@ -1,5 +1,6 @@
 <template>
     <section class="collection-view">
+
         <nav class="toolbar">
 
             <el-button class="button">
@@ -25,8 +26,12 @@
                 @node-click="nodeClick"
                 ref="tree"></el-tree>
 
+            <!-- {{ getListWordCount('jd3sysjs') }} -->
+
             selected Nodes: {{ selectedNodes }}
-            renameListId: {{ renameListId}}
+            current key: {{ currentKey }};
+            renameListId: {{ renameListId }}
+            <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div>
         </div>
 
 
@@ -34,6 +39,10 @@
 </template>
 
 <script lang="ts">
+/**
+ * TODO: use keyboard events to move the focus up and down the tree, as it seems the build it focus moves but does not change the current node key to go with it
+ */
+
 import {
     Vue,
     Component,
@@ -82,15 +91,29 @@ export default class CollectionView extends Vue {
 
     @StateCL('index') index: CollectionIndex;
     @StateCL('lists') lists: Map<string, CollectionList>;
+    @StateCL selectedLists: CollectionList[];
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
     @ActionCL('addList') addList: (list: CollectionList) => void;
 
-    @ActionCL('editListName')
-    editListName: (payload: { listId: string; name: string }) => void;
+    @ActionCL('renameLIst')
+    renameLIst: (payload: { listId: string; name: string }) => void;
+
+    @ActionCL
+    selectList: (
+        { listId, annex }: { listId: string; annex?: boolean }
+    ) => void;
 
     // #endregion vuex
+
+    /* getListWordCount(id: string): number {
+        if (this.lists.has(id)) {
+            return this.lists.get(id)!.index.length;
+        }
+
+        return -1;
+    } */
 
     treeProps = {
         label: (tree: CollectionTree) => this.getListName(tree.listId),
@@ -137,7 +160,7 @@ export default class CollectionView extends Vue {
                             // enter
                             // console.log(event, data.listId);
 
-                            this.editListName({
+                            this.renameLIst({
                                 listId: data.listId,
                                 name: (<HTMLInputElement>event.target).value
                             });
@@ -153,20 +176,22 @@ export default class CollectionView extends Vue {
             });
         }
 
+        console.log('update collection view');
+
         return h(
             'span', // tag name,
             {
                 class: {
                     foot: true,
                     bar: false
+                },
+                attrs: {
+                    bl: this.selectedLists // this.selectedNodes // I'm not sure why the tree would not refresh when words are added to a list, so this seems to be the only way to force it
                 }
             },
-            [
-                (<any>node).label,
-                ` [${list.id}] `,
-                list.words.length,
+            `${(<any>node).label} [${list.id}] ${list.index.length} ${
                 data.listId === this.defaultListId ? ' ✔' : ''
-            ]
+            }`
         );
     }
 
@@ -183,13 +208,27 @@ export default class CollectionView extends Vue {
         console.log(tree.getCheckedKeys());
 
         this.selectedNodes = tree.getCheckedKeys();
+        this.selectList({ listId: this.selectedNodes[0] });
     }
 
     selectedNodes: string[] = [];
 
     renameListId: string = '_!';
 
+    get currentKey() {
+        const tree: Tree = this.$refs.tree as Tree;
+        if (!tree) {
+            return '-';
+        }
+
+        console.log('getCurrentKey', tree.getCurrentKey());
+
+        return tree.getCurrentKey();
+    }
+
     renameList(event: KeyboardEvent): void {
+        console.log(event, '--', (this.$refs.tree as Tree).getCurrentKey());
+
         if (event.keyCode !== 113) {
             return;
         }
@@ -199,7 +238,6 @@ export default class CollectionView extends Vue {
         const tree: Tree = this.$refs.tree as Tree;
 
         this.renameListId = tree.getCurrentKey();
-        console.log(event);
     }
 
     blur(event: KeyboardEvent): void {
@@ -276,6 +314,16 @@ export default class CollectionView extends Vue {
 
     &.expanded {
         transform: rotate(-90deg);
+    }
+}
+
+/deep/ .el-tree-node {
+    &:focus > .el-tree-node__content {
+        //background-color: transparent;
+    }
+
+    &.is-checked > .el-tree-node__content {
+        //background-color: lightblue;
     }
 }
 

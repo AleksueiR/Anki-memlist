@@ -1,6 +1,8 @@
 /* declare module 'quill/core';
 declare module 'blots/block'; */
 
+declare module '@vue/devtools';
+
 declare module 'gists';
 
 // declare module 'element-ui';

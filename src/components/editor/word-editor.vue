@@ -74,6 +74,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import anki from './../../api/anki';
 
@@ -91,6 +92,11 @@ import {
     rItems
 } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
+import { CollectionWord } from '../../store/modules/collection/index';
+
+const StateCL = namespace('collection', State);
+const GetterCL = namespace('collection', Getter);
+const ActionCL = namespace('collection', Action);
 
 @Component({
     components: Object.assign(
@@ -103,6 +109,8 @@ import wordMenu from './../list/word-menu.vue';
     )
 })
 export default class WordList extends Vue {
+    @StateCL selectedWords: CollectionWord[];
+
     @Prop() id: string;
 
     activeTab: string = 'first';
@@ -125,10 +133,14 @@ export default class WordList extends Vue {
     ];
 
     // _word: Word | null = null;
-    get word(): Word | null {
-        return rSelectedItem(this.$store);
-        // return rItems(this.$store).find(item => item.id === this.id);
-        // return this._word;
+    get word(): CollectionWord | null {
+        if (this.selectedWords.length === 0) {
+            return null;
+        }
+
+        return this.selectedWords[0];
+
+        //return rSelectedItem(this.$store);
     }
 
     created(): void {

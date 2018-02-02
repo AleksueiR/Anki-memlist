@@ -21,6 +21,7 @@
         "@types/request": "^2.0.12",
         "@types/request-promise": "^4.1.39",
         "@types/uniqid": "^4.1.2",
+        "@vue/devtools": "^1.0.2",
         "artoo-js": "^0.4.0",
         "axios": "^0.17.1",
         "bluebird": "^3.5.1",
@@ -50,7 +51,6 @@
         "vue-router": "^3.0.1",
         "vue-template-compiler": "^2.5.13",
         "vuetify": "^0.16.9",
-        "vuetype": "^0.2.2",
         "vuex": "^3.0.1",
         "vuex-class": "^0.3.0",
         "vuex-typescript": "^2.0.1",
@@ -61,8 +61,7 @@
         "dev": "poi --port 3031 --templateCompiler true src/index.ts",
         "build": "poi build src/index.ts",
         "both": "concurrently \"npm run dev\" \"npm run app\" -k",
-        "app": "electron electron/index.js",
-        "vuetype": "vuetype src/components"
+        "app": "electron electron/index.js"
     },
     "author": "",
     "license": "ISC"

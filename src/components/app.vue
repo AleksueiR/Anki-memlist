@@ -4,7 +4,7 @@
 
         <collection-view></collection-view>
 
-        <div>
+        <!--div>
 
             index {{ index.safeJSON }}
             <br>
@@ -12,21 +12,19 @@
             {{ selectedLists.length }}
             <div v-for="list in selectedLists" :key="list.id"> {{ list.safeJSON }} </div>
 
-            <!-- <ul>
-                <li v-for="l in index.tree.items" :key="l.listId"><button @click="selectList({ listId: l.listId })">
-                    {{ getListName(l.listId) }}</button></li>
-            </ul> -->
-
             <hr>
-            <!-- lists
-            <div v-for="list in lists" :key="list.id"> {{ list.safeJSON }} </div> -->
+
             {{ index.tree.safeJSON }}
 
 
 
 
-            <!--  -->
-        </div>
+
+        </div-->
+
+        <list-view></list-view>
+
+        <word-editor class="word-editor"></word-editor>
 
         <!-- <word-list class="word-list"></word-list>
 
@@ -35,8 +33,8 @@
         <settings :isOpen.sync="isSettingsOpen"></settings>
         <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
 
-        <input v-model="blah" type="text" width="50">
-        <button @click="qqq">asve</button>
+        <!-- <input v-model="blah" type="text" width="50">
+        <button @click="qqq">asve</button> -->
     </section>
 
 </template>
@@ -46,7 +44,7 @@ import { Vue, Component, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import collectionView from './collection/collection-view.vue';
-import wordList from './list/word-list.vue';
+import listView from './list/list-view.vue';
 import wordEditor from './editor/word-editor.vue';
 import settings from './dialogs/settings.vue';
 import bulkimport from './dialogs/bulk-import.vue';
@@ -75,7 +73,7 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         collectionView,
-        wordList,
+        listView,
         wordEditor,
 
         settings,
@@ -169,11 +167,11 @@ export default class App extends Vue {
     }
 }
 
-.word-list {
+/* .word-list {
     width: 15em;
     flex-shrink: 0;
     margin-right: 16px;
-}
+} */
 
 .word-editor {
     margin-left: 16px;

@@ -213,6 +213,7 @@ const actions = {
         }
 
         context.commit('REMOVE_WORD', { list, word });
+        context.commit('DESELECT_WORD', word);
         actions.writeList(context, list.id);
     },
 
@@ -246,9 +247,18 @@ const actions = {
         context: CollectionContext,
         options: { wordId: string }
     ): void {
-        const word: CollectionWord = context.getters.getPooledWords.find(
-            (word: CollectionWord) => word.id === options.wordId
+        const { wordId } = options;
+
+        // find a list with the provided wordId
+        const list = Array.from(state.lists.values()).find(list =>
+            list.words.has(wordId)
         );
+        if (list === undefined) {
+            return;
+        }
+
+        const word: CollectionWord | undefined = list.words.get(wordId);
+
         if (word === undefined) {
             return;
         }

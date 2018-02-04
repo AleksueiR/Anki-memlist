@@ -31,10 +31,10 @@
             </ul>
         </section>
 
-        <!-- {{ selectedLists[0].index.length }} -->
-        <!-- {{ getPooledWords.length }}
+        <span>{{ getPooledWords.length }} words</span> <span v-if="selectedLists.length > 1">{{ selectedLists.length }} lists</span>
 
-        <div v-for="word in getPooledWords" :key="word.id">{{ word.text }}</div> -->
+
+        <!-- <div v-for="word in getPooledWords" :key="word.id">{{ word.text }}</div> -->
 
         <div class="container" v-if="false">
             <!-- <el-row>
@@ -83,6 +83,8 @@
 </template>
 
 <script lang="ts">
+// TODO: use virual scroller for the list view: https://github.com/Akryum/vue-virtual-scroller#variable-height-mode
+
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
@@ -124,13 +126,24 @@ const ActionCL = namespace('collection', Action);
 })
 export default class WordList extends Vue {
     @StateCL selectedLists: CollectionList[];
+    @StateCL selectedWords: CollectionWord[];
 
-    @GetterCL getPooledWords: CollectionList[];
+    @GetterCL getPooledWords: CollectionWord[];
 
     @ActionCL
     addWord: (payload: { listId: string; word: CollectionWord }) => void;
     @ActionCL
     selectWord: (payload: { wordId: string; annex?: Boolean }) => void;
+    @ActionCL deselectWord: (payload: { wordId: string }) => void;
+
+    @Watch('getPooledWords')
+    onGetPooledWordsChanged(value: CollectionWord[]): void {
+        this.selectedWords.forEach(word => {
+            if (!this.getPooledWords.includes(word)) {
+                this.deselectWord({ wordId: word.id });
+            }
+        });
+    }
 
     lookup: string = '';
 
@@ -275,6 +288,8 @@ export default class WordList extends Vue {
 </script>
 
 <style lang="scss" scoped>
+@import './../../styles/variables';
+
 .list-view {
     width: 15em;
     flex-shrink: 0;

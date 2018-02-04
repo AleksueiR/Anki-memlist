@@ -1,13 +1,15 @@
 <template>
-    <li @click="selectWord({ wordId: word.id })"
+    <li @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
         @mouseover="isOver = true"
         @mouseleave="isOver = false"
-        :class="{ over: isOver }">
+        class="list-item"
+        :class="{ over: isOver, checked: selectedWords.includes(word) }">
+
         <el-row type="flex" align="middle" >
             <el-col :span="12">
                 <span>{{ word.text }} {{ selectedWords.includes(word) }} <!-- /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }} ) --></span>
             </el-col>
-            <el-col :span="12" v-if="isOver" class="word-controls">
+            <el-col :span="12" v-if="true || isOver" class="word-controls">
                 <el-button-group>
                     <el-tooltip content="Mark as added" placement="top-start">
                         <el-button icon="el-icon-check" @click.stop.prevent="archiveWord({ wordId: word.id })" size="small"></el-button>
@@ -18,6 +20,7 @@
                 </el-button-group>
             </el-col>
         </el-row>
+
     </li>
 </template>
 
@@ -28,12 +31,6 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import moment from 'moment';
 
-import {
-    Word,
-    dFetchWods,
-    dSyncWords,
-    rItems
-} from './../../store/modules/words';
 import { CollectionWord } from '../../store/modules/collection/index';
 
 const StateCL = namespace('collection', State);
@@ -49,7 +46,7 @@ export default class WordItem extends Vue {
     archiveWord: (payload: { wordId: string; archived: boolean }) => void;
     @ActionCL removeWord: (wordId: string) => void;
 
-    @Prop() word: Word;
+    @Prop() word: CollectionWord;
 
     isOver: boolean = false;
 
@@ -76,6 +73,16 @@ export default class WordItem extends Vue {
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
+.list-item {
+    &.checked {
+        background-color: darken($secondary-colour, 10%);
+    }
+
+    &:hover {
+        background-color: $secondary-colour;
+    }
+}
+
 .el-row {
     height: 36px;
     padding: 8px;
@@ -92,6 +99,6 @@ button {
 }
 
 .over {
-    background-color: $secondary-colour;
+    // background-color: $secondary-colour;
 }
 </style>

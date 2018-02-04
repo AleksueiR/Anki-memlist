@@ -33,8 +33,6 @@
         <settings :isOpen.sync="isSettingsOpen"></settings>
         <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
 
-        <!-- <input v-model="blah" type="text" width="50">
-        <button @click="qqq">asve</button> -->
     </section>
 
 </template>
@@ -98,12 +96,6 @@ export default class App extends Vue {
     @ActionCL('addList') addList: (list: CollectionList) => void;
     @ActionCL('selectList') selectList: (options: { listId: string }) => void;
 
-    blah: string = '';
-
-    qqq(event: Event) {
-        this.addList(new CollectionList({ name: this.blah }));
-    }
-
     @Watch('isSettingsOpen')
     onIsSettingsOpenChange(value: boolean): void {
         console.log('!!!!');
@@ -121,7 +113,9 @@ export default class App extends Vue {
     }
 
     mounted(): void {
-        this.init();
+        // TODO: when should setting check happen
+        // this.init();
+
         console.log('fetch index');
         this.fetchIndex();
     }
@@ -135,10 +129,6 @@ export default class App extends Vue {
             cOpenSettings(this.$store, true);
         }
     }
-
-    /* get collectionIndex() {
-        return rCollectionIndex(this.$store);
-    } */
 }
 </script>
 

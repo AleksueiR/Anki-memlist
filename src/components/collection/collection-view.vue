@@ -22,6 +22,7 @@
                 node-key="listId"
                 :show-checkbox="false"
                 :check-strictly="true"
+                :highlight-current="false"
                 :render-content="renderContent"
                 @node-click="nodeClick"
                 ref="tree"></el-tree>
@@ -30,7 +31,7 @@
 
             selected Nodes: {{ selectedNodes }}
             current key: {{ currentKey }};
-            renameListId: {{ renameListId }}
+            renamedListId: {{ renamedListId }}
             <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div>
         </div>
 
@@ -97,8 +98,8 @@ export default class CollectionView extends Vue {
 
     @ActionCL('addList') addList: (list: CollectionList) => void;
 
-    @ActionCL('renameLIst')
-    renameLIst: (payload: { listId: string; name: string }) => void;
+    @ActionCL('renameList')
+    renameList: (payload: { listId: string; name: string }) => void;
 
     @ActionCL
     selectList: (
@@ -132,13 +133,9 @@ export default class CollectionView extends Vue {
         h: any,
         { node, data, store }: { node: any; data: CollectionTree; store: any }
     ) {
-        // console.log(h, node, data, store);
-
-        let a: Tree;
-
         const list: CollectionList = this.lists.get(data.listId)!;
 
-        if (data.listId === this.renameListId) {
+        if (data.listId === this.renamedListId) {
             return h('el-input', {
                 attrs: {
                     // autofocus: true,
@@ -160,7 +157,7 @@ export default class CollectionView extends Vue {
                             // enter
                             // console.log(event, data.listId);
 
-                            this.renameLIst({
+                            this.renameList({
                                 listId: data.listId,
                                 name: (<HTMLInputElement>event.target).value
                             });
@@ -198,62 +195,87 @@ export default class CollectionView extends Vue {
     nodeClick(data: CollectionTree, node: any, store: any) {
         const tree: Tree = this.$refs.tree as Tree;
 
-        console.log(store, node, tree);
+        if (!tree) {
+            return;
+        }
 
+        const selectedKeys: string[] = this.selectedLists.map(list => list.id);
+
+        // mark corresponding nodes in the tree as selected
         tree.setCheckedKeys(
-            //this.selectedNodes.concat([data.listId])
-            [data.listId]
+            this.ctrlPressed ? selectedKeys.concat(data.listId) : [data.listId]
         );
 
         console.log(tree.getCheckedKeys());
-
         this.selectedNodes = tree.getCheckedKeys();
-        this.selectList({ listId: this.selectedNodes[0] });
+
+        this.selectList({ listId: data.listId, annex: this.ctrlPressed });
     }
 
     selectedNodes: string[] = [];
 
-    renameListId: string = '_!';
+    renamedListId: string = '_!';
+    ctrlPressed: boolean = false;
 
-    get currentKey() {
-        const tree: Tree = this.$refs.tree as Tree;
-        if (!tree) {
-            return '-';
+    currentKey: string = '';
+
+    keyDownHandler(event: KeyboardEvent): void {
+        /* console.log(event, '--', (this.$refs.tree as Tree).getCurrentKey());
+
+        const tree2: Tree = this.$refs.tree as Tree;
+        if (!tree2) {
+            this.currentKey = '-';
         }
 
-        console.log('getCurrentKey', tree.getCurrentKey());
+        this.currentKey = tree2.getCurrentKey(); */
 
-        return tree.getCurrentKey();
-    }
+        // TODO: override the default tree keyboard handling
 
-    renameList(event: KeyboardEvent): void {
-        console.log(event, '--', (this.$refs.tree as Tree).getCurrentKey());
-
-        if (event.keyCode !== 113) {
+        /* const tree: Tree = this.$refs.tree as Tree;
+        if (!tree) {
+            console.error('Tree is not defined');
             return;
+        } */
+
+        // assume at least one list is selected
+        if (event.keyCode === Vue.config.keyCodes.f2) {
+            this.renamedListId = this.selectedLists[0].id;
+        }
+
+        if (event.keyCode === Vue.config.keyCodes.ctrl) {
+            this.ctrlPressed = true;
         }
 
         event.preventDefault();
+    }
 
-        const tree: Tree = this.$refs.tree as Tree;
+    keyUpHandler(event: KeyboardEvent): void {
+        if (event.keyCode === Vue.config.keyCodes.ctrl) {
+            this.ctrlPressed = false;
+        }
 
-        this.renameListId = tree.getCurrentKey();
+        event.preventDefault();
     }
 
     blur(event: KeyboardEvent): void {
         console.log('blur', event);
 
-        this.renameListId = '';
+        this.renamedListId = '';
     }
 
     mounted() {
-        this.$el.addEventListener('keydown', this.renameList);
+        console.log(
+            'mounteed looking for tree',
+            (this.$refs.tree as Tree).getCurrentKey()
+        );
+        this.$el.addEventListener('keydown', this.keyDownHandler);
+        this.$el.addEventListener('keyup', this.keyUpHandler);
     }
 
     createNewList(): void {
         const list = new CollectionList({ name: 'Untitled List' });
         this.addList(list);
-        this.renameListId = list.id;
+        this.renamedListId = list.id;
     }
 }
 </script>
@@ -307,23 +329,32 @@ export default class CollectionView extends Vue {
     }
 }
 
-// move caret icon to the right
-/deep/ .el-tree-node__expand-icon {
-    order: 1;
-    transform: rotate(90deg);
+.el-tree /deep/ {
+    color: $text-colour;
+    user-select: none;
 
-    &.expanded {
-        transform: rotate(-90deg);
+    // move caret icon to the right
+    .el-tree-node__expand-icon {
+        order: 1;
+        transform: rotate(90deg);
+
+        &.expanded {
+            transform: rotate(-90deg);
+        }
     }
-}
 
-/deep/ .el-tree-node {
-    &:focus > .el-tree-node__content {
-        //background-color: transparent;
-    }
+    .el-tree-node {
+        &:focus > .el-tree-node__content {
+            background-color: transparent;
+        }
 
-    &.is-checked > .el-tree-node__content {
-        //background-color: lightblue;
+        &.is-checked > .el-tree-node__content {
+            background-color: darken($secondary-colour, 10%);
+        }
+
+        &:hover > .el-tree-node__content {
+            background-color: $secondary-colour;
+        }
     }
 }
 

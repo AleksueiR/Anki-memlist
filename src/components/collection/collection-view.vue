@@ -15,6 +15,15 @@
                 <font-awesome-icon icon="plus" /> Add List
             </el-button>
 
+            <!-- <TreeView :model="index.tree.items" category="items" :selection="treeSelection" :onSelect="treeOnSelect"
+                :dragndrop="treeDragndrop"
+                :display="treeDisplay">
+            </TreeView>
+
+            {{ treeSelection }} -->
+
+            <treee v-model="treeItems"></treee>
+
             <el-tree
                 :data="index.tree.items"
                 :expand-on-click-node="false"
@@ -56,6 +65,9 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 import { Tree } from 'element-ui/types';
+import { TreeView } from '@bosket/vue';
+
+import treee from './../treee/treee.vue';
 
 import {
     CollectionState,
@@ -63,7 +75,6 @@ import {
     CollectionIndex,
     CollectionList
 } from '../../store/modules/collection/index';
-import { longStackTraces } from 'bluebird';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -84,22 +95,59 @@ Vue.directive('input-focus', {
 
 @Component({
     components: {
-        FontAwesomeIcon
+        FontAwesomeIcon,
+        treee,
+        TreeView
     }
 })
 export default class CollectionView extends Vue {
+    treeSelection = [];
+    treeOnSelect(data: any) {
+        console.log('treeOnSelect', data);
+    }
+
+    treeDisplay(tree: any) {
+        return tree.listId;
+    }
+
+    treeDragndrop = {
+        draggable: true,
+        droppable: true,
+        over: (target: any, event: any, inputs: any) => {
+            // console.log('over', target, event, inputs);
+        },
+        enter: (target: any, event: any, inputs: any) => {
+            console.log('enter', target, event, inputs);
+        },
+        leave: (target: any, event: any, inputs: any) => {
+            console.log('leave', target, event, inputs);
+        }
+    };
+
     // #region vuex
 
-    @StateCL('index') index: CollectionIndex;
-    @StateCL('lists') lists: Map<string, CollectionList>;
+    get treeItems() {
+        return this.index.tree.safeJSON.items!;
+    }
+
+    set treeItems(items: CollectionTree[]) {
+        console.log('set tree items', items);
+
+        const newIndexTree = new CollectionTree({ items }, this.index);
+        this.setIndexTree({ tree: newIndexTree });
+    }
+
+    @StateCL index: CollectionIndex;
+    @StateCL lists: Map<string, CollectionList>;
     @StateCL selectedLists: CollectionList[];
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
-    @ActionCL('addList') addList: (list: CollectionList) => void;
+    @ActionCL setIndexTree: (options: { tree: CollectionTree }) => void;
 
-    @ActionCL('renameList')
-    renameList: (payload: { listId: string; name: string }) => void;
+    @ActionCL addList: (list: CollectionList) => void;
+
+    @ActionCL renameList: (payload: { listId: string; name: string }) => void;
 
     @ActionCL
     selectList: (
@@ -115,6 +163,10 @@ export default class CollectionView extends Vue {
 
         return -1;
     } */
+
+    draggableOptions = {
+        draggable: '.el-tree-node'
+    };
 
     treeProps = {
         label: (tree: CollectionTree) => this.getListName(tree.listId),
@@ -356,10 +408,5 @@ export default class CollectionView extends Vue {
             background-color: $secondary-colour;
         }
     }
-}
-
-///
-/deep/ .foot {
-    flex: 1;
 }
 </style>

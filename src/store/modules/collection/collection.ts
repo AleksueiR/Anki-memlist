@@ -107,6 +107,16 @@ const actions = {
         }
     },
 
+    setIndexTree(
+        context: CollectionContext,
+        options: { tree: CollectionTree }
+    ): void {
+        const { tree } = options;
+
+        context.commit('SET_INDEX_TREE', { tree });
+        actions.writeIndex(context);
+    },
+
     addList(context: CollectionContext, list: CollectionList): void {
         // context.commit('ADD_LIST', { tree: state.index.tree, list });
         context.commit('ADD_LIST', {
@@ -288,6 +298,10 @@ const mutations = {
 
     SET_DEFAULT_LIST(state: CollectionState, list: CollectionList): void {
         state.index.defaultListId = list.id;
+    },
+
+    SET_INDEX_TREE(state: CollectionState, options: { tree: CollectionTree }) {
+        state.index.tree = options.tree;
     },
 
     ADD_LIST(

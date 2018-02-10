@@ -74,7 +74,7 @@ export class CollectionIndex {
     readonly id: string;
     protected _defaultListId: string | null;
 
-    readonly tree: CollectionTree;
+    protected _tree: CollectionTree;
 
     readonly dateCreated: number;
     dateModified: number;
@@ -93,6 +93,15 @@ export class CollectionIndex {
         this.tree = new CollectionTree(tree, this);
         this.dateCreated = dateCreated;
         this.dateModified = dateModified;
+    }
+
+    set tree(value: CollectionTree) {
+        this._tree = value;
+        this.update();
+    }
+
+    get tree(): CollectionTree {
+        return this._tree;
     }
 
     set defaultListId(value: string | null) {

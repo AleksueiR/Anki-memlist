@@ -8,6 +8,7 @@
 
             <span class="divider before"
                 ref="dividerBefore"
+                :class="{ double: index === 0 }"
                 @mouseover="mouseOver('before', $event)"
                 @mouseout="mouseOut"></span>
 
@@ -22,11 +23,13 @@
                     class="item"
                     :is="renderer"
                     :item="item"></component>
+
+                <span class="highlight" ref="highlight"></span>
             </div>
 
             <span class="divider after"
                 ref="dividerAfter"
-                v-if="item.items.length === 0"
+                v-if="!hasChildren"
                 @mouseover="mouseOver('after', $event)"
                 @mouseout="mouseOut"></span>
         </div>
@@ -37,13 +40,13 @@
                 :renderer="renderer"
                 :item="subItem"
                 :level="level + 1"
+                :index="index"
                 :key="`${index}-node`">
             </treee-node>
         </div>
 
         <!-- the very last divider - needed to move items to the top level when the last item in the top level has children -->
         <span class="divider before"
-            ref="dividerAfter"
             v-if="isLast && level === 0"
             @mouseover="mouseOver('after', $event)"
             @mouseout="mouseOut"></span>
@@ -69,12 +72,18 @@ import Treee, {
 @Component
 export default class TreeeNode extends Vue {
     @Prop() renderer: Vue;
-    // @Prop() itemList: CollectionTree[];
     @Prop() item: CollectionTree;
     @Prop() level: number;
+    @Prop() index: number;
     @Prop() isLast: boolean;
 
     treee: Treee;
+
+    get hasChildren(): boolean {
+        return this.item.items.length > 0;
+    }
+
+    preventNextClick: boolean = false;
 
     created(): void {
         if (this.$parent instanceof Treee) {
@@ -84,62 +93,62 @@ export default class TreeeNode extends Vue {
         } else {
             console.error('something is wrong');
         }
-
-        /* this.tree.$on('start-drag', () => (this.isDragging = true));
-        this.tree.$on('stop-drag', () => (this.isDragging = false));  */
-
-        // this.tree.$on('stop-drag', this.mouseUp);
     }
 
     mounted(): void {
         console.log('parent tree', this.treee);
 
-        (<HTMLElement>this.$refs.content).style.paddingLeft = `${this.level *
-            16}px`;
+        const indent = `${this.level * 16}px`;
 
-        (<HTMLElement>this.$refs.dividerBefore).style.paddingLeft = `${this
-            .level * 16}px`;
-        if (this.item.items.length === 0) {
-            (<HTMLElement>this.$refs.dividerAfter).style.paddingLeft = `${this
-                .level * 16}px`;
+        this.getRef('content').style.paddingLeft = indent;
+        this.getRef('highlight').style.left = indent;
+        this.getRef('dividerBefore').style.left = indent;
+
+        // the afte divider does not exist if item has children of its own
+        if (!this.hasChildren) {
+            this.getRef('dividerAfter').style.left = indent;
         }
+
+        this.treee.$on('start-drag', this.onDragStart);
+    }
+
+    getRef(refName: string): HTMLElement {
+        return this.$refs[refName] as HTMLElement;
+    }
+
+    onDragStart(dragItem: TreeDragItem): void {
+        if (this.item !== dragItem.item) {
+            return;
+        }
+
+        this.preventNextClick = true;
     }
 
     mouseDown(event: MouseEvent): void {
-        // this.$el.classList.add('no-drop');
+        // prevent text from being selected when dragging
+        event.preventDefault();
 
         const dragItem: TreeDragItem = {
             event,
-            node: this.$el,
-            // clone: this.$el.cloneNode(true) as HTMLElement,
+            node: this.$refs.content as HTMLElement,
             clone: (<HTMLElement>this.$refs.content).cloneNode(
                 true
             ) as HTMLElement,
-            // itemList: this.itemList,
             item: this.item
         };
 
         dragItem.clone.classList.add('clone');
 
-        this.treee.$emit('start-drag', dragItem);
+        this.treee.$emit('init-drag', dragItem);
     }
-
-    /* mouseUp(): void {
-        this.tree.$emit('stop-drag');
-
-        // this.$el.classList.remove('no-drop');
-    } */
 
     mouseOver(position: TreeeDropPosition, event: MouseEvent): void {
         if (!this.treee.dragItem) {
             return;
         }
 
-        // (<HTMLElement>this.$refs.container).classList.add('over');
-
         const dropTarget: TreeDropTarget = {
             node: event.currentTarget as HTMLElement,
-            // itemList: this.itemList,
             item: this.item,
             position: TreeeDropPosition[position]
         };
@@ -152,17 +161,12 @@ export default class TreeeNode extends Vue {
             return;
         }
 
-        // (<HTMLElement>this.$refs.container).classList.remove('over');
-
-        this.treee.$emit(
-            'drag-out' /* , {
-            node: event.currentTarget as HTMLElement
-        } */
-        );
+        this.treee.$emit('drag-out');
     }
 
     click(event: MouseEvent): void {
-        if (this.treee.dragItem) {
+        if (this.preventNextClick) {
+            this.preventNextClick = false;
             return;
         }
 
@@ -175,75 +179,90 @@ export default class TreeeNode extends Vue {
 @import './../../styles/variables';
 
 @mixin drag-over-highlight {
-    background-color: $even-darker-secondary-colour !important;
+    background-color: $accent-colour !important;
 }
 
-/* .item {
-    display: block;
-
-    &.over {
-        @include drag-over-highlight();
-    }
-} */
-
 .treee-node {
-    &.no-drop {
-        cursor: no-drop;
-    }
+}
+
+.container {
+    position: relative;
 }
 
 .content {
     &:hover {
         background-color: $secondary-colour;
-
-        .no-drop & {
-            background-color: transparent;
-        }
     }
 
     &.over {
-        @include drag-over-highlight();
+        .highlight {
+            display: block;
+        }
+    }
+
+    &.no-drop {
+        cursor: no-drop;
+
+        &:hover {
+            background-color: transparent;
+        }
     }
 }
 
-.nested {
-    margin-left: 20px;
-    position: relative;
+.highlight {
+    display: none;
+    pointer-events: none;
+    position: absolute;
+    // border: 2px solid $accent-colour;
+    background-color: rgba($accent-colour, 0.2);
+    right: 0;
+    bottom: 0;
+    top: 0;
 }
 
 //.dragging {
 .divider {
-    display: none;
+    // display: none;
     position: absolute;
-    width: 100%;
+    left: 0;
+    right: 0;
+
+    $divider-trigger-height: 6px;
+    $divider-action-height: 2px;
 
     &.before,
     &.after {
+        height: $divider-trigger-height;
+
         &:after {
             content: '';
             position: absolute;
-            height: 6px;
-            // left: 0;
+            height: $divider-action-height;
             width: 100%;
             pointer-events: none;
         }
     }
 
     &.before {
-        margin-bottom: -3px;
-        height: 3px;
-
         &:after {
-            margin-top: -3px;
+            margin-top: - $divider-action-height / 2;
+        }
+
+        &.double {
+            height: $divider-trigger-height * 2;
+            margin-top: - $divider-trigger-height;
+
+            &:after {
+                margin-top: $divider-trigger-height - $divider-action-height / 2;
+            }
         }
     }
 
     &.after {
-        height: 3px;
-        margin-top: -3px;
+        margin-top: -$divider-trigger-height;
 
         &:after {
-            margin-bottom: -3px;
+            margin-top: $divider-trigger-height - $divider-action-height / 2;
         }
     }
 

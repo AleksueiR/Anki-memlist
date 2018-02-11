@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="collection-item">
         <span class="meti">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
     </div>
 </template>
@@ -37,4 +37,14 @@ export default class CollectionItem extends Vue {
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
+
+.collection-item {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    // margin: 0 0.5rem 0 0.5rem;
+}
+
+.meti {
+}
 </style>

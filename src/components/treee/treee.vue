@@ -1,17 +1,13 @@
 <template>
     <div class="treee-root" role="tree"
-        :class="{ dragging: dragItem }"
-        @mouseup="stopDrag()"
-        @mousemove="moveDrag"
-        @mouseleave="stopDrag(true)">
-
-        <!--  -->
+        :class="{ dragging: dragItem }">
 
         <treee-node
             v-for="(item, index) in items"
             :renderer="renderer"
             :item="item"
             :level="0"
+            :index="index"
             :isLast="index === items.length - 1"
             :key="`${index}-node`">
         </treee-node>
@@ -33,24 +29,11 @@ import deepmerge from 'deepmerge';
 import { CollectionTree } from './../../store/modules/collection/index';
 import TreeeNode from './treee-node.vue';
 
-/* export class TreeeStore extends Vue {
-    isDragging: boolean = false;
-
-    treeTrunk: Treee;
-} */
-
 export enum TreeeDropPosition {
     before = 'before',
     after = 'after',
     middle = 'middle'
 }
-
-/* export class TreeeDragOverEvent {
-    node: HTMLElement;
-    itemList: any[];
-    item: any;
-    position: TreeeDropPosition;
-} */
 
 export interface TreeDragItem {
     event: MouseEvent;
@@ -84,21 +67,13 @@ export default class Treee extends Vue {
     @Watch('value')
     onValueChanged() {
         this.items = deepmerge({}, { items: this.value }).items;
-        this.stopDrag(true);
+        this.dropTarget = null;
+        this.stopDrag();
     }
 
     @Prop() renderer: Vue;
 
-    /* drag: {
-        node: HTMLElement; // this is a clone
-        itemList: any[];
-        item: any;
-    } | null = null;
-
-    target: TreeeDragOverEvent | null = null; */
-
-    /* treeVm: TreeeStore = new TreeeStore(); */
-
+    dragOrigin: TreeDragItem | null = null;
     dragItem: TreeDragItem | null = null;
     dropTarget: TreeDropTarget | null = null;
 
@@ -111,51 +86,74 @@ export default class Treee extends Vue {
     }
 
     mounted(): void {
-        this.$on('start-drag', this.startDrag);
-        // this.treeVm.$on('stop-drag', this.stopDrag);
+        this.$on('init-drag', this.initDrag);
         this.$on('drag-over', this.dragOver);
         this.$on('drag-out', this.dragOut);
-
-        /* this.$on('node-click', (...args: any[]) =>
-            this.$emit('node-click', ...args)
-        ); */
     }
 
-    /* mouseOut(event: MouseEvent): void {
-        if (!this.treeVm.isDragging) {
+    initDrag(dragItem: TreeDragItem): void {
+        this.dragOrigin = dragItem;
+
+        document.addEventListener('mousemove', this.startDetection);
+        document.addEventListener('mouseup', this.stopDetection);
+    }
+
+    startDetection(event: MouseEvent): void {
+        if (!this.dragOrigin) {
             return;
         }
 
-        console.log(event.target, event.currentTarget);
+        const [x, y] = [
+            this.dragOrigin.event.pageX - event.pageX,
+            this.dragOrigin.event.pageY - event.pageY
+        ];
+        const c = Math.sqrt(x * x + y * y);
 
-        if (event.target === this.$el) {
-            this.stopDrag();
+        // if move of 3 pixels detected, start drag
+        if (c > 3) {
+            this.stopDetection();
+            this.startDrag(this.dragOrigin);
         }
-    } */
+    }
+
+    stopDetection(): void {
+        document.removeEventListener('mousemove', this.startDetection);
+        document.removeEventListener('mouseup', this.stopDetection);
+    }
 
     startDrag(dragItem: TreeDragItem): void {
+        document.addEventListener('mouseup', this.stopDrag);
+        document.addEventListener('mousemove', this.moveDrag);
+
         this.dragItem = dragItem;
         this.dragItem.node.classList.add('no-drop');
         this.root.appendChild(this.dragItem.clone);
+
+        this.$emit('start-drag', this.dragItem);
+
         this.moveDrag(this.dragItem.event);
     }
 
-    stopDrag(cancelDrop: boolean = false): void {
+    stopDrag(): void {
+        document.removeEventListener('mouseup', this.stopDrag);
+        document.removeEventListener('mousemove', this.moveDrag);
+
+        this.dragOrigin = null;
+
         if (!this.dragItem) {
             return;
         }
 
         if (this.dropTarget) {
-            if (!cancelDrop) {
-                this.performDrop();
-            }
-
+            this.performDrop();
             this.dragOut();
         }
 
         this.dragItem.node.classList.remove('no-drop');
         this.root.removeChild(this.dragItem.clone);
         this.dragItem = null;
+
+        this.$emit('stop-drag');
     }
 
     moveDrag(event: MouseEvent): void {
@@ -172,19 +170,19 @@ export default class Treee extends Vue {
             return;
         }
 
-        // prevent items being dropped onto their children
+        // prevent items being dropped their children
         if (this.contains(dropTarget.item, this.dragItem.item)) {
             return;
         }
 
-        /* // prevent items from being dropped onto themselves
+        // prevent items being dropped onto themselves
+        // dropping an item before or after itself is okay
         if (
-            event.item[this.keyProp] === this.drag!.item[this.keyProp] &&
-            event.position === TreeeDropPosition.middle
+            this.dragItem.item === dropTarget.item &&
+            dropTarget.position === TreeeDropPosition.middle
         ) {
-            // event.node.classList.add('no-drop');
             return;
-        } */
+        }
 
         this.dropTarget = dropTarget;
         this.dropTarget.node.classList.add('over');
@@ -206,26 +204,24 @@ export default class Treee extends Vue {
 
         console.log('drop');
 
+        // at item being dropped before or after itself
+        // the order will not change
+        if (this.dragItem.item === this.dropTarget.item) {
+            return;
+        }
+
         const {
             list: dragItemParentList,
             index: dragItemIndex
         } = this.findItemPosition(this.dragItem.item);
 
         // remove dragged item from its parent list
-        /* const dragItemIndex = this.drag.itemList.findIndex(
-            item => item[this.keyProp] === this.drag!.item[this.keyProp]
-        ); */
-        //this.drag.itemList.splice(dragItemIndex, 1);
         dragItemParentList.splice(dragItemIndex, 1);
 
         const {
             list: targetItemParentList,
             index: targetItemIndex
         } = this.findItemPosition(this.dropTarget.item);
-
-        /* const targetItemIndex = this.target.itemList.findIndex(
-            item => item[this.keyProp] === this.target!.item[this.keyProp]
-        ); */
 
         switch (this.dropTarget.position) {
             case TreeeDropPosition.before:
@@ -277,32 +273,21 @@ export default class Treee extends Vue {
         }
 
         return answer;
-
-        /* const index = treeItems.findIndex((treeItem: any) => treeItem[this.keyProp] === item[this.keyProp]);
-
-        if (index !== -1) {
-            return {
-                parentList: treeItems,
-                index
-            }
-        }
-
-
-
-        treeItems.map((treeItem: any) => this.findItemPosition(item, treeItem.items as any[])) */
     }
 
     contains(item: any, parent: any): boolean {
-        if (item[this.keyProp] === parent[this.keyProp]) {
+        /* if (item[this.keyProp] === parent[this.keyProp]) {
             return true;
-        }
+        } */
 
         if (parent.items.length === 0) {
             return false;
         }
 
-        return (<any[]>parent.items).find(subItem =>
-            this.contains(item, subItem)
+        return (<any[]>parent.items).find(
+            subItem =>
+                item[this.keyProp] === subItem[this.keyProp] ||
+                this.contains(item, subItem)
         );
     }
 }
@@ -313,7 +298,7 @@ export default class Treee extends Vue {
 
 .treee-root {
     cursor: default;
-    user-select: none;
+    // user-select: none;
     position: relative;
 
     &.dragging /deep/ {

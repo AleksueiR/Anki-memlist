@@ -22,7 +22,13 @@
 
             {{ treeSelection }} -->
 
-            <treee v-model="treeItems"></treee>
+            <treee
+                v-model="treeItems"
+                :renderer="renderer"
+                @node-click="nodeClick"
+                ></treee>
+
+            <hr>
 
             <el-tree
                 :data="index.tree.items"
@@ -65,8 +71,8 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 import { Tree } from 'element-ui/types';
-import { TreeView } from '@bosket/vue';
 
+import CollectionItem from './collection-item.vue';
 import treee from './../treee/treee.vue';
 
 import {
@@ -96,11 +102,12 @@ Vue.directive('input-focus', {
 @Component({
     components: {
         FontAwesomeIcon,
-        treee,
-        TreeView
+        treee
     }
 })
 export default class CollectionView extends Vue {
+    renderer = CollectionItem;
+
     treeSelection = [];
     treeOnSelect(data: any) {
         console.log('treeOnSelect', data);
@@ -244,7 +251,12 @@ export default class CollectionView extends Vue {
         );
     }
 
-    nodeClick(data: CollectionTree, node: any, store: any) {
+    nodeClick(node: CollectionTree, event: MouseEvent): void {
+        // console.log(node, event);
+        this.selectList({ listId: node.listId, annex: event.ctrlKey });
+    }
+
+    _nodeClick(data: CollectionTree, node: any, store: any) {
         const tree: Tree = this.$refs.tree as Tree;
 
         if (!tree) {

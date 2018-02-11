@@ -53,14 +53,14 @@
 
         <section class="container main" v-if="word">
             <section class="content cm-scrollbar">
-                    <div v-for="source in sources" :key="source.id" :id="source.id" class="source-view">
+                    <div v-for="source in sourceOrder" :key="source.id" :id="source.id" class="source-view">
                         <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
                         <component :is="source.id" :word="word" ></component>
                     </div>
             </section>
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
-                    <li v-for="source in sources" :key="source.id" class="heading">
+                    <li v-for="source in sourceOrder" :key="source.id" class="heading">
                         <a :href="`#${source.id}`" class="anchor">{{ source.name }}</a>
                     </li>
                 </ul>
@@ -78,7 +78,7 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import anki from './../../api/anki';
 
-import QuillEditor from './editor/../quill-editor.vue';
+// import QuillEditor from './editor/../quill-editor.vue';
 
 import sources from './../../sources';
 
@@ -102,8 +102,8 @@ const ActionCL = namespace('collection', Action);
     components: Object.assign(
         {},
         {
-            wordMenu: wordMenu,
-            'quill-editor': QuillEditor
+            wordMenu: wordMenu
+            // 'quill-editor': QuillEditor
         },
         sources
     )
@@ -117,7 +117,7 @@ export default class WordList extends Vue {
 
     raw: string = '';
 
-    sources = [
+    sourceOrder = [
         {
             name: 'Vocabulary.com',
             id: 'vocabulary-source'

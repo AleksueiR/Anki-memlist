@@ -1,5 +1,6 @@
 <template>
-    <div class="collection-item">
+    <div class="collection-item"
+        :class="{ selected: isSelected }">
 
         <span
             class="icon-button default-flag"
@@ -15,7 +16,19 @@
             <font-awesome-icon icon="bookmark" />
         </button> -->
 
-        <span class="meti">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
+        <span class="meti"
+            v-if="!isRenaming">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
+
+        <el-input
+            v-if="isRenaming"
+            v-input-focus
+            v-model="newName"
+            @focus.once="onFocus"
+            @mousedown.native.stop="onClick"
+            @click.native.stop="onClick"
+            @blur="renameListStop(true)"
+            @keyup.native.enter="renameListStop()"
+            @keyup.native.esc="renameListStop(true)"></el-input>
     </div>
 </template>
 
@@ -36,6 +49,7 @@ import {
     CollectionTree,
     CollectionState
 } from '../../store/modules/collection/index';
+import { CollectionBus } from './collection-view.vue';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -46,8 +60,11 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionItem extends Vue {
+    @Inject() collectionBus: CollectionBus;
+
     @Prop() item: CollectionTree;
 
+    @StateCL selectedLists: CollectionList[];
     @StateCL lists: Map<string, CollectionList>;
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
@@ -56,7 +73,56 @@ export default class CollectionItem extends Vue {
         return this.lists.get(this.item.listId)!;
     }
 
-    onBookmarkClick(): void {}
+    get isSelected(): boolean {
+        return this.selectedLists.some(
+            selectedList => this.list.id === selectedList.id
+        );
+    }
+
+    isRenaming: boolean = false;
+    newName: string | null = null;
+
+    mounted(): void {
+        this.collectionBus.$on('rename-list-start', this.renameListStart);
+    }
+
+    renameListStart(listId: string): void {
+        if (this.item.listId !== listId) {
+            return;
+        }
+        this.isRenaming = true;
+        this.newName = this.list.name;
+    }
+
+    renameListStop(cancel: boolean = false): void {
+        if (!this.isRenaming) {
+            return;
+        }
+
+        if (cancel) {
+            this.newName = null;
+        }
+
+        this.isRenaming = false;
+        this.collectionBus.renameListStop(this.item.listId, this.newName);
+    }
+
+    /* onClick(event: MouseEvent): void {
+        console.log('field click');
+
+        event.stopPropagation();
+    } */
+
+    onClick(): void {}
+
+    onFocus(event: FocusEvent): void {
+        console.log('onfocus');
+        (<HTMLInputElement>event.target).select();
+    }
+
+    onBlur(): void {
+        console.log('onblur');
+    }
 }
 </script>
 
@@ -73,6 +139,23 @@ export default class CollectionItem extends Vue {
 
     span {
         line-height: 1.5rem;
+    }
+
+    &.selected:before {
+        background-color: darken($secondary-colour, 10%);
+    }
+
+    &:hover:before {
+        background-color: $secondary-colour;
+    }
+
+    &:before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        z-index: -1;
     }
 }
 
@@ -107,5 +190,15 @@ export default class CollectionItem extends Vue {
     cursor: pointer;
     width: 1.5rem;
     height: 1.5rem;
+}
+
+.el-input /deep/ {
+    font-size: 1rem;
+
+    input {
+        font-family: Segoe UI;
+        height: 1.5rem;
+        border-radius: 0;
+    }
 }
 </style>

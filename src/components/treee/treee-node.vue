@@ -1,9 +1,11 @@
 <template>
     <div class="treee-node"
+        tabindex="-1"
         role="treeitem">
 
         <div class="container"
-            @click="click"
+
+            @click="onClick"
             @mousedown="mouseDown">
 
             <span class="divider before"
@@ -78,10 +80,16 @@ export default class TreeeNode extends Vue {
 
     treee: Treee;
 
-    get hasChildren(): boolean {
-        return this.item.items.length > 0;
+    @Watch('item')
+    onItemChange(): void {
+        this.hasChildren = this.item.items.length !== 0;
+
+        console.log('item update', this.item.listId);
+        // TODO: recalculate item indents here
+        // the item is recycled and not remounted keeped the previous indent
     }
 
+    hasChildren: boolean = false;
     preventNextClick: boolean = false;
 
     created(): void {
@@ -95,8 +103,6 @@ export default class TreeeNode extends Vue {
     }
 
     mounted(): void {
-        console.log('parent tree', this.treee);
-
         const indent = `${this.level * 16}px`;
 
         this.getRef('content').style.paddingLeft = indent;
@@ -109,6 +115,8 @@ export default class TreeeNode extends Vue {
         }
 
         this.treee.$on('start-drag', this.onDragStart);
+
+        console.log('parent tree', this.item.listId, indent, this.hasChildren);
     }
 
     getRef(refName: string): HTMLElement {
@@ -124,6 +132,10 @@ export default class TreeeNode extends Vue {
     }
 
     mouseDown(event: MouseEvent): void {
+        if (!this.treee.draggable) {
+            return;
+        }
+
         // prevent text from being selected when dragging
         event.preventDefault();
 
@@ -163,11 +175,15 @@ export default class TreeeNode extends Vue {
         this.treee.$emit('drag-out');
     }
 
-    click(event: MouseEvent): void {
+    onClick(event: MouseEvent): void {
         if (this.preventNextClick) {
             this.preventNextClick = false;
             return;
         }
+
+        console.log('uini', event);
+
+        this.$el.focus();
 
         this.treee.$emit('node-click', this.item, event);
     }
@@ -181,14 +197,18 @@ export default class TreeeNode extends Vue {
     background-color: $accent-colour !important;
 }
 
+.treee-node {
+    outline: none;
+}
+
 .container {
     position: relative;
 }
 
 .content {
-    &:hover {
+    /* &:hover {
         background-color: $secondary-colour;
-    }
+    } */
 
     &.over {
         .highlight {

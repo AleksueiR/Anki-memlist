@@ -15,23 +15,17 @@
                 <font-awesome-icon icon="plus" /> Add List
             </el-button>
 
-            <!-- <TreeView :model="index.tree.items" category="items" :selection="treeSelection" :onSelect="treeOnSelect"
-                :dragndrop="treeDragndrop"
-                :display="treeDisplay">
-            </TreeView>
-
-            {{ treeSelection }} -->
-
             <treee
                 class="treee"
                 v-model="treeItems"
+                :draggable="isTreeDraggable"
                 :renderer="renderer"
-                @node-click="nodeClick"
-                ></treee>
+                @node-click="nodeClick">
+            </treee>
 
             <hr>
 
-            <el-tree
+            <!-- <el-tree
                 :data="index.tree.items"
                 :expand-on-click-node="false"
                 :props="treeProps"
@@ -41,7 +35,7 @@
                 :highlight-current="false"
                 :render-content="renderContent"
                 @node-click="nodeClick"
-                ref="tree"></el-tree>
+                ref="tree"></el-tree> -->
 
             <!-- {{ getListWordCount('jd3sysjs') }} -->
 
@@ -63,10 +57,11 @@
 import {
     Vue,
     Component,
-    Inject,
+    Provide,
     Model,
     Prop,
-    Watch
+    Watch,
+    Emit
 } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
@@ -86,11 +81,13 @@ import {
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
 
-// Register a global custom directive called `v-focus`
+// Register a global custom directive called `v-input-focus`
 Vue.directive('input-focus', {
     // When the bound element is inserted into the DOM...
     inserted: (element: HTMLElement) => {
         // Focus the element
+
+        console.log('input-auot=focus');
 
         const input = element.querySelector('input');
         if (!input) {
@@ -100,6 +97,14 @@ Vue.directive('input-focus', {
     }
 });
 
+export class CollectionBus extends Vue {
+    @Emit()
+    renameListStart(listId: string) {}
+
+    @Emit()
+    renameListStop(listId: string, name: string | null) {}
+}
+
 @Component({
     components: {
         FontAwesomeIcon,
@@ -107,6 +112,8 @@ Vue.directive('input-focus', {
     }
 })
 export default class CollectionView extends Vue {
+    @Provide() collectionBus = new CollectionBus();
+
     renderer = CollectionItem;
 
     treeSelection = [];
@@ -163,6 +170,8 @@ export default class CollectionView extends Vue {
     ) => void;
 
     // #endregion vuex
+
+    isTreeDraggable: boolean = true;
 
     /* getListWordCount(id: string): number {
         if (this.lists.has(id)) {
@@ -304,14 +313,20 @@ export default class CollectionView extends Vue {
 
         // assume at least one list is selected
         if (event.keyCode === Vue.config.keyCodes.f2) {
-            this.renamedListId = this.selectedLists[0].id;
+            // this.renamedListId = this.selectedLists[0].id;
+
+            event.preventDefault();
+            this.isTreeDraggable = false;
+            this.collectionBus.renameListStart(this.selectedLists[0].id);
         }
 
+        // track ctrl key
+        // TODO: move up to the app-level
         if (event.keyCode === Vue.config.keyCodes.ctrl) {
             this.ctrlPressed = true;
         }
 
-        event.preventDefault();
+        console.log(event.keyCode, 'is pressed');
     }
 
     keyUpHandler(event: KeyboardEvent): void {
@@ -319,7 +334,7 @@ export default class CollectionView extends Vue {
             this.ctrlPressed = false;
         }
 
-        event.preventDefault();
+        // event.preventDefault();
     }
 
     blur(event: KeyboardEvent): void {
@@ -329,12 +344,30 @@ export default class CollectionView extends Vue {
     }
 
     mounted() {
-        console.log(
+        /* console.log(
             'mounteed looking for tree',
             (this.$refs.tree as Tree).getCurrentKey()
-        );
+        ); */
+
         this.$el.addEventListener('keydown', this.keyDownHandler);
         this.$el.addEventListener('keyup', this.keyUpHandler);
+
+        this.collectionBus.$on('rename-list-stop', this.onRenameListStop);
+    }
+
+    onRenameListStop(listId: string, name: string | null) {
+        this.isTreeDraggable = true;
+
+        if (!name) {
+            return;
+        }
+
+        this.renameList({
+            listId,
+            name
+        });
+
+        this.$el.focus();
     }
 
     createNewList(): void {
@@ -404,7 +437,7 @@ export default class CollectionView extends Vue {
     }
 }
 
-.el-tree /deep/ {
+/* .el-tree /deep/ {
     color: $text-colour;
     user-select: none;
 
@@ -431,5 +464,5 @@ export default class CollectionView extends Vue {
             background-color: $secondary-colour;
         }
     }
-}
+} */
 </style>

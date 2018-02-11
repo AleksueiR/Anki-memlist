@@ -18,6 +18,7 @@ declare module '@fortawesome/fontawesome-free-solid/faAngleUp';
 declare module '@fortawesome/fontawesome-free-solid/faAngleDown';
 declare module '@fortawesome/fontawesome-free-solid/faFile';
 declare module '@fortawesome/fontawesome-free-solid/faBookmark';
+declare module '@fortawesome/fontawesome-free-solid/faPlus';
 
 /* declare module 'quill/modules/toolbar';
 declare module 'quill/themes/snow';

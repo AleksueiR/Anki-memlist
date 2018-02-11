@@ -73,6 +73,8 @@ export default class Treee extends Vue {
 
     @Prop() renderer: Vue;
 
+    @Prop() draggable: boolean;
+
     dragOrigin: TreeDragItem | null = null;
     dragItem: TreeDragItem | null = null;
     dropTarget: TreeDropTarget | null = null;

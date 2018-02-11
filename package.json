@@ -6,9 +6,6 @@
     "main": "index.js",
     "dependencies": {},
     "devDependencies": {
-        "@bosket/core": "^0.4.2",
-        "@bosket/tools": "^0.4.2",
-        "@bosket/vue": "^0.4.2",
         "@fortawesome/fontawesome": "^1.1.2",
         "@fortawesome/fontawesome-free-solid": "^5.0.4",
         "@fortawesome/vue-fontawesome": "0.0.22",

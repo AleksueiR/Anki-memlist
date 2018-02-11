@@ -17,14 +17,13 @@
                 @mouseover="mouseOver('middle', $event)"
                 @mouseout="mouseOut">
 
-                <!-- <span class="item">{{ item.listId }}</span> -->
+                <span class="highlight" ref="highlight"></span>
 
                 <component
                     class="item"
                     :is="renderer"
                     :item="item"></component>
 
-                <span class="highlight" ref="highlight"></span>
             </div>
 
             <span class="divider after"
@@ -182,9 +181,6 @@ export default class TreeeNode extends Vue {
     background-color: $accent-colour !important;
 }
 
-.treee-node {
-}
-
 .container {
     position: relative;
 }
@@ -213,7 +209,7 @@ export default class TreeeNode extends Vue {
     display: none;
     pointer-events: none;
     position: absolute;
-    // border: 2px solid $accent-colour;
+    z-index: -1;
     background-color: rgba($accent-colour, 0.2);
     right: 0;
     bottom: 0;
@@ -222,7 +218,7 @@ export default class TreeeNode extends Vue {
 
 //.dragging {
 .divider {
-    // display: none;
+    display: none;
     position: absolute;
     left: 0;
     right: 0;

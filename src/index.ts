@@ -21,9 +21,13 @@ Vue.use(ElementUI);
 const store: Store<State> = createStore();
 
 import fontawesome from '@fortawesome/fontawesome';
-import { faAngleUp, faAngleDown } from '@fortawesome/fontawesome-free-solid';
 
-fontawesome.library.add(faAngleUp, faAngleDown);
+import faAngleUp from '@fortawesome/fontawesome-free-solid/faAngleUp';
+import faAngleDown from '@fortawesome/fontawesome-free-solid/faAngleDown';
+import file from '@fortawesome/fontawesome-free-solid/faFile';
+import bookmark from '@fortawesome/fontawesome-free-solid/faBookmark';
+
+fontawesome.library.add(faAngleUp, faAngleDown, file, bookmark);
 
 Vue.config.keyCodes = {
     up: 38,

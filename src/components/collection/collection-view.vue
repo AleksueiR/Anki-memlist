@@ -23,6 +23,7 @@
             {{ treeSelection }} -->
 
             <treee
+                class="treee"
                 v-model="treeItems"
                 :renderer="renderer"
                 @node-click="nodeClick"
@@ -390,6 +391,16 @@ export default class CollectionView extends Vue {
 
     .el-tree {
         flex: 1;
+    }
+}
+
+.treee /deep/ {
+    .divider {
+        margin-left: 1.5rem;
+    }
+
+    .highlight {
+        left: 0 !important;
     }
 }
 

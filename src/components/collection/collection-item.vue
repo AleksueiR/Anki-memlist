@@ -2,19 +2,21 @@
     <div class="collection-item"
         :class="{ selected: isSelected }">
 
+        <!-- TODO: add higlight layer that spans the width of the row -->
+
         <span
             class="icon-button default-flag"
-            @click.stop="onBookmarkClick"
             v-if="item.listId === defaultListId">
             <font-awesome-icon icon="bookmark" />
         </span>
 
-        <!-- <button
-            class="icon-button default-flag"
-            @click.stop="onBookmarkClick"
-            v-if="item.listId === defaultListId">
-            <font-awesome-icon icon="bookmark" />
-        </button> -->
+        <button
+            class="icon-button hidden-button pin-flag"
+            :class="{ selected: list.pin }"
+            @click.stop="onPinClick"
+            v-if="item.listId !== defaultListId">
+            <font-awesome-icon icon="thumbtack" />
+        </button>
 
         <span class="meti"
             v-if="!isRenaming">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
@@ -69,6 +71,8 @@ export default class CollectionItem extends Vue {
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
+    // TODO: oin list action
+
     get list(): CollectionList {
         return this.lists.get(this.item.listId)!;
     }
@@ -85,6 +89,8 @@ export default class CollectionItem extends Vue {
     mounted(): void {
         this.collectionBus.$on('rename-list-start', this.renameListStart);
     }
+
+    onPinClick(): void {}
 
     renameListStart(listId: string): void {
         if (this.item.listId !== listId) {
@@ -107,12 +113,6 @@ export default class CollectionItem extends Vue {
         this.collectionBus.renameListStop(this.item.listId, this.newName);
     }
 
-    /* onClick(event: MouseEvent): void {
-        console.log('field click');
-
-        event.stopPropagation();
-    } */
-
     onClick(): void {}
 
     onFocus(event: FocusEvent): void {
@@ -129,6 +129,15 @@ export default class CollectionItem extends Vue {
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
+// TODO: move this inot common styles
+.icon-button {
+    color: $even-darker-secondary-colour;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
 .collection-item {
     height: 1.5rem;
     display: flex;
@@ -139,6 +148,13 @@ export default class CollectionItem extends Vue {
 
     span {
         line-height: 1.5rem;
+    }
+
+    &.selected,
+    &:hover {
+        .hidden-button {
+            opacity: 1;
+        }
     }
 
     &.selected:before {
@@ -159,15 +175,32 @@ export default class CollectionItem extends Vue {
     }
 }
 
-.meti {
+.icon-button {
+    color: $dark-secondary-colour;
+    font-size: 0.8rem;
+    cursor: pointer;
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
-.icon-button {
-    color: $even-darker-secondary-colour;
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: 0;
+.hidden-button {
+    opacity: 0;
+
+    &.selected {
+        color: $primary-colour;
+        opacity: 1;
+    }
+
+    &:hover {
+        color: $accent-colour;
+    }
+}
+
+// position pin/default flags on the left
+.default-flag,
+.pin-flag {
+    position: absolute;
+    left: 0;
 }
 
 .default-flag {
@@ -179,17 +212,7 @@ export default class CollectionItem extends Vue {
     cursor: default !important;
 }
 
-.pin-flag,
-.default-flag {
-    position: absolute;
-    left: 0;
-}
-
-.icon-button {
-    font-size: 0.8rem;
-    cursor: pointer;
-    width: 1.5rem;
-    height: 1.5rem;
+.pin-flag {
 }
 
 .el-input /deep/ {
@@ -199,6 +222,14 @@ export default class CollectionItem extends Vue {
         font-family: Segoe UI;
         height: 1.5rem;
         border-radius: 0;
+    }
+}
+
+// adjust visual center
+.pin-flag {
+    svg {
+        position: relative;
+        top: 2px;
     }
 }
 </style>

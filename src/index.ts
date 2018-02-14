@@ -27,8 +27,16 @@ import faAngleDown from '@fortawesome/fontawesome-free-solid/faAngleDown';
 import file from '@fortawesome/fontawesome-free-solid/faFile';
 import bookmark from '@fortawesome/fontawesome-free-solid/faBookmark';
 import faPlus from '@fortawesome/fontawesome-free-solid/faPlus';
+import faThumbtack from '@fortawesome/fontawesome-free-solid/faThumbtack';
 
-fontawesome.library.add(faAngleUp, faAngleDown, file, bookmark, faPlus);
+fontawesome.library.add(
+    faAngleUp,
+    faAngleDown,
+    file,
+    bookmark,
+    faPlus,
+    faThumbtack
+);
 
 Vue.config.keyCodes = {
     up: 38,

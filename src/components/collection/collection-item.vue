@@ -172,6 +172,14 @@ export default class CollectionItem extends Vue {
         height: 100%;
         left: 0;
         z-index: -1;
+
+        &.selected {
+            background-color: darken($secondary-colour, 10%);
+        }
+
+        &:hover {
+            background-color: $secondary-colour;
+        }
     }
 }
 

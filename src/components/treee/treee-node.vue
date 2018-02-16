@@ -4,12 +4,11 @@
         role="treeitem">
 
         <div class="container"
-
+            :class="`level-${level}`"
             @click="onClick"
             @mousedown="mouseDown">
 
             <span class="divider before"
-                ref="dividerBefore"
                 :class="{ double: index === 0 }"
                 @mouseover="mouseOver('before', $event)"
                 @mouseout="mouseOut"></span>
@@ -29,7 +28,6 @@
             </div>
 
             <span class="divider after"
-                ref="dividerAfter"
                 v-if="!hasChildren"
                 @mouseover="mouseOver('after', $event)"
                 @mouseout="mouseOut"></span>
@@ -85,8 +83,6 @@ export default class TreeeNode extends Vue {
         this.hasChildren = this.item.items.length !== 0;
 
         console.log('item update', this.item.listId);
-        // TODO: recalculate item indents here
-        // the item is recycled and not remounted keeped the previous indent
     }
 
     hasChildren: boolean = false;
@@ -103,24 +99,14 @@ export default class TreeeNode extends Vue {
     }
 
     mounted(): void {
-        const indent = `${this.level * 16}px`;
-
-        this.getRef('content').style.paddingLeft = indent;
-        this.getRef('highlight').style.left = indent;
-        this.getRef('dividerBefore').style.left = indent;
-
-        // the afte divider does not exist if item has children of its own
-        if (!this.hasChildren) {
-            this.getRef('dividerAfter').style.left = indent;
-        }
-
         this.treee.$on('start-drag', this.onDragStart);
 
-        console.log('parent tree', this.item.listId, indent, this.hasChildren);
-    }
-
-    getRef(refName: string): HTMLElement {
-        return this.$refs[refName] as HTMLElement;
+        console.log(
+            'parent tree',
+            this.item.listId,
+            this.level,
+            this.hasChildren
+        );
     }
 
     onDragStart(dragItem: TreeDragItem): void {
@@ -157,6 +143,8 @@ export default class TreeeNode extends Vue {
         if (!this.treee.dragItem) {
             return;
         }
+
+        console.log(position, event.target);
 
         const dropTarget: TreeDropTarget = {
             node: event.currentTarget as HTMLElement,
@@ -206,9 +194,7 @@ export default class TreeeNode extends Vue {
 }
 
 .content {
-    /* &:hover {
-        background-color: $secondary-colour;
-    } */
+    position: relative;
 
     &.over {
         .highlight {
@@ -225,27 +211,32 @@ export default class TreeeNode extends Vue {
     }
 }
 
+// TODO: move highlight to the rendered item
+// it should be reponsible for all the highlighting and hover/over effects, not the tree
 .highlight {
     display: none;
     pointer-events: none;
     position: absolute;
     z-index: -1;
     background-color: rgba($accent-colour, 0.2);
+    left: 0;
     right: 0;
     bottom: 0;
     top: 0;
 }
 
-//.dragging {
 .divider {
+    // dividers are not displayed until the dragging starts
     display: none;
     position: absolute;
     left: 0;
     right: 0;
+    z-index: 1;
 
     $divider-trigger-height: 6px;
     $divider-action-height: 2px;
 
+    // both dividers use `:after` elements to draw the divider itself
     &.before,
     &.after {
         height: $divider-trigger-height;
@@ -259,6 +250,7 @@ export default class TreeeNode extends Vue {
         }
     }
 
+    // divider `:after` elements are shifted to be drawn in the same place
     &.before {
         &:after {
             margin-top: - $divider-action-height / 2;
@@ -284,6 +276,21 @@ export default class TreeeNode extends Vue {
 
     &.over:after {
         @include drag-over-highlight();
+    }
+}
+
+@for $i from 0 through 10 {
+    .divider.after,
+    .divider.before {
+        .level-#{$i} & {
+            left: $i * 16px;
+        }
+    }
+
+    .content {
+        .level-#{$i} & {
+            padding-left: $i * 16px;
+        }
     }
 }
 

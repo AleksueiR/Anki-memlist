@@ -431,10 +431,6 @@ export default class CollectionView extends Vue {
     .divider {
         margin-left: 1.5rem;
     }
-
-    .highlight {
-        left: 0 !important;
-    }
 }
 
 /* .el-tree /deep/ {

@@ -1,5 +1,5 @@
 <template>
-    <li @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
+    <div @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
         @mouseover="isOver = true"
         @mouseleave="isOver = false"
         class="list-item"
@@ -21,7 +21,7 @@
             </el-col>
         </el-row>
 
-    </li>
+    </div>
 </template>
 
 <script lang="ts">

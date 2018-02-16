@@ -52,12 +52,14 @@
         </div>
 
         <section class="container main" v-if="word">
+
             <section class="content cm-scrollbar">
                     <div v-for="source in sourceOrder" :key="source.id" :id="source.id" class="source-view">
                         <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
                         <component :is="source.id" :word="word" ></component>
                     </div>
             </section>
+
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
                     <li v-for="source in sourceOrder" :key="source.id" class="heading">
@@ -264,6 +266,7 @@ header {
 
     .content {
         flex: 1;
+        padding-right: 1rem;
 
         .source-view {
             .title {

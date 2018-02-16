@@ -12,6 +12,7 @@ declare module 'quill-image-drop-module';
 declare module 'artoo-js';
 
 declare module 'vue-perfect-scrollbar';
+declare module 'vue-virtual-scroll-list';
 
 declare module '@fortawesome/vue-fontawesome';
 declare module '@fortawesome/fontawesome-free-solid/faAngleUp';

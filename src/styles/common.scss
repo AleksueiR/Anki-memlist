@@ -7,10 +7,9 @@ body {
 // adds modified scroll-bar to the section
 .cm-scrollbar {
     overflow: auto;
-    padding-right: 16px;
 
     &::-webkit-scrollbar {
-        width: 5px;
+        width: 8px;
     }
 
     &::-webkit-scrollbar-thumb {

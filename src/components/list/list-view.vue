@@ -19,8 +19,8 @@
 
         <span class="text-smaller">{{ lookupHint }}</span>
 
-        <section class="cm-scrollbar">
-            <ul class="list">
+        <section class="_cm-scrollbar virtual-list-container" ref="virtualListContainer">
+            <!-- <ul class="list">
                 <list-item
                     v-for="word in getPooledWords"
                     :key="word.id"
@@ -28,10 +28,60 @@
                     @edit="editWord"
                     v-on:remove="removeWord"
                     :word="word"></list-item>
-            </ul>
+            </ul> -->
+
+            <virtual-list
+                :size="36"
+                :remain="visibleHeight"
+                :bench="20"
+                class="cm-scrollbar">
+
+                <list-item
+                    v-for="item in getPooledWords"
+                    @archive="archiveWord"
+                    @edit="editWord"
+                    @remove="removeWord"
+                    :key="item.id"
+                    :word="item"></list-item>
+
+            </virtual-list>
+
+            <!-- <virtual-scroller class="scroller"
+                style="height: 300px; overflow: scroll;"
+                item-height="21"
+                :items="getPooledWords">
+                <template slot-scope="props">
+
+                    <div class="item">gelp {{ props.item.id }}</div>
+
+                </template>
+            </virtual-scroller> -->
+
+            <!-- <list-item
+                        @archive="archiveWord"
+                        @edit="editWord"
+                        @remove="removeWord"
+                        :key="props.itemKey"
+                        :word="props.item"></list-item> -->
+
+            <!-- <recycle-list
+                style="height: 300px; overflow: scroll;"
+                :items="getPooledWords"
+                :itemHeight="20">
+                <template slot-scope="props">
+                    <div style="height: 20px;" >word:</div>
+
+                </template>
+            </recycle-list> -->
+
+            <!--  -->
+
         </section>
 
-        <span>{{ getPooledWords.length }} words</span> <span v-if="selectedLists.length > 1">{{ selectedLists.length }} lists</span>
+        <div>
+            <span>{{ getPooledWords.length }} words</span>
+            <span v-if="selectedLists.length > 1"> {{ selectedLists.length }} lists</span>
+        </div>
 
 
         <!-- <div v-for="word in getPooledWords" :key="word.id">{{ word.text }}</div> -->
@@ -83,11 +133,10 @@
 </template>
 
 <script lang="ts">
-// TODO: use virual scroller for the list view: https://github.com/Akryum/vue-virtual-scroller#variable-height-mode
-
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import VirtualScrollList from 'vue-virtual-scroll-list';
 
 import debounce from 'lodash/debounce';
 
@@ -120,7 +169,9 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
+        'virtual-list': VirtualScrollList,
         listItem
+
         //wordMenu
     }
 })
@@ -143,6 +194,19 @@ export default class WordList extends Vue {
                 this.deselectWord({ wordId: word.id });
             }
         });
+    }
+
+    /* get visibleHeight(): number {
+        console.log('visible heigh');
+
+        return this.$el ? this.$el.clientHeight / 36 : 0;
+    } */
+
+    visibleHeight: number = -1;
+
+    mounted(): void {
+        this.visibleHeight =
+            (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 36;
     }
 
     lookup: string = '';
@@ -316,6 +380,10 @@ export default class WordList extends Vue {
     list-style-type: none;
     padding: 0;
     margin: 0;
+}
+
+.virtual-list-container {
+    flex: 1;
 }
 
 .word-menu {

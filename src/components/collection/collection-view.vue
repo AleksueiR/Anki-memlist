@@ -198,7 +198,7 @@ export default class CollectionView extends Vue {
         return this.lists.get(listId)!.name;
     }
 
-    renderContent(
+    /* renderContent(
         h: any,
         { node, data, store }: { node: any; data: CollectionTree; store: any }
     ) {
@@ -259,7 +259,7 @@ export default class CollectionView extends Vue {
                 data.listId === this.defaultListId ? ' ✔' : ''
             }`
         );
-    }
+    } */
 
     nodeClick(node: CollectionTree, event: MouseEvent): void {
         // console.log(node, event);

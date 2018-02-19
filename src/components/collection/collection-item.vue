@@ -2,7 +2,7 @@
     <div class="collection-item"
         :class="{ selected: isSelected }">
 
-        <!-- TODO: add higlight layer that spans the width of the row -->
+        <span class="highlight"></span>
 
         <span
             class="icon-button default-flag"
@@ -18,8 +18,7 @@
             <font-awesome-icon icon="thumbtack" />
         </button>
 
-        <span class="meti"
-            v-if="!isRenaming">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
+        <span v-if="!isRenaming">{{ list.name }} {{ list.index.length }}</span>
 
         <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
 
@@ -60,6 +59,13 @@ import CollectionBus from './collection-bus';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
+
+// TODO: need colors for tree item highlighting
+// selected
+// on hover
+// selected on hover
+
+// TODO: need to decide what to do with the list icons; how to colour them; how to make sure colours don't interfere with higlighting colours'
 
 @Component({
     components: {
@@ -174,15 +180,15 @@ export default class CollectionItemV extends Vue {
         }
     }
 
-    &.selected:before {
+    &.selected .highlight {
         background-color: darken($secondary-colour, 10%);
     }
 
-    &:hover:before {
+    &:hover .highlight {
         background-color: $secondary-colour;
     }
 
-    &:before {
+    .highlight {
         content: '';
         position: absolute;
         width: 100%;
@@ -198,6 +204,16 @@ export default class CollectionItemV extends Vue {
             background-color: $secondary-colour;
         }
     }
+}
+
+.highlight {
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
 }
 
 .icon-button {

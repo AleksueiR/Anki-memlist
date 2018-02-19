@@ -25,8 +25,6 @@
 
             <hr>
 
-            current key: {{ currentKey }};
-
             <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div>
         </div>
 
@@ -137,8 +135,6 @@ export default class CollectionView extends Vue {
     }
 
     ctrlPressed: boolean = false;
-
-    currentKey: string = '';
 
     keyDownHandler(event: KeyboardEvent): void {
         // assume at least one list is selected
@@ -253,9 +249,18 @@ export default class CollectionView extends Vue {
     }
 }
 
-.treee /deep/ {
-    .divider {
+.treee {
+    /deep/ .divider {
         margin-left: 1.5rem;
+    }
+
+    &.dragging /deep/ {
+        .collection-item {
+            .highlight,
+            .icon-button {
+                display: none;
+            }
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 <template>
     <div class="treee-node"
         tabindex="-1"
+        :class="{ 'no-drop': isDragSource }"
         role="treeitem">
 
         <div class="container"
@@ -18,7 +19,7 @@
                 @mouseover="mouseOver('middle', $event)"
                 @mouseout="mouseOut">
 
-                <span class="highlight" ref="highlight"></span>
+                <span class="highlight"></span>
 
                 <component
                     class="item"
@@ -33,7 +34,8 @@
                 @mouseout="mouseOut"></span>
         </div>
 
-        <div class="children" role="group">
+        <div class="children"
+            role="group">
             <treee-node
                 v-for="(subItem, index) in item.items"
                 :renderer="renderer"
@@ -85,10 +87,17 @@ export default class TreeeNode extends Vue {
         console.log('item update', this.item.listId);
     }
 
+    isDragSource: boolean = false;
+
     hasChildren: boolean = false;
+
+    /**
+     * Prevent next click when starting to drag an element, so if the drag is cancelled, the element will be automatically selected.
+     */
     preventNextClick: boolean = false;
 
     created(): void {
+        // TODO: replace with inject/provide
         if (this.$parent instanceof Treee) {
             this.treee = this.$parent;
         } else if (this.$parent instanceof TreeeNode) {
@@ -100,6 +109,7 @@ export default class TreeeNode extends Vue {
 
     mounted(): void {
         this.treee.$on('start-drag', this.onDragStart);
+        this.treee.$on('stop-drag', this.onDragStop);
 
         console.log(
             'parent tree',
@@ -115,6 +125,11 @@ export default class TreeeNode extends Vue {
         }
 
         this.preventNextClick = true;
+        this.isDragSource = true;
+    }
+
+    onDragStop(): void {
+        this.isDragSource = false;
     }
 
     mouseDown(event: MouseEvent): void {
@@ -125,12 +140,16 @@ export default class TreeeNode extends Vue {
         // prevent text from being selected when dragging
         event.preventDefault();
 
+        const original = <HTMLElement>this.$refs.content;
+        const clone = original.cloneNode(true) as HTMLElement;
+
+        // the clone is positioned absolute and the width must be set manually
+        clone.style.width = `${original.clientWidth}px`;
+
         const dragItem: TreeDragItem = {
             event,
-            node: this.$refs.content as HTMLElement,
-            clone: (<HTMLElement>this.$refs.content).cloneNode(
-                true
-            ) as HTMLElement,
+            node: original,
+            clone,
             item: this.item
         };
 
@@ -201,13 +220,15 @@ export default class TreeeNode extends Vue {
             display: block;
         }
     }
+}
 
-    &.no-drop {
-        cursor: no-drop;
+.no-drop {
+    cursor: no-drop;
+    color: $dark-secondary-colour;
+    // outline: 1px solid grey;
 
-        &:hover {
-            background-color: transparent;
-        }
+    &:hover {
+        background-color: transparent;
     }
 }
 
@@ -279,17 +300,19 @@ export default class TreeeNode extends Vue {
     }
 }
 
+$base-indent: 16px;
+
 @for $i from 0 through 10 {
     .divider.after,
     .divider.before {
         .level-#{$i} & {
-            left: $i * 16px;
+            left: $i * $base-indent;
         }
     }
 
     .content {
         .level-#{$i} & {
-            padding-left: $i * 16px;
+            padding-left: $i * $base-indent;
         }
     }
 }
@@ -297,6 +320,7 @@ export default class TreeeNode extends Vue {
 .clone {
     position: fixed;
     border: 1px solid grey;
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 1000;
 }
 </style>

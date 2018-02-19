@@ -37,8 +37,8 @@ export enum TreeeDropPosition {
 
 export interface TreeDragItem {
     event: MouseEvent;
-    node: HTMLElement; // tree-node element
-    clone: HTMLElement;
+    node: HTMLElement; // content tree-node element
+    clone: HTMLElement; // the clone of the content tree-node
     item: any;
 }
 
@@ -128,7 +128,7 @@ export default class Treee extends Vue {
         document.addEventListener('mousemove', this.moveDrag);
 
         this.dragItem = dragItem;
-        this.dragItem.node.classList.add('no-drop');
+        // this.dragItem.node.classList.add('no-drop');
         this.root.appendChild(this.dragItem.clone);
 
         this.$emit('start-drag', this.dragItem);
@@ -151,7 +151,7 @@ export default class Treee extends Vue {
             this.dragOut();
         }
 
-        this.dragItem.node.classList.remove('no-drop');
+        // this.dragItem.node.classList.remove('no-drop');
         this.root.removeChild(this.dragItem.clone);
         this.dragItem = null;
 
@@ -163,7 +163,8 @@ export default class Treee extends Vue {
             return;
         }
 
-        this.dragItem.clone.style.top = `${event.pageY - 10}px`;
+        this.dragItem.clone.style.top = `${event.pageY -
+            this.dragItem.clone.clientHeight / 2}px`;
         this.dragItem.clone.style.left = `${event.pageX + 10}px`;
     }
 

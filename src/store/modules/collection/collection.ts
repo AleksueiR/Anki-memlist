@@ -147,6 +147,13 @@ const actions = {
         context.commit('SET_DEFAULT_LIST', list);
     },
 
+    /**
+     * Add the specified list to the `selectedLists` array
+     *
+     * @param {CollectionContext} context
+     * @param {{ listId: string; annex: boolean }} options
+     * @returns
+     */
     selectList(
         context: CollectionContext,
         options: { listId: string; annex: boolean }
@@ -165,7 +172,17 @@ const actions = {
         context.commit('SELECT_LIST', list);
     },
 
-    deselectList(context: CollectionContext, listId: string): void {
+    /**
+     * Removes the specified list from the `selectedLists` array.
+     *
+     * @param {CollectionContext} context
+     * @param {{ listId: string }} { listId }
+     * @returns {void}
+     */
+    deselectList(
+        context: CollectionContext,
+        { listId }: { listId: string }
+    ): void {
         const list = state.lists.get(listId);
         if (list === undefined) {
             return;
@@ -180,7 +197,7 @@ const actions = {
 
     // #region EDIT LIST
 
-    renameList(
+    setListName(
         context: CollectionContext,
         { listId, name }: { listId: string; name: string }
     ): void {
@@ -189,7 +206,7 @@ const actions = {
             return;
         }
 
-        context.commit('RENAME_LIST', { list, name });
+        context.commit('SET_LIST_NAME', { list, name });
 
         actions.writeList(context, list.id);
     },
@@ -341,7 +358,7 @@ const mutations = {
 
     // #region EDIT LIST
 
-    RENAME_LIST(
+    SET_LIST_NAME(
         state: CollectionState,
         { list, name }: { list: CollectionList; name: string }
     ): void {

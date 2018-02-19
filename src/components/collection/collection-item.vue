@@ -21,16 +21,21 @@
         <span class="meti"
             v-if="!isRenaming">{{ list.name }} [{{ list.id }}] {{ list.index.length }}</span>
 
+        <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
+
         <el-input
             v-if="isRenaming"
             v-input-focus
             v-model="newName"
+
             @focus.once="onFocus"
-            @mousedown.native.stop="onClick"
-            @click.native.stop="onClick"
-            @blur="renameListStop(true)"
-            @keyup.native.enter="renameListStop()"
-            @keyup.native.esc="renameListStop(true)"></el-input>
+            @blur="renameCancel"
+
+            @mousedown.native.stop="() => {}"
+            @click.native.stop="() => {}"
+
+            @keyup.native.enter="renameComplete"
+            @keyup.native.esc="renameCancel"></el-input>
     </div>
 </template>
 
@@ -51,7 +56,7 @@ import {
     CollectionTree,
     CollectionState
 } from '../../store/modules/collection/index';
-import { CollectionBus } from './collection-view.vue';
+import CollectionBus from './collection-bus';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -59,10 +64,25 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         FontAwesomeIcon
+    },
+    directives: {
+        // Register a local custom directive called `v-input-focus`
+        'input-focus': {
+            // When the bound element is inserted into the DOM...
+            inserted: (element: HTMLElement) => {
+                // Focus the element
+
+                const input = element.querySelector('input');
+                if (!input) {
+                    return;
+                }
+                input.focus();
+            }
+        }
     }
 })
-export default class CollectionItem extends Vue {
-    @Inject() collectionBus: CollectionBus;
+export default class CollectionItemV extends Vue {
+    @Inject() bus: CollectionBus;
 
     @Prop() item: CollectionTree;
 
@@ -87,41 +107,38 @@ export default class CollectionItem extends Vue {
     newName: string | null = null;
 
     mounted(): void {
-        this.collectionBus.$on('rename-list-start', this.renameListStart);
+        this.bus.$on('rename-start', this.renameStart);
+
+        this.bus.mountComplete(this.list.id);
     }
 
     onPinClick(): void {}
 
-    renameListStart(listId: string): void {
+    renameStart(listId: string): void {
+        console.log('rename start', this.item.listId, listId);
         if (this.item.listId !== listId) {
             return;
         }
+
         this.isRenaming = true;
         this.newName = this.list.name;
     }
 
-    renameListStop(cancel: boolean = false): void {
-        if (!this.isRenaming) {
-            return;
-        }
-
-        if (cancel) {
-            this.newName = null;
-        }
-
+    renameComplete(): void {
         this.isRenaming = false;
-        this.collectionBus.renameListStop(this.item.listId, this.newName);
+        this.bus.renameComplete(this.item.listId, this.newName);
     }
 
-    onClick(): void {}
+    renameCancel() {
+        this.isRenaming = false;
+        this.bus.renameCancel(this.item.listId);
+    }
 
+    /**
+     * Preselect the current list name on focus.
+     */
     onFocus(event: FocusEvent): void {
-        console.log('onfocus');
         (<HTMLInputElement>event.target).select();
-    }
-
-    onBlur(): void {
-        console.log('onblur');
     }
 }
 </script>

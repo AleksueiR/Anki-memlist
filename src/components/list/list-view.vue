@@ -202,6 +202,7 @@ export default class WordList extends Vue {
         return this.$el ? this.$el.clientHeight / 36 : 0;
     } */
 
+    // TODO: recompute the height when the window heighs is changing
     visibleHeight: number = -1;
 
     mounted(): void {

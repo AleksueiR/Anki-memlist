@@ -25,26 +25,10 @@
 
             <hr>
 
-            <!-- <el-tree
-                :data="index.tree.items"
-                :expand-on-click-node="false"
-                :props="treeProps"
-                node-key="listId"
-                :show-checkbox="false"
-                :check-strictly="true"
-                :highlight-current="false"
-                :render-content="renderContent"
-                @node-click="nodeClick"
-                ref="tree"></el-tree> -->
-
-            <!-- {{ getListWordCount('jd3sysjs') }} -->
-
-            selected Nodes: {{ selectedNodes }}
             current key: {{ currentKey }};
-            renamedListId: {{ renamedListId }}
+
             <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div>
         </div>
-
 
     </section>
 </template>
@@ -66,85 +50,42 @@ import {
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
-import { Tree } from 'element-ui/types';
 
-import CollectionItem from './collection-item.vue';
-import treee from './../treee/treee.vue';
+import CollectionItemV from './collection-item.vue';
+import Treee from './../treee/treee.vue';
 
 import {
     CollectionState,
     CollectionTree,
     CollectionIndex,
     CollectionList
-} from '../../store/modules/collection/index';
+} from '../../store/modules/collection';
+
+import CollectionBus from './collection-bus';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
 
-// Register a global custom directive called `v-input-focus`
-Vue.directive('input-focus', {
-    // When the bound element is inserted into the DOM...
-    inserted: (element: HTMLElement) => {
-        // Focus the element
-
-        console.log('input-auot=focus');
-
-        const input = element.querySelector('input');
-        if (!input) {
-            return;
-        }
-        input.focus();
-    }
-});
-
-export class CollectionBus extends Vue {
-    @Emit()
-    renameListStart(listId: string) {}
-
-    @Emit()
-    renameListStop(listId: string, name: string | null) {}
-}
-
 @Component({
     components: {
         FontAwesomeIcon,
-        treee
+        Treee
     }
 })
 export default class CollectionView extends Vue {
-    @Provide() collectionBus = new CollectionBus();
+    @Provide() bus = new CollectionBus();
 
-    renderer = CollectionItem;
-
-    treeSelection = [];
-    treeOnSelect(data: any) {
-        console.log('treeOnSelect', data);
-    }
-
-    treeDisplay(tree: any) {
-        return tree.listId;
-    }
-
-    treeDragndrop = {
-        draggable: true,
-        droppable: true,
-        over: (target: any, event: any, inputs: any) => {
-            // console.log('over', target, event, inputs);
-        },
-        enter: (target: any, event: any, inputs: any) => {
-            console.log('enter', target, event, inputs);
-        },
-        leave: (target: any, event: any, inputs: any) => {
-            console.log('leave', target, event, inputs);
-        }
-    };
+    renderer = CollectionItemV;
 
     // #region vuex
 
+    // Treee needs a sturcture without circular dependencies
+    // returns a safe list
     get treeItems() {
         return this.index.tree.safeJSON.items!;
     }
 
+    // ipdates the underlying tree structure after items in the Treee are reordered
     set treeItems(items: CollectionTree[]) {
         console.log('set tree items', items);
 
@@ -158,170 +99,62 @@ export default class CollectionView extends Vue {
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
+    // replaces the existing tree index with the new one
     @ActionCL setIndexTree: (options: { tree: CollectionTree }) => void;
-
+    // adds a new list to the bottom of the top level of the list tree
     @ActionCL addList: (list: CollectionList) => void;
-
-    @ActionCL renameList: (payload: { listId: string; name: string }) => void;
-
+    // sets a new list name
+    @ActionCL setListName: (payload: { listId: string; name: string }) => void;
+    // select the list
     @ActionCL
     selectList: (
         { listId, annex }: { listId: string; annex?: boolean }
     ) => void;
+    @ActionCL deselectList: (value: { listId: string }) => void;
 
     // #endregion vuex
 
+    /**
+     * Specifies if the Treee can be reordered.
+     * When a list is being renamed, this is set to false to prevent erroneous handling mouse events.
+     */
     isTreeDraggable: boolean = true;
 
-    /* getListWordCount(id: string): number {
-        if (this.lists.has(id)) {
-            return this.lists.get(id)!.index.length;
-        }
-
-        return -1;
-    } */
-
-    draggableOptions = {
-        draggable: '.el-tree-node'
-    };
-
-    treeProps = {
-        label: (tree: CollectionTree) => this.getListName(tree.listId),
-        children: 'items'
-    };
-
-    getListName(listId: string): string {
-        if (!this.lists.has(listId)) {
-            return '';
-        }
-
-        return this.lists.get(listId)!.name;
-    }
-
-    /* renderContent(
-        h: any,
-        { node, data, store }: { node: any; data: CollectionTree; store: any }
-    ) {
-        const list: CollectionList = this.lists.get(data.listId)!;
-
-        if (data.listId === this.renamedListId) {
-            return h('el-input', {
-                attrs: {
-                    // autofocus: true,
-                    value: (<any>node).label
-                },
-                directives: [
-                    {
-                        name: 'input-focus'
-                    }
-                ],
-                on: {
-                    focus: (event: FocusEvent) =>
-                        (<HTMLInputElement>event.target).select(),
-                    blur: this.blur
-                },
-                nativeOn: {
-                    keydown: (event: KeyboardEvent) => {
-                        if (event.keyCode === 13) {
-                            // enter
-                            // console.log(event, data.listId);
-
-                            this.renameList({
-                                listId: data.listId,
-                                name: (<HTMLInputElement>event.target).value
-                            });
-                            this.blur(event);
-                        }
-
-                        if (event.keyCode === 27) {
-                            // escape
-                            this.blur(event);
-                        }
-                    }
-                }
-            });
-        }
-
-        console.log('update collection view');
-
-        return h(
-            'span', // tag name,
-            {
-                class: {
-                    foot: true,
-                    bar: false
-                },
-                attrs: {
-                    bl: this.selectedLists // this.selectedNodes // I'm not sure why the tree would not refresh when words are added to a list, so this seems to be the only way to force it
-                }
-            },
-            `${(<any>node).label} [${list.id}] ${list.index.length} ${
-                data.listId === this.defaultListId ? ' ✔' : ''
-            }`
-        );
-    } */
-
+    /**
+     * Handles the click on a tree node.
+     * If the clicked list is not yet selected, adds to the selection array. (holding Ctrl key appends it to already selected lists)
+     * If the clicked list is already selected, removes from the selection array. (not holding Ctrl key will deselected everything except the one clicked)
+     */
     nodeClick(node: CollectionTree, event: MouseEvent): void {
-        // console.log(node, event);
-        this.selectList({ listId: node.listId, annex: event.ctrlKey });
-    }
-
-    _nodeClick(data: CollectionTree, node: any, store: any) {
-        const tree: Tree = this.$refs.tree as Tree;
-
-        if (!tree) {
-            return;
+        if (
+            this.selectedLists.find(list => list.id === node.listId) &&
+            event.ctrlKey
+        ) {
+            this.deselectList({ listId: node.listId });
+        } else {
+            this.selectList({ listId: node.listId, annex: event.ctrlKey });
         }
-
-        const selectedKeys: string[] = this.selectedLists.map(list => list.id);
-
-        // mark corresponding nodes in the tree as selected
-        tree.setCheckedKeys(
-            this.ctrlPressed ? selectedKeys.concat(data.listId) : [data.listId]
-        );
-
-        console.log(tree.getCheckedKeys());
-        this.selectedNodes = tree.getCheckedKeys();
-
-        this.selectList({ listId: data.listId, annex: this.ctrlPressed });
     }
 
-    selectedNodes: string[] = [];
-
-    renamedListId: string = '_!';
     ctrlPressed: boolean = false;
 
     currentKey: string = '';
 
     keyDownHandler(event: KeyboardEvent): void {
-        /* console.log(event, '--', (this.$refs.tree as Tree).getCurrentKey());
-
-        const tree2: Tree = this.$refs.tree as Tree;
-        if (!tree2) {
-            this.currentKey = '-';
-        }
-
-        this.currentKey = tree2.getCurrentKey(); */
-
-        // TODO: override the default tree keyboard handling
-
-        /* const tree: Tree = this.$refs.tree as Tree;
-        if (!tree) {
-            console.error('Tree is not defined');
-            return;
-        } */
-
         // assume at least one list is selected
-        if (event.keyCode === Vue.config.keyCodes.f2) {
+        if (
+            event.keyCode === Vue.config.keyCodes.f2 &&
+            this.selectedLists.length > 0
+        ) {
             // this.renamedListId = this.selectedLists[0].id;
 
             event.preventDefault();
             this.isTreeDraggable = false;
-            this.collectionBus.renameListStart(this.selectedLists[0].id);
+            this.bus.renameStart(this.selectedLists[0].id);
         }
 
         // track ctrl key
-        // TODO: move up to the app-level
+        // TODO: move ctrl tracking up to the app-level
         if (event.keyCode === Vue.config.keyCodes.ctrl) {
             this.ctrlPressed = true;
         }
@@ -333,47 +166,40 @@ export default class CollectionView extends Vue {
         if (event.keyCode === Vue.config.keyCodes.ctrl) {
             this.ctrlPressed = false;
         }
-
-        // event.preventDefault();
-    }
-
-    blur(event: KeyboardEvent): void {
-        console.log('blur', event);
-
-        this.renamedListId = '';
     }
 
     mounted() {
-        /* console.log(
-            'mounteed looking for tree',
-            (this.$refs.tree as Tree).getCurrentKey()
-        ); */
-
         this.$el.addEventListener('keydown', this.keyDownHandler);
         this.$el.addEventListener('keyup', this.keyUpHandler);
 
-        this.collectionBus.$on('rename-list-stop', this.onRenameListStop);
+        this.bus.$on('rename-complete', this.onRenameComplete);
     }
 
-    onRenameListStop(listId: string, name: string | null) {
+    onRenameComplete(listId: string, name: string) {
         this.isTreeDraggable = true;
 
-        if (!name) {
-            return;
-        }
+        this.setListName({ listId, name });
 
-        this.renameList({
-            listId,
-            name
-        });
-
+        // TODO: is this needed?
         this.$el.focus();
     }
 
+    /**
+     * Creates a new list and adds it to the collection.
+     * After the CollectionItemV is mounted, start renaming the list so the user can change its name.
+     */
     createNewList(): void {
-        const list = new CollectionList({ name: 'Untitled List' });
+        const list = new CollectionList();
         this.addList(list);
-        this.renamedListId = list.id;
+
+        this.bus.$on('mount-complete', (listId: string) => {
+            if (listId !== list.id) {
+                return;
+            }
+
+            this.bus.$off('mount-complete');
+            this.bus.renameStart(list.id);
+        });
     }
 }
 </script>

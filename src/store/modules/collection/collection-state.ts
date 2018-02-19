@@ -213,6 +213,8 @@ export interface CollectionListOptions {
 }
 
 export class CollectionList {
+    static readonly DEFAULT_NAME: string = 'Untitled List';
+
     readonly id: string;
     private _name: string;
     readonly dateCreated: number;
@@ -232,7 +234,7 @@ export class CollectionList {
     constructor(options: CollectionListOptions = {}) {
         const {
             id = uniqid.time(),
-            name = 'dog-guts',
+            name = CollectionList.DEFAULT_NAME,
             dateCreated = moment.now(),
             dateModified = moment.now(),
             pin = false,

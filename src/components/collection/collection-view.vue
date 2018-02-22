@@ -11,6 +11,13 @@
 
         <div class="collection" >
 
+            <div class="uk-inline">
+                <button class="uk-button uk-button-default uk-icon-button" type="button" uk-icon="icon: plus; ratio: 0.7">Hover</button>
+                <div uk-dropdown>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.</div>
+            </div>
+
+            <button class="uk-button uk-button-default uk-width-1-1 uk-margin-small-bottom">Button</button>
+
             <el-button class="button" @click="createNewList" type="plain">
                 <font-awesome-icon icon="plus" /> Add List
             </el-button>

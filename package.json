@@ -47,6 +47,7 @@
         "quill-image-drop-module": "^1.0.3",
         "sass-loader": "^6.0.6",
         "typescript": "^2.6.2",
+        "uikit": "^3.0.0-beta.40",
         "uniqid": "^4.1.1",
         "vue-class-component": "^6.1.2",
         "vue-property-decorator": "^6.0.0",

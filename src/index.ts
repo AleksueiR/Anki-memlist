@@ -1,6 +1,7 @@
 import devtools from '@vue/devtools';
 
 if (process.env.NODE_ENV === 'development') {
+    // TODO: uncomment to debug
     // devtools.connect(/* host */);
 }
 
@@ -37,6 +38,11 @@ fontawesome.library.add(
     faPlus,
     faThumbtack
 );
+
+import UIkit from 'uikit';
+import Icons from 'uikit/dist/js/uikit-icons';
+
+UIkit.use(Icons);
 
 Vue.config.keyCodes = {
     up: 38,

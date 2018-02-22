@@ -132,8 +132,9 @@ export default class App extends Vue {
 }
 </script>
 
-<style lang="scss" src="../styles/common.scss">
-
+<style lang="scss">
+@import './../styles/common.scss';
+@import './../../node_modules/uikit/dist/css/uikit.min.css';
 </style>
 
 

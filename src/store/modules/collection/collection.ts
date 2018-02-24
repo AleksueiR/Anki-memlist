@@ -26,7 +26,8 @@ const getters = {
 
         const pooledWords = (<CollectionWord[]>[]).concat(
             ...state.selectedLists.map(list =>
-                list.index.map(wordId => list.words.get(wordId)!)
+                // list.index.map(wordId => list.words.get(wordId)!)
+                list.index.map(wordId => list.words[wordId]!)
             )
         );
 
@@ -47,16 +48,11 @@ const getters = {
 
 // actions
 const actions = {
-    feck(context: CollectionContext) {
-        // context.state.halp = !context.state.halp;
-        context.commit('FECK', !context.state.halp.feck);
-    },
-
     // #region EDIT INDEX
 
     async fetchIndex(context: CollectionContext): Promise<void> {
         let index: CollectionIndex = state.index;
-        let lists: Map<string, CollectionList> = state.lists;
+        let lists: { [name: string]: CollectionList } = state.lists;
 
         const hasCollection = await storage.hasCollection();
 
@@ -74,7 +70,8 @@ const actions = {
             return;
         }
 
-        const defaultList = state.lists.get(state.index.defaultListId);
+        //const defaultList = state.lists.get(state.index.defaultListId);
+        const defaultList = state.lists[state.index.defaultListId];
         if (defaultList === undefined) {
             return;
         }
@@ -105,7 +102,8 @@ const actions = {
         }
 
         function _writeList(lId: string) {
-            const list = state.lists.get(lId);
+            // const list = state.lists.get(lId);
+            const list = state.lists[lId];
             if (list === undefined) {
                 return;
             }
@@ -146,7 +144,8 @@ const actions = {
     },
 
     setDefaultList(context: CollectionContext, listId: string): void {
-        const list = state.lists.get(listId);
+        // const list = state.lists.get(listId);
+        const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
@@ -171,7 +170,8 @@ const actions = {
             context.commit('DESELECT_ALL_LISTS');
         }
 
-        const list = state.lists.get(listId);
+        // const list = state.lists.get(listId);
+        const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
@@ -190,7 +190,8 @@ const actions = {
         context: CollectionContext,
         { listId }: { listId: string }
     ): void {
-        const list = state.lists.get(listId);
+        // const list = state.lists.get(listId);
+        const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
@@ -210,7 +211,8 @@ const actions = {
         context: CollectionContext,
         { listId, name }: { listId: string; name: string }
     ): void {
-        const list = state.lists.get(listId);
+        //const list = state.lists.get(listId);
+        const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
@@ -224,7 +226,8 @@ const actions = {
         context: CollectionContext,
         { listId, word }: { listId: string; word: CollectionWord }
     ): void {
-        const list = state.lists.get(listId);
+        //const list = state.lists.get(listId);
+        const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
@@ -235,14 +238,19 @@ const actions = {
     },
 
     removeWord(context: CollectionContext, options: { wordId: string }): void {
-        const list = Array.from(state.lists.values()).find(list =>
+        /* const list = Array.from(state.lists.values()).find(list =>
             list.words.has(options.wordId)
+        ); */
+        const list = Object.values(state.lists).find(
+            list => list.words[options.wordId] !== undefined
         );
+
         if (!list) {
             return;
         }
 
-        const word = list.words.get(options.wordId);
+        //const word = list.words.get(options.wordId);
+        const word: CollectionWord | undefined = list.words[options.wordId];
 
         if (!word) {
             return;
@@ -331,15 +339,20 @@ const actions = {
         const { wordId } = options;
 
         // find a list with the provided wordId
-        const list = Array.from(state.lists.values()).find(list =>
+        /* const list = Array.from(state.lists.values()).find(list =>
             list.words.has(wordId)
+        ); */
+        const list = Object.values(state.lists).find(
+            list => list.words[wordId] !== undefined
         );
+
         if (list === undefined) {
             return;
         }
 
         // get the word from the list
-        const word: CollectionWord | undefined = list.words.get(wordId);
+        // const word: CollectionWord | undefined = list.words.get(wordId);
+        const word: CollectionWord | undefined = list.words[wordId];
 
         if (word === undefined) {
             return;
@@ -369,7 +382,7 @@ const mutations = {
 
     SET_LISTS(
         state: CollectionState,
-        lists: Map<string, CollectionList>
+        lists: { [name: string]: CollectionList }
     ): void {
         state.lists = lists;
     },

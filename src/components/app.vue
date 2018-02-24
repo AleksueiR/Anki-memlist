@@ -61,7 +61,7 @@ export default class App extends Vue {
     @Mutation('selectWord') selectWord: (item: string | null) => void; */
 
     @StateCL('index') index: CollectionIndex;
-    @StateCL('lists') lists: Map<string, CollectionList>;
+    @StateCL('lists') lists: { [name: string]: CollectionList };
 
     /* @StateCL((state: CollectionState) =>
         Array.from(state.lists.values())

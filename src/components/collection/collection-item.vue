@@ -88,7 +88,6 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionItemV extends Vue {
-    @ActionCL feck: () => void;
     @ActionCL setListName: any;
 
     @Inject() bus: CollectionBus;
@@ -96,14 +95,14 @@ export default class CollectionItemV extends Vue {
     @Prop() item: CollectionTree;
 
     @StateCL selectedLists: CollectionList[];
-    @StateCL lists: Map<string, CollectionList>;
+    @StateCL lists: { [name: string]: CollectionList };
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
     // TODO: oin list action
 
     get list(): CollectionList {
-        return this.lists.get(this.item.listId)!;
+        return this.lists[this.item.listId]!;
     }
 
     get isSelected(): boolean {
@@ -121,11 +120,7 @@ export default class CollectionItemV extends Vue {
         this.bus.mountComplete(this.list.id);
     }
 
-    onPinClick(): void {
-        this.feck();
-
-        this.setListName({ listId: this.list.id, name: this.list.name + '1' });
-    }
+    onPinClick(): void {}
 
     renameStart(listId: string): void {
         console.log('rename start', this.item.listId, listId);

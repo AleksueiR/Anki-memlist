@@ -28,7 +28,8 @@ window.onbeforeunload = e => {
 
 export interface CollectionStateOptions {
     index?: CollectionIndex;
-    lists?: Map<string, CollectionList>;
+    //lists?: { [name: string]: CollectionList};
+    lists?: { [name: string]: CollectionList };
 
     selectedLists?: CollectionList[];
     selectedWords?: CollectionWord[];
@@ -39,7 +40,8 @@ export class CollectionState {
 
     index: CollectionIndex;
 
-    lists: Map<string, CollectionList>;
+    // lists: { [name: string]: CollectionList};
+    lists: { [name: string]: CollectionList };
 
     readonly selectedLists: CollectionList[];
     readonly selectedWords: CollectionWord[];
@@ -47,7 +49,7 @@ export class CollectionState {
     constructor(options: CollectionStateOptions = {}) {
         const {
             index = new CollectionIndex(),
-            lists = new Map(),
+            lists = {},
             selectedLists = [],
             selectedWords = []
         } = options;
@@ -60,7 +62,8 @@ export class CollectionState {
 
     addList(tree: CollectionTree, list: CollectionList): void {
         tree.addList(list);
-        this.lists.set(list.id, list);
+        this.lists[list.id] = list;
+        //this.lists.set(list.id, list);
     }
 }
 
@@ -210,7 +213,8 @@ export interface CollectionListOptions {
     sortDirection?: CollectionSortDirection;
 
     index?: string[];
-    words?: Map<string, CollectionWord>;
+    //words?: Map<string, CollectionWord>;
+    words?: { [name: string]: CollectionWord };
     notes?: string;
 }
 
@@ -230,7 +234,8 @@ export class CollectionList {
     private _sortDirection: CollectionSortDirection;
 
     readonly index: string[];
-    readonly words: Map<string, CollectionWord>;
+    // readonly words: Map<string, CollectionWord>;
+    readonly words: { [name: string]: CollectionWord };
     private _notes: string;
 
     constructor(options: CollectionListOptions = {}) {
@@ -245,7 +250,7 @@ export class CollectionList {
             sortBy = 'name',
             sortDirection = 'asc',
             index = [] as string[],
-            words = new Map<string, CollectionWord>(),
+            words = {},
             notes = ''
         } = options;
 
@@ -337,12 +342,14 @@ export class CollectionList {
 
     addWord(word: CollectionWord): void {
         this.index.push(word.id);
-        this.words.set(word.id, word);
+        //this.words.set(word.id, word);
+        this.words[word.id] = word;
         this.update();
     }
 
     removeWord(word: CollectionWord): void {
-        this.words.delete(word.id);
+        // this.words.delete(word.id);
+        delete this.words[word.id];
 
         const index = this.index.indexOf(word.id);
         this.index.splice(index, 1);
@@ -356,7 +363,19 @@ export class CollectionList {
 
     get safeJSON(): CollectionListOptions {
         // convert Map into a safe, regular JSON object for storage
-        const words = Array.from(this.words.values()).reduce(
+        /* const safeWords = Array.from(this.words.values()).reduce(
+            (
+                map: { [name: string]: CollectionWordOptions },
+                word: CollectionWord,
+                {}
+            ) => {
+                map[word.id] = word.safeJSON;
+                return map;
+            },
+            {}
+        ); */
+
+        const safeWords = Object.values(this.words).reduce(
             (
                 map: { [name: string]: CollectionWordOptions },
                 word: CollectionWord,
@@ -379,7 +398,8 @@ export class CollectionList {
             sortBy: this.sortBy,
             sortDirection: this.sortDirection,
             index: this.index,
-            words: words as Map<string, CollectionWord>,
+            //words: words as Map<string, CollectionWord>,
+            words: safeWords as { [name: string]: CollectionWord },
             notes: this.notes
         };
     }

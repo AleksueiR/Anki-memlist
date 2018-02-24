@@ -44,15 +44,26 @@ const local: Storage = {
         );
 
         const listArray = await Promise.all(listPromises);
-        const lists = new Map(
-            listArray.map<[string, CollectionList]>(list => [list.id, list])
+        const lists: { [name: string]: CollectionList } = listArray.reduce(
+            (map: { [name: string]: CollectionList }, list) => {
+                map[list.id] = list;
+                return map;
+            },
+            {}
         );
+        /* const lists = new Map(
+            listArray.map<[string, CollectionList]>(list => [list.id, list])
+        ); */
 
         return Promise.resolve(new CollectionState({ index, lists }));
     },
 
     saveCollection(state: CollectionState): Promise<void> {
-        const promises: Promise<void>[] = Array.from(state.lists.values()).map(
+        /* const promises: Promise<void>[] = Array.from(state.lists.values()).map(
+            (list: CollectionList) => local.saveList(list)
+        ); */
+
+        const promises: Promise<void>[] = Object.values(state.lists).map(
             (list: CollectionList) => local.saveList(list)
         );
 
@@ -104,11 +115,17 @@ const local: Storage = {
                 listFileName(listId),
                 (error, data: CollectionListOptions) => {
                     // convert word dictionary into a proper Map of CollectionWord object
-                    data.words = new Map(
+                    /* data.words = new Map(
                         Array.from(Object.values(data.words)).map<
                             [string, CollectionWord]
                         >(word => [word.id, new CollectionWord(word)])
-                    );
+                    ); */
+
+                    /* data.words = new Map(
+                        Array.from(Object.values(data.words)).map<
+                            [string, CollectionWord]
+                        >(word => [word.id, new CollectionWord(word)])
+                    ); */
 
                     // TODO: handle errors
                     resolve(new CollectionList(data));

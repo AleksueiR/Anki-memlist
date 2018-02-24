@@ -14,10 +14,6 @@
             v-if="isControlsVisible || word.favourite"
             :class="{ active: word.favourite }"></a>
 
-        {{ word._favourite }}
-
-        {{ ap.value }}
-
         <span class="item-text uk-flex-1">{{ word.text }}</span>
 
         <template v-if="isControlsVisible">
@@ -147,7 +143,7 @@ export default class WordItem extends Vue {
         this.$emit('remove', this.word);
     } */
 
-    ap = { value: 0 };
+    /* ap = { value: 0 };
 
     @ActionCL
     setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
@@ -157,17 +153,16 @@ export default class WordItem extends Vue {
         payload: { word: CollectionWord; value: boolean }
     ) => void;
 
-    @ActionCL feck: () => void;
+    @ActionCL feck: () => void; */
 
     toggleFavourite(): void {
-        // this.word.favourite = !this.word.favourite;
-        // this.favourite({ wordId: this.word.id, value: !this.word.favourite });
+        this.favourite({ wordId: this.word.id, value: !this.word.favourite });
         // this.ap.value++;
-        this.setWordFavourite({
+        /* this.setWordFavourite({
             wordId: this.word.id,
             value: !this.word.favourite
         });
-        this.feck();
+        this.feck(); */
     }
 
     vnull(): void {}

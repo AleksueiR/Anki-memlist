@@ -36,9 +36,6 @@
                 :bench="20"
                 class="cm-scrollbar">
 -->
-<div v-if="getPooledWords.length > 0">
-                {{ getPooledWords[0].favourite }}
-                </div>
 
                 <list-item
                     v-for="item in getPooledWords"

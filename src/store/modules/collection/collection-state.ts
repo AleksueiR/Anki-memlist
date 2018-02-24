@@ -329,6 +329,10 @@ export class CollectionList {
         return this._notes;
     }
 
+    get hasNotes(): boolean {
+        return this.notes !== '';
+    }
+
     addWord(word: CollectionWord): void {
         this.index.push(word.id);
         this.words.set(word.id, word);
@@ -457,6 +461,10 @@ export class CollectionWord {
 
     get notes(): string {
         return this._notes;
+    }
+
+    get hasNotes(): boolean {
+        return this.notes !== '';
     }
 
     private update(): void {

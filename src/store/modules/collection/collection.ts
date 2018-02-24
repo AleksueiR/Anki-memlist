@@ -302,6 +302,8 @@ const actions = {
 
 // mutations
 const mutations = {
+    // #region EDIT INDEX
+
     SET_INDEX(state: CollectionState, index: CollectionIndex): void {
         state.index = index;
     },
@@ -355,6 +357,8 @@ const mutations = {
     DESELECT_ALL_LISTS(state: CollectionState): void {
         state.selectedLists.splice(0);
     },
+
+    // #endregion EDIT INDEX
 
     // #region EDIT LIST
 

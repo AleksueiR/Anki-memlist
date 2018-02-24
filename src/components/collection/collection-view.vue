@@ -1,22 +1,22 @@
 <template>
-    <section class="collection-view">
+    <section class="collection-view uk-flex uk-flex-none">
 
-        <nav class="toolbar">
+        <nav class="toolbar uk-flex uk-flex-column">
 
-            <el-button class="button">
-                <font-awesome-icon icon="file" />
-            </el-button>
+            <a href="" uk-icon="album" class="uk-padding-small uk-icon"
+                :class="{ selected: isExpanded }"
+                @click.prevent="toggleIsExpanded"></a>
 
         </nav>
 
-        <div class="collection" >
+        <div class="collection cm-scrollbar" v-show="isExpanded">
 
-            <div class="uk-inline">
+            <!-- <div class="uk-inline">
                 <button class="uk-button uk-button-default uk-icon-button" type="button" uk-icon="icon: plus; ratio: 0.7">Hover</button>
                 <div uk-dropdown>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.</div>
             </div>
 
-            <button class="uk-button uk-button-default uk-width-1-1 uk-margin-small-bottom">Button</button>
+            <button class="uk-button uk-button-default uk-width-1-1 uk-margin-small-bottom">Button</button> -->
 
             <el-button class="button" @click="createNewList" type="plain">
                 <font-awesome-icon icon="plus" /> Add List
@@ -78,6 +78,12 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionView extends Vue {
+    isExpanded: boolean = true;
+
+    toggleIsExpanded(): void {
+        this.isExpanded = !this.isExpanded;
+    }
+
     @Provide() bus = new CollectionBus();
 
     renderer = CollectionItemV;
@@ -211,26 +217,29 @@ export default class CollectionView extends Vue {
 @import './../../styles/variables';
 
 .collection-view {
-    border-right: 1px solid $dark-secondary-colour;
-    //width: 13em;
-    width: 20em;
+    // width: 20em;
 
-    flex-shrink: 0;
-    display: flex;
+    // flex-shrink: 0;
+    // display: flex;
 }
 
 .toolbar {
-    $toolbar-width: 3em;
+    // $toolbar-width: 3em;
 
-    border-right: 1px solid $dark-secondary-colour;
-    width: $toolbar-width;
+    border: 1px solid $dark-secondary-colour;
+    border-width: 0 1px 0 1px;
+    // width: $toolbar-width;
     flex-shrink: 0;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    .selected {
+        color: $accent-colour;
+    }
 
-    .button {
+    /* display: flex;
+    flex-direction: column;
+    align-items: center; */
+
+    /* .button {
         border: none;
         width: $toolbar-width;
         height: $toolbar-width;
@@ -243,13 +252,15 @@ export default class CollectionView extends Vue {
             width: $toolbar-width / 2;
             height: $toolbar-width / 2;
         }
-    }
+    } */
 }
 
 .collection {
-    flex: 1;
+    width: 17em;
+
+    /* flex: 1;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; */
 
     .el-tree {
         flex: 1;

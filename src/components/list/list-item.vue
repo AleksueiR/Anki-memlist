@@ -1,35 +1,75 @@
 <template>
-    <div @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
-        @mouseover="isOver = true"
-        @mouseleave="isOver = false"
-        class="list-item"
+    <div class="list-item uk-flex uk-flex-middle"
+        @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
+        @mouseover="isHovered = true"
+        @mouseleave="isHovered = false"
         :class="{ over: isOver, checked: selectedWords.includes(word) }">
 
-        <el-row type="flex" align="middle" >
-            <el-col :span="12">
-                <span>{{ word.text }} {{ selectedWords.includes(word) }} <!-- /{{ word.archived }}/ ({{ dateFormat(word.dateAdded) }} ) --></span>
-            </el-col>
-            <el-col :span="12" v-if="true || isOver" class="word-controls">
-                <el-button-group>
-                    <el-tooltip content="Mark as added" placement="top-start">
-                        <el-button icon="el-icon-check" @click.stop.prevent="archiveWord({ wordId: word.id })" size="small"></el-button>
-                    </el-tooltip>
-                    <el-tooltip content="Remove from list" placement="top-start">
-                        <el-button icon="el-icon-delete" @click.stop.prevent="removeWord({ wordId: word.id })" size="small"></el-button>
-                    </el-tooltip>
-                </el-button-group>
-            </el-col>
-        </el-row>
+        <a
+            href="#"
+            uk-tooltip="delay: 500; title: Favourite"
+            uk-icon="ratio: 0.7; icon: star"
+            class="uk-icon uk-position-center-left item-control star"
+            v-if="isControlsVisible || word.favourite"
+            :class="{ active: word.favourite }"></a>
+
+        <span class="item-text uk-flex-1">{{ word.text }} </span>
+
+        <template v-if="isControlsVisible">
+            <a
+                href="#"
+                uk-tooltip="delay: 1500; title: View menu"
+                uk-icon="ratio: 0.7; icon: more"
+                @click.stop="positionDropdown"
+                class="uk-margin-small-left uk-icon item-control hidden"></a>
+            <div class="drrrr" uk-dropdown="mode: click; pos: right-center" ref="dropdown">
+                <ul class="uk-nav uk-dropdown-nav">
+                    <li class="uk-active"><a href="#">Active</a></li>
+                    <li><a href="#">Item</a></li>
+                    <li class="uk-nav-header">Header</li>
+                    <li><a href="#">Item</a></li>
+                    <li><a href="#">Item</a></li>
+                    <li class="uk-nav-divider"></li>
+                    <li><a href="#">Item</a></li>
+                </ul>
+            </div>
+
+            <a
+                href="#"
+                uk-tooltip="delay: 500; title: Archive"
+                uk-icon="ratio: 0.7; icon: check"
+                class=" uk-icon item-control hidden"></a>
+
+            <a
+                href="#"
+                uk-tooltip="delay: 500; title: Remove"
+                uk-icon="ratio: 0.7; icon: close"
+                class="uk-margin-small-right uk-icon item-control hidden"></a>
+        </template>
+
+        <span
+            uk-icon="ratio: 0.7; icon: comment"
+            class="uk-margin-small-left uk-margin-small-right uk-icon item-control transient"
+            v-show="!isControlsVisible"
+            v-if="word.hasNotes"></span>
 
     </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
-import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import {
+    Component,
+    Inject,
+    Model,
+    Prop,
+    Watch,
+    Emit
+} from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import moment from 'moment';
+import UIkit from 'uikit';
 
 import { CollectionWord } from '../../store/modules/collection/index';
 
@@ -47,6 +87,16 @@ export default class WordItem extends Vue {
     @ActionCL removeWord: (wordId: string) => void;
 
     @Prop() word: CollectionWord;
+
+    isHovered: boolean = false;
+    isMenuOpened: boolean = false;
+    get isControlsVisible(): boolean {
+        return this.isHovered || this.isMenuOpened;
+    }
+
+    get isSelected(): boolean {
+        return this.selectedWords.includes(this.word);
+    }
 
     isOver: boolean = false;
 
@@ -67,6 +117,16 @@ export default class WordItem extends Vue {
     remove(): void {
         this.$emit('remove', this.word);
     } */
+
+    positionDropdown(event: MouseEvent): void {
+        // const a = UIkit.dropdown('.drrrr');
+
+        const dropdown = this.$refs.dropdown as HTMLElement;
+        const bbox = dropdown.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.left = `${bbox.left}px`;
+        dropdown.style.top = `${bbox.top}px`;
+    }
 }
 </script>
 
@@ -74,16 +134,54 @@ export default class WordItem extends Vue {
 @import './../../styles/variables';
 
 .list-item {
+    position: relative;
+    height: 34px;
+
     &.checked {
         background-color: darken($secondary-colour, 10%);
     }
 
     &:hover {
         background-color: $secondary-colour;
+
+        /* .item-control {
+            &.hidden {
+                display: block;
+            }
+            &.transient {
+                display: none;
+            }
+        } */
     }
 }
 
-.el-row {
+.item-text {
+    padding-left: 0.5rem + 2rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    user-select: none;
+    pointer-events: none;
+}
+
+.item-control {
+    padding: 0.5rem;
+
+    &.star {
+        left: 0.5rem;
+    }
+
+    &.hidden {
+        //display: none;
+    }
+
+    &.active {
+        // display: block;
+        color: $accent-colour;
+    }
+}
+
+/* .el-row {
     height: 36px;
     padding: 8px;
     cursor: pointer;
@@ -100,5 +198,5 @@ button {
 
 .over {
     // background-color: $secondary-colour;
-}
+} */
 </style>

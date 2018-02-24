@@ -1,36 +1,14 @@
 <template>
 
-    <section class="root">
+    <section class="root uk-flex">
 
         <collection-view></collection-view>
-
-        <!--div>
-
-            index {{ index.safeJSON }}
-            <br>
-            selectedLists
-            {{ selectedLists.length }}
-            <div v-for="list in selectedLists" :key="list.id"> {{ list.safeJSON }} </div>
-
-            <hr>
-
-            {{ index.tree.safeJSON }}
-
-
-
-
-
-        </div-->
 
         <list-view></list-view>
 
         <word-editor class="word-editor"></word-editor>
 
-        <!-- <word-list class="word-list"></word-list>
-
-        <word-editor class="word-editor"></word-editor>
-
-        <settings :isOpen.sync="isSettingsOpen"></settings>
+        <!-- <settings :isOpen.sync="isSettingsOpen"></settings>
         <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
 
     </section>
@@ -140,22 +118,16 @@ export default class App extends Vue {
 
 <style lang="scss" scoped>
 .root {
-    padding: 8px 0;
+    // padding: 8px 0;
+
     font-size: 16px;
     font-family: Segoe UI;
 
-    display: flex;
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
     left: 0;
-    flex-direction: row;
-
-    > section,
-    > aside {
-        display: flex;
-    }
 }
 
 /* .word-list {
@@ -164,8 +136,8 @@ export default class App extends Vue {
     margin-right: 16px;
 } */
 
-.word-editor {
+/* .word-editor {
     margin-left: 16px;
     flex: 1;
-}
+} */
 </style>

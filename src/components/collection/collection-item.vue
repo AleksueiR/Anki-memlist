@@ -162,7 +162,7 @@ export default class CollectionItemV extends Vue {
 }
 
 .collection-item {
-    height: 1.5rem;
+    height: 34px;
     display: flex;
     align-items: center;
     // margin: 0 0.5rem 0 0.5rem;

@@ -356,9 +356,8 @@ export default class WordList extends Vue {
 @import './../../styles/variables';
 
 .list-view {
-    width: 15em;
+    width: 17em;
     flex-shrink: 0;
-    margin-right: 16px;
 
     display: flex;
     flex-direction: column;

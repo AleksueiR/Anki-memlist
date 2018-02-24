@@ -40,6 +40,7 @@ import {
     CollectionState,
     CollectionIndex,
     CollectionList,
+    CollectionListMap,
     CollectionTree
 } from '../store/modules/collection/index';
 
@@ -61,7 +62,7 @@ export default class App extends Vue {
     @Mutation('selectWord') selectWord: (item: string | null) => void; */
 
     @StateCL('index') index: CollectionIndex;
-    @StateCL('lists') lists: { [name: string]: CollectionList };
+    @StateCL('lists') lists: CollectionListMap;
 
     /* @StateCL((state: CollectionState) =>
         Array.from(state.lists.values())

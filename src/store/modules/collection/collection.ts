@@ -6,7 +6,8 @@ import {
     CollectionIndex,
     CollectionList,
     CollectionTree,
-    CollectionWord
+    CollectionWord,
+    CollectionListMap
 } from './collection-state';
 import { State as RootState } from './../../state';
 import { isArray } from 'util';
@@ -52,7 +53,7 @@ const actions = {
 
     async fetchIndex(context: CollectionContext): Promise<void> {
         let index: CollectionIndex = state.index;
-        let lists: { [name: string]: CollectionList } = state.lists;
+        let lists: CollectionListMap = state.lists;
 
         const hasCollection = await storage.hasCollection();
 
@@ -380,10 +381,7 @@ const mutations = {
         state.index = index;
     },
 
-    SET_LISTS(
-        state: CollectionState,
-        lists: { [name: string]: CollectionList }
-    ): void {
+    SET_LISTS(state: CollectionState, lists: CollectionListMap): void {
         state.lists = lists;
     },
 

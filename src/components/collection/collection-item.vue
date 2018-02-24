@@ -52,6 +52,7 @@ import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
 import {
     CollectionList,
+    CollectionListMap,
     CollectionTree,
     CollectionState
 } from '../../store/modules/collection/index';
@@ -95,7 +96,7 @@ export default class CollectionItemV extends Vue {
     @Prop() item: CollectionTree;
 
     @StateCL selectedLists: CollectionList[];
-    @StateCL lists: { [name: string]: CollectionList };
+    @StateCL lists: CollectionListMap;
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 

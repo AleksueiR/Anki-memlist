@@ -30,9 +30,9 @@
                 @node-click="nodeClick">
             </treee>
 
-            <hr>
+            <!-- <hr>
 
-            <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div>
+            <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div> -->
         </div>
 
     </section>
@@ -64,7 +64,8 @@ import {
     CollectionTree,
     CollectionIndex,
     CollectionList,
-    CollectionWord
+    CollectionWord,
+    CollectionListMap
 } from '../../store/modules/collection';
 
 import CollectionBus from './collection-bus';
@@ -109,7 +110,7 @@ export default class CollectionView extends Vue {
     }
 
     @StateCL index: CollectionIndex;
-    @StateCL lists: { [name: string]: CollectionList };
+    @StateCL lists: CollectionListMap;
     @StateCL selectedLists: CollectionList[];
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;

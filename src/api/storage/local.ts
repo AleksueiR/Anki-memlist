@@ -8,7 +8,8 @@ import {
     CollectionTree,
     CollectionIndexOptions,
     CollectionListOptions,
-    CollectionWord
+    CollectionWord,
+    CollectionListMap
 } from '../../store/modules/collection/index';
 
 /* console.log('padht', jsonStorage.getDataPath());
@@ -44,8 +45,8 @@ const local: Storage = {
         );
 
         const listArray = await Promise.all(listPromises);
-        const lists: { [name: string]: CollectionList } = listArray.reduce(
-            (map: { [name: string]: CollectionList }, list) => {
+        const lists: CollectionListMap = listArray.reduce(
+            (map: CollectionListMap, list) => {
                 map[list.id] = list;
                 return map;
             },

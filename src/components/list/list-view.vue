@@ -30,12 +30,12 @@
                     :word="word"></list-item>
             </ul> -->
 
-            <!-- <virtual-list
+            <virtual-list
                 :size="36"
                 :remain="visibleHeight"
                 :bench="20"
                 class="cm-scrollbar">
--->
+
 
                 <list-item
                     v-for="item in getPooledWords"
@@ -46,7 +46,7 @@
                     :key="item.id"
                     :word="item"></list-item>
 
-            <!-- </virtual-list> -->
+            </virtual-list>
 
             <!-- <virtual-scroller class="scroller"
                 style="height: 300px; overflow: scroll;"

@@ -26,10 +26,12 @@ window.onbeforeunload = e => {
 
 // overloading constructors https://stackoverflow.com/a/40976608
 
+export type CollectionListMap = { [name: string]: CollectionList };
+
 export interface CollectionStateOptions {
     index?: CollectionIndex;
     //lists?: { [name: string]: CollectionList};
-    lists?: { [name: string]: CollectionList };
+    lists?: CollectionListMap;
 
     selectedLists?: CollectionList[];
     selectedWords?: CollectionWord[];
@@ -41,7 +43,7 @@ export class CollectionState {
     index: CollectionIndex;
 
     // lists: { [name: string]: CollectionList};
-    lists: { [name: string]: CollectionList };
+    lists: CollectionListMap;
 
     readonly selectedLists: CollectionList[];
     readonly selectedWords: CollectionWord[];
@@ -198,6 +200,7 @@ export class CollectionTree {
 
 export type CollectionSortBy = 'name' | 'date';
 export type CollectionSortDirection = 'asc' | 'des';
+export type CollectionWordMap = { [name: string]: CollectionWord };
 
 export interface CollectionListOptions {
     id?: string;
@@ -214,7 +217,7 @@ export interface CollectionListOptions {
 
     index?: string[];
     //words?: Map<string, CollectionWord>;
-    words?: { [name: string]: CollectionWord };
+    words?: CollectionWordMap;
     notes?: string;
 }
 
@@ -235,7 +238,7 @@ export class CollectionList {
 
     readonly index: string[];
     // readonly words: Map<string, CollectionWord>;
-    readonly words: { [name: string]: CollectionWord };
+    readonly words: CollectionWordMap;
     private _notes: string;
 
     constructor(options: CollectionListOptions = {}) {
@@ -399,7 +402,7 @@ export class CollectionList {
             sortDirection: this.sortDirection,
             index: this.index,
             //words: words as Map<string, CollectionWord>,
-            words: safeWords as { [name: string]: CollectionWord },
+            words: safeWords as CollectionWordMap,
             notes: this.notes
         };
     }

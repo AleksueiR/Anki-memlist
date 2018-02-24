@@ -3,7 +3,7 @@
         @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false"
-        :class="{ over: isOver, checked: selectedWords.includes(word) }">
+        :class="{ hover: isHovered || isControlsVisible, checked: selectedWords.includes(word) }">
 
         <a
             href="#"
@@ -13,7 +13,7 @@
             v-if="isControlsVisible || word.favourite"
             :class="{ active: word.favourite }"></a>
 
-        <span class="item-text uk-flex-1">{{ word.text }} </span>
+        <span class="item-text uk-flex-1">{{ word.text }}</span>
 
         <template v-if="isControlsVisible">
             <a
@@ -22,17 +22,32 @@
                 uk-icon="ratio: 0.7; icon: more"
                 @click.stop="positionDropdown"
                 class="uk-margin-small-left uk-icon item-control hidden"></a>
-            <div class="drrrr" uk-dropdown="mode: click; pos: right-center" ref="dropdown">
+
+            <uk-dropdown
+                v-once
+                :pos="'right-center'"
+                :delay-hide="0"
+                @show="isMenuOpened = true"
+                @hide="isMenuOpened = false">
+
                 <ul class="uk-nav uk-dropdown-nav">
-                    <li class="uk-active"><a href="#">Active</a></li>
-                    <li><a href="#">Item</a></li>
-                    <li class="uk-nav-header">Header</li>
-                    <li><a href="#">Item</a></li>
-                    <li><a href="#">Item</a></li>
+                    <li :class="{ 'uk-active': word.favourite }"><a href="#" class="uk-flex uk-flex-middle">
+                        <span class="uk-flex-1">Favourite</span>
+                        <span uk-icon="icon: check" v-if="word.favourite"></span>
+                    </a></li>
+                    <li :class="{ 'uk-active': word.archived }"><a href="#" class="uk-flex uk-flex-middle">
+                        <span class="uk-flex-1">Archived</span>
+                        <span uk-icon="icon: check" v-if="word.archived"></span>
+                    </a></li>
+
                     <li class="uk-nav-divider"></li>
-                    <li><a href="#">Item</a></li>
+
+                    <li><a href="#">Edit</a></li>
+                    <li><a href="#">Delete</a></li>
+                    <li><a href="#">Move</a></li>
                 </ul>
-            </div>
+
+            </uk-dropdown>
 
             <a
                 href="#"
@@ -69,15 +84,19 @@ import {
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import moment from 'moment';
-import UIkit from 'uikit';
 
 import { CollectionWord } from '../../store/modules/collection/index';
+import UkDropdownV from '../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
 
-@Component
+@Component({
+    components: {
+        'uk-dropdown': UkDropdownV
+    }
+})
 export default class WordItem extends Vue {
     @StateCL selectedWords: CollectionWord[];
 
@@ -98,8 +117,6 @@ export default class WordItem extends Vue {
         return this.selectedWords.includes(this.word);
     }
 
-    isOver: boolean = false;
-
     dateFormat(date: number): string {
         return moment(date).fromNow(); //format('YYYY-MM-DD HH:mm:ss');
     }
@@ -117,16 +134,6 @@ export default class WordItem extends Vue {
     remove(): void {
         this.$emit('remove', this.word);
     } */
-
-    positionDropdown(event: MouseEvent): void {
-        // const a = UIkit.dropdown('.drrrr');
-
-        const dropdown = this.$refs.dropdown as HTMLElement;
-        const bbox = dropdown.getBoundingClientRect();
-        dropdown.style.position = 'fixed';
-        dropdown.style.left = `${bbox.left}px`;
-        dropdown.style.top = `${bbox.top}px`;
-    }
 }
 </script>
 
@@ -141,7 +148,7 @@ export default class WordItem extends Vue {
         background-color: darken($secondary-colour, 10%);
     }
 
-    &:hover {
+    &.hover {
         background-color: $secondary-colour;
 
         /* .item-control {
@@ -171,14 +178,13 @@ export default class WordItem extends Vue {
         left: 0.5rem;
     }
 
-    &.hidden {
-        //display: none;
-    }
-
     &.active {
-        // display: block;
         color: $accent-colour;
     }
+}
+
+.uk-nav a.uk-flex {
+    display: flex !important;
 }
 
 /* .el-row {

@@ -1,5 +1,5 @@
 <template>
-    <div v-once :uk-dropdown="options">
+    <div :uk-dropdown="options">
         <slot></slot>
     </div>
 </template>

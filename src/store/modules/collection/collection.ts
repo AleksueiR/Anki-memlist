@@ -17,7 +17,7 @@ const state: CollectionState = new CollectionState();
 
 // getters
 const getters = {
-    getPooledWords: (state: CollectionState): CollectionWord[] => {
+    getPooledWords(state: CollectionState): CollectionWord[] {
         if (state.selectedLists.length === 0) {
             return [];
         }
@@ -47,6 +47,13 @@ const getters = {
 
 // actions
 const actions = {
+    feck(context: CollectionContext) {
+        // context.state.halp = !context.state.halp;
+        context.commit('FECK', !context.state.halp.feck);
+    },
+
+    // #region EDIT INDEX
+
     async fetchIndex(context: CollectionContext): Promise<void> {
         let index: CollectionIndex = state.index;
         let lists: Map<string, CollectionList> = state.lists;
@@ -195,6 +202,8 @@ const actions = {
         context.commit('DESELECT_ALL_LISTS');
     },
 
+    // #endregion EDIT INDEX
+
     // #region EDIT LIST
 
     setListName(
@@ -248,10 +257,55 @@ const actions = {
 
     // #region EDIT WORD
 
+    /**
+     * Sets the text value of the word with the given wordId.
+     *
+     * @param {CollectionContext} context
+     * @param {{ wordId: string; value: string }} { wordId, value }
+     * @returns {void}
+     */
+    setWordText(
+        context: CollectionContext,
+        { wordId, value }: { wordId: string; value: string }
+    ): void {
+        const word: CollectionWord = context.getters.getPooledWords.find(
+            (word: CollectionWord) => word.id === wordId
+        );
+
+        if (word === undefined) {
+            return;
+        }
+
+        context.commit('SET_WORD_TEXT', { word, value });
+    },
+
+    setWordFavourite(
+        context: CollectionContext,
+        { wordId, value }: { wordId: string; value: boolean }
+    ): void {
+        const word: CollectionWord | null = helpers.getWordFromPooled(
+            context,
+            wordId
+        );
+
+        if (!word) {
+            return;
+        }
+
+        context.commit('SET_WORD_FAVOURITE', { word, value });
+    },
+
+    setWordFavourite_(
+        context: CollectionContext,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
+        word.favourite = value;
+    },
+
     selectWord(
         context: CollectionContext,
         options: { wordId: string; annex: boolean }
-    ) {
+    ): void {
         const { wordId, annex = false } = options;
 
         if (!annex) {
@@ -284,6 +338,7 @@ const actions = {
             return;
         }
 
+        // get the word from the list
         const word: CollectionWord | undefined = list.words.get(wordId);
 
         if (word === undefined) {
@@ -302,6 +357,10 @@ const actions = {
 
 // mutations
 const mutations = {
+    FECK(state: CollectionState, value: boolean): void {
+        state.halp.feck = value;
+    },
+
     // #region EDIT INDEX
 
     SET_INDEX(state: CollectionState, index: CollectionIndex): void {
@@ -387,6 +446,34 @@ const mutations = {
 
     // #region EDIT WORD
 
+    SET_WORD_TEXT(
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: string }
+    ): void {
+        word.text = value;
+    },
+
+    SET_WORD_FAVOURITE(
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
+        word.favourite = value;
+    },
+
+    SET_WORD_ARCHIVED(
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
+        word.archived = value;
+    },
+
+    SET_WORD_NOTES(
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: string }
+    ): void {
+        word.notes = value;
+    },
+
     SELECT_WORD(state: CollectionState, word: CollectionWord): void {
         // do not select the same list twice
         const index = state.selectedWords.findIndex(
@@ -416,6 +503,23 @@ const mutations = {
     }
 
     // #endregion
+};
+
+const helpers = {
+    getWordFromPooled(
+        context: CollectionContext,
+        wordId: string
+    ): CollectionWord | null {
+        const word: CollectionWord = context.getters.getPooledWords.find(
+            (word: CollectionWord) => word.id === wordId
+        );
+
+        if (word === undefined) {
+            return null;
+        }
+
+        return word;
+    }
 };
 
 export const collection = {

@@ -9,6 +9,25 @@
 
         </nav>
 
+        <div style="height: 300px; border: 1px solid black">
+
+            <div v-if="lists.get('jd3t48py')">
+
+                {{ catWord.favourite }}
+
+                <!-- {{ halp.feck }} -->
+
+                {{ lists.get('jd3t48py').words.size }}
+            </div>
+
+            <!-- <div v-if="getPooledWords && getPooledWords[0]">
+                {{ getPooledWords[0].text }}        {{ getPooledWords[0].favourite }}
+            </div> -->
+
+        </div>
+
+        <!--  -->
+
         <div class="collection cm-scrollbar" v-show="isExpanded">
 
             <!-- <div class="uk-inline">
@@ -63,12 +82,14 @@ import {
     CollectionState,
     CollectionTree,
     CollectionIndex,
-    CollectionList
+    CollectionList,
+    CollectionWord
 } from '../../store/modules/collection';
 
 import CollectionBus from './collection-bus';
 
 const StateCL = namespace('collection', State);
+const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
 
 @Component({
@@ -78,6 +99,14 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionView extends Vue {
+    @State(state =>
+        state.collection.lists.get('jd3t48py').words.get('jd3t9hxq')
+    )
+    catWord: any;
+
+    @StateCL halp: boolean;
+    @GetterCL getPooledWords: CollectionWord[];
+
     isExpanded: boolean = true;
 
     toggleIsExpanded(): void {
@@ -256,7 +285,7 @@ export default class CollectionView extends Vue {
 }
 
 .collection {
-    width: 17em;
+    width: 14em;
 
     /* flex: 1;
     display: flex;

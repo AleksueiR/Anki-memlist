@@ -2,7 +2,8 @@ import devtools from '@vue/devtools';
 
 if (process.env.NODE_ENV === 'development') {
     // TODO: uncomment to debug
-    // devtools.connect(/* host */);
+    // run: ./node_modules/.bin/vue-devtools
+    devtools.connect(/* host */);
 }
 
 import Vue from 'vue';

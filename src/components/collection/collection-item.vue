@@ -88,6 +88,9 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionItemV extends Vue {
+    @ActionCL feck: () => void;
+    @ActionCL setListName: any;
+
     @Inject() bus: CollectionBus;
 
     @Prop() item: CollectionTree;
@@ -118,7 +121,11 @@ export default class CollectionItemV extends Vue {
         this.bus.mountComplete(this.list.id);
     }
 
-    onPinClick(): void {}
+    onPinClick(): void {
+        this.feck();
+
+        this.setListName({ listId: this.list.id, name: this.list.name + '1' });
+    }
 
     renameStart(listId: string): void {
         console.log('rename start', this.item.listId, listId);

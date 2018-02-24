@@ -30,21 +30,26 @@
                     :word="word"></list-item>
             </ul> -->
 
-            <virtual-list
+            <!-- <virtual-list
                 :size="36"
                 :remain="visibleHeight"
                 :bench="20"
                 class="cm-scrollbar">
+-->
+<div v-if="getPooledWords.length > 0">
+                {{ getPooledWords[0].favourite }}
+                </div>
 
                 <list-item
                     v-for="item in getPooledWords"
+                    @favourite="setWordFavourite"
                     @archive="archiveWord"
                     @edit="editWord"
                     @remove="removeWord"
                     :key="item.id"
                     :word="item"></list-item>
 
-            </virtual-list>
+            <!-- </virtual-list> -->
 
             <!-- <virtual-scroller class="scroller"
                 style="height: 300px; overflow: scroll;"
@@ -81,51 +86,6 @@
         <div>
             <span>{{ getPooledWords.length }} words</span>
             <span v-if="selectedLists.length > 1"> {{ selectedLists.length }} lists</span>
-        </div>
-
-
-        <!-- <div v-for="word in getPooledWords" :key="word.id">{{ word.text }}</div> -->
-
-        <div class="container" v-if="false">
-            <!-- <el-row>
-                <el-col> -->
-
-                    <section class="lookup">
-                        <el-input
-                            @keyup.enter.native="addOrEditWord()"
-                            @keyup.esc.native="clearLookup"
-                            @input="blah"
-                            v-model.trim="lookup"
-                            label="Lookup"
-                            placeholder="type a word"
-                            suffix-icon="el-icon-edit"
-                            autofocus
-                            :hint="lookupHint"
-                            :clearable="true">
-                        </el-input>
-                    </section>
-
-
-                <!-- </el-col> -->
-                <!-- <el-col :span="2" class="word-menu">
-                    <word-menu></word-menu>
-                </el-col> -->
-            <!-- </el-row> -->
-            <!-- <el-row> -->
-                <span class="text-smaller">{{ lookupHint }}</span>
-            <section class="cm-scrollbar">
-                    <ul class="list">
-                        <word-item
-                            v-for="word in items"
-                            :key="word.text"
-                            @archive="archiveWord"
-                            @edit="editWord"
-                            @select="selectWord"
-                            v-on:remove="removeWord"
-                            v-bind:word="word"></word-item>
-                    </ul>
-            </section>
-            <!-- </el-row> -->
         </div>
 
     </section>
@@ -186,6 +146,9 @@ export default class WordList extends Vue {
     @ActionCL
     selectWord: (payload: { wordId: string; annex?: Boolean }) => void;
     @ActionCL deselectWord: (payload: { wordId: string }) => void;
+
+    @ActionCL
+    setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
 
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {

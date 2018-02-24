@@ -35,6 +35,8 @@ export interface CollectionStateOptions {
 }
 
 export class CollectionState {
+    halp = { feck: false };
+
     index: CollectionIndex;
 
     lists: Map<string, CollectionList>;

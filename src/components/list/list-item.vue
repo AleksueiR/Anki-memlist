@@ -7,33 +7,49 @@
 
         <a
             href="#"
+            @click.stop="toggleFavourite"
             uk-tooltip="delay: 500; title: Favourite"
             uk-icon="ratio: 0.7; icon: star"
             class="uk-icon uk-position-center-left item-control star"
             v-if="isControlsVisible || word.favourite"
             :class="{ active: word.favourite }"></a>
 
+        {{ word._favourite }}
+
+        {{ ap.value }}
+
         <span class="item-text uk-flex-1">{{ word.text }}</span>
 
         <template v-if="isControlsVisible">
             <a
                 href="#"
+                uk-tooltip="delay: 500; title: Archive"
+                uk-icon="ratio: 0.7; icon: check"
+                class="uk-margin-small-left uk-icon item-control"></a>
+
+            <a
+                href="#"
+                uk-tooltip="delay: 500; title: Delete"
+                uk-icon="ratio: 0.7; icon: close"
+                class="uk-icon item-control"></a>
+
+            <a
+                href="#"
                 uk-tooltip="delay: 1500; title: View menu"
                 uk-icon="ratio: 0.7; icon: more"
-                @click.stop="positionDropdown"
-                class="uk-margin-small-left uk-icon item-control hidden"></a>
-
+                @click.stop="vnull"
+                class="uk-margin-small-right uk-icon item-control"></a>
             <uk-dropdown
-                v-once
                 :pos="'right-center'"
                 :delay-hide="0"
                 @show="isMenuOpened = true"
                 @hide="isMenuOpened = false">
 
                 <ul class="uk-nav uk-dropdown-nav">
-                    <li :class="{ 'uk-active': word.favourite }"><a href="#" class="uk-flex uk-flex-middle">
-                        <span class="uk-flex-1">Favourite</span>
-                        <span uk-icon="icon: check" v-if="word.favourite"></span>
+                    <li :class="{ 'uk-active': word.favourite }">
+                        <a href="#" class="uk-flex uk-flex-middle" @click.stop="toggleFavourite">
+                            <span class="uk-flex-1">Favourite</span>
+                            <span uk-icon="icon: check" v-if="word.favourite"></span>
                     </a></li>
                     <li :class="{ 'uk-active': word.archived }"><a href="#" class="uk-flex uk-flex-middle">
                         <span class="uk-flex-1">Archived</span>
@@ -48,18 +64,6 @@
                 </ul>
 
             </uk-dropdown>
-
-            <a
-                href="#"
-                uk-tooltip="delay: 500; title: Archive"
-                uk-icon="ratio: 0.7; icon: check"
-                class=" uk-icon item-control hidden"></a>
-
-            <a
-                href="#"
-                uk-tooltip="delay: 500; title: Remove"
-                uk-icon="ratio: 0.7; icon: close"
-                class="uk-margin-small-right uk-icon item-control hidden"></a>
         </template>
 
         <span
@@ -98,6 +102,9 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class WordItem extends Vue {
+    @Emit()
+    favourite(payload: { wordId: string; value: boolean }) {}
+
     @StateCL selectedWords: CollectionWord[];
 
     @ActionCL selectWord: (wordId: string) => void;
@@ -106,6 +113,11 @@ export default class WordItem extends Vue {
     @ActionCL removeWord: (wordId: string) => void;
 
     @Prop() word: CollectionWord;
+
+    @Watch('word.favourite', { deep: true })
+    onWordChanged(one: any, two: any) {
+        console.log(one, two);
+    }
 
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
@@ -134,6 +146,31 @@ export default class WordItem extends Vue {
     remove(): void {
         this.$emit('remove', this.word);
     } */
+
+    ap = { value: 0 };
+
+    @ActionCL
+    setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
+
+    @ActionCL
+    setWordFavourite_: (
+        payload: { word: CollectionWord; value: boolean }
+    ) => void;
+
+    @ActionCL feck: () => void;
+
+    toggleFavourite(): void {
+        // this.word.favourite = !this.word.favourite;
+        // this.favourite({ wordId: this.word.id, value: !this.word.favourite });
+        // this.ap.value++;
+        this.setWordFavourite({
+            wordId: this.word.id,
+            value: !this.word.favourite
+        });
+        this.feck();
+    }
+
+    vnull(): void {}
 }
 </script>
 

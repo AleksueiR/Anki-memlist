@@ -220,7 +220,7 @@ export interface CollectionListOptions {
     dateCreated?: number;
     dateModified?: number;
 
-    pin?: boolean;
+    pinned?: boolean;
     hidden?: boolean;
     colour?: string;
 
@@ -241,7 +241,7 @@ export class CollectionList {
     readonly dateCreated: number;
     dateModified: number;
 
-    private _pin: boolean;
+    private _pinned: boolean;
     private _hidden: boolean;
     private _colour: string;
 
@@ -259,7 +259,7 @@ export class CollectionList {
             name = CollectionList.DEFAULT_NAME,
             dateCreated = moment.now(),
             dateModified = moment.now(),
-            pin = false,
+            pinned = false,
             hidden = false,
             colour = '#fff',
             sortBy = 'name',
@@ -273,7 +273,7 @@ export class CollectionList {
         this.name = name;
         this.dateCreated = dateCreated;
         this.dateModified = dateModified;
-        this.pin = pin;
+        this.pinned = pinned;
         this.hidden = hidden;
         this.colour = colour;
         this.sortBy = sortBy;
@@ -297,13 +297,13 @@ export class CollectionList {
         return this._name;
     }
 
-    set pin(value: boolean) {
-        this._pin = value;
+    set pinned(value: boolean) {
+        this._pinned = value;
         this.update();
     }
 
-    get pin(): boolean {
-        return this._pin;
+    get pinned(): boolean {
+        return this._pinned;
     }
 
     set hidden(value: boolean) {
@@ -412,7 +412,7 @@ export class CollectionList {
             name: this.name,
             dateCreated: this.dateCreated,
             dateModified: this.dateModified,
-            pin: this.pin,
+            pinned: this.pinned,
             hidden: this.hidden,
             colour: this.colour,
             sortBy: this.sortBy,

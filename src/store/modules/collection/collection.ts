@@ -132,7 +132,7 @@ const actions = {
 
         // if this is a first list added, make it default
         if (!state.index.defaultListId) {
-            context.commit('SET_DEFAULT_LIST', list);
+            context.commit('SET_INDEX_DEFAULT_LIST', { list });
         }
 
         actions.writeList(context, list.id);
@@ -144,14 +144,51 @@ const actions = {
         // context.commit('REMOVE_LIST_FROM_TREE', { tree: state.index.tree, list });
     },
 
-    setDefaultList(context: CollectionContext, listId: string): void {
-        // const list = state.lists.get(listId);
+    setIndexDefaultList(
+        context: CollectionContext,
+        { listId }: { listId: string }
+    ): void {
+        if (state.index.defaultListId === listId) {
+            return;
+        }
+
         const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
 
-        context.commit('SET_DEFAULT_LIST', list);
+        context.commit('SET_INDEX_DEFAULT_LIST', { list });
+        actions.writeIndex(context);
+    },
+
+    setIndexExpandedTree(
+        context: CollectionContext,
+        { listId, value }: { listId: string, value: boolean }
+    ): void {
+        const stack: CollectionTree[] = [];
+        let tree: CollectionTree | undefined = undefined;
+
+        stack.push.apply(stack, state.index.tree.items);
+
+        while (stack.length !== 0) {
+            const node = stack.pop()!;
+
+            if (node.listId === listId) {
+                tree = node;
+                break;
+            }
+
+            if (node.items.length !== 0) {
+                stack.push.apply(stack, node.items.slice().reverse());
+            }
+        }
+
+        if (tree === undefined) {
+            return;
+        }
+
+        context.commit('SET_INDEX_EXPANDED_TREE', { tree, value });
+        actions.writeIndex(context);
     },
 
     /**
@@ -219,6 +256,20 @@ const actions = {
         }
 
         context.commit('SET_LIST_NAME', { list, name });
+
+        actions.writeList(context, list.id);
+    },
+
+    setListPinned(
+        context: CollectionContext,
+        { listId, value }: { listId: string; value: boolean }
+    ): void {
+        const list = state.lists[listId];
+        if (list === undefined) {
+            return;
+        }
+
+        context.commit('SET_LIST_PINNED', { list, value });
 
         actions.writeList(context, list.id);
     },
@@ -398,8 +449,18 @@ const mutations = {
         state.lists = lists;
     },
 
-    SET_DEFAULT_LIST(state: CollectionState, list: CollectionList): void {
+    SET_INDEX_DEFAULT_LIST(
+        state: CollectionState,
+        { list }: { list: CollectionList }
+    ): void {
         state.index.defaultListId = list.id;
+    },
+
+    SET_INDEX_EXPANDED_TREE(
+        state: CollectionState,
+        { tree, value }: { tree: CollectionTree, value: boolean }
+    ): void {
+        tree.expanded = value;
     },
 
     SET_INDEX_TREE(state: CollectionState, options: { tree: CollectionTree }) {
@@ -447,9 +508,16 @@ const mutations = {
 
     SET_LIST_NAME(
         state: CollectionState,
-        { list, name }: { list: CollectionList; name: string }
+        { list, value }: { list: CollectionList; value: string }
     ): void {
-        list.name = name;
+        list.name = value;
+    },
+
+    SET_LIST_PINNED(
+        state: CollectionState,
+        { list, value }: { list: CollectionList; value: boolean }
+    ): void {
+        list.pinned = value;
     },
 
     ADD_WORD(
@@ -536,6 +604,15 @@ const mutations = {
 };
 
 const helpers = {
+    /**
+     * Finds and returns a CollectionWord object give its id.
+     * By default, searches only in the selected lists.
+     *
+     * @param {CollectionContext} context context to search in
+     * @param {string} wordId word id
+     * @param {boolean} [searchAll=false] if true, search the whole collection; slower
+     * @returns {({ word: CollectionWord | null; list: CollectionList | null })}
+     */
     findWord(
         context: CollectionContext,
         wordId: string,

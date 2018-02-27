@@ -10,6 +10,11 @@
             :index="index"
             :isLast="index === items.length - 1"
             :key="`${index}-node`">
+
+            <template slot-scope="{ item, level }">
+                <slot :item="item" :level="level"></slot>
+            </template>
+
         </treee-node>
 
     </div>

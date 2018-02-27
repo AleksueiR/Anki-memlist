@@ -28,11 +28,18 @@
                 :draggable="isTreeDraggable"
                 :renderer="renderer"
                 @node-click="nodeClick">
+
+                <template slot-scope="{ item, level }">
+                    <collection-item
+                        :class="`level-${level}`"
+                        :item="item"
+                        @default="setIndexDefaultList"
+                        @pinned="setListPinned"
+                        @expanded="setIndexExpandedTree"
+                        ></collection-item>
+                </template>
             </treee>
 
-            <!-- <hr>
-
-            <div v-for="list in lists" :key="list.id"> {{ list.index.length }}</div> -->
         </div>
 
     </section>
@@ -77,11 +84,20 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         FontAwesomeIcon,
-        Treee
+        Treee,
+        'collection-item': CollectionItemV
     }
 })
 export default class CollectionView extends Vue {
     @GetterCL getPooledWords: CollectionWord[];
+
+    @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
+
+    @ActionCL
+    setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
+
+    @ActionCL
+    setListPinned: (payload: { listId: string; value: boolean }) => void;
 
     isExpanded: boolean = true;
 
@@ -152,7 +168,7 @@ export default class CollectionView extends Vue {
         }
     }
 
-    ctrlPressed: boolean = false;
+    // ctrlPressed: boolean = false;
 
     keyDownHandler(event: KeyboardEvent): void {
         // assume at least one list is selected
@@ -169,25 +185,18 @@ export default class CollectionView extends Vue {
 
         // track ctrl key
         // TODO: move ctrl tracking up to the app-level
-        if (event.keyCode === Vue.config.keyCodes.ctrl) {
+        /* if (event.keyCode === Vue.config.keyCodes.ctrl) {
             this.ctrlPressed = true;
         }
 
-        console.log(event.keyCode, 'is pressed');
+        console.log(event.keyCode, 'is pressed'); */
     }
 
-    keyUpHandler(event: KeyboardEvent): void {
+    /* keyUpHandler(event: KeyboardEvent): void {
         if (event.keyCode === Vue.config.keyCodes.ctrl) {
             this.ctrlPressed = false;
         }
-    }
-
-    mounted() {
-        this.$el.addEventListener('keydown', this.keyDownHandler);
-        this.$el.addEventListener('keyup', this.keyUpHandler);
-
-        this.bus.$on('rename-complete', this.onRenameComplete);
-    }
+    } */
 
     onRenameComplete(listId: string, name: string) {
         this.isTreeDraggable = true;
@@ -196,6 +205,13 @@ export default class CollectionView extends Vue {
 
         // TODO: is this needed?
         this.$el.focus();
+    }
+
+    mounted() {
+        this.$el.addEventListener('keydown', this.keyDownHandler);
+        // this.$el.addEventListener('keyup', this.keyUpHandler);
+
+        this.bus.$on('rename-complete', this.onRenameComplete);
     }
 
     /**
@@ -274,7 +290,7 @@ export default class CollectionView extends Vue {
 
 .treee {
     /deep/ .divider {
-        margin-left: 1.5rem;
+        margin-left: calc(0.5rem + 30px);
     }
 
     &.dragging /deep/ {

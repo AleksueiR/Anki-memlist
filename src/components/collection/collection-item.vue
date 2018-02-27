@@ -1,40 +1,112 @@
 <template>
-    <div class="collection-item"
-        :class="{ selected: isSelected }">
+    <div class="collection-item uk-flex uk-flex-middle"
+        :class="{ selected: isSelected }"
+        @mouseover="isHovered = true"
+        @mouseleave="isHovered = false">
 
         <span class="highlight"></span>
 
         <span
-            class="icon-button default-flag"
-            v-if="item.listId === defaultListId">
-            <font-awesome-icon icon="bookmark" />
-        </span>
+            uk-icon="ratio: 0.7; icon: bookmark"
+            uk-tooltip="delay: 1500; title: Default list"
+            class="uk-icon uk-position-center-left item-control default active"
+            v-if="isDefault"></span>
 
-        <button
-            class="icon-button hidden-button pin-flag"
-            :class="{ selected: list.pin }"
-            @click.stop="onPinClick"
-            v-if="item.listId !== defaultListId">
-            <font-awesome-icon icon="thumbtack" />
-        </button>
+        <a
+            href="#"
+            uk-icon="ratio: 0.7; icon: hashtag"
+            uk-tooltip="delay: 1500; title: Pin"
+            @click.stop="togglePinned"
+            :class="{ active: list.pinned }"
+            class="uk-margin-small-right uk-icon item-control default"
+            v-if="(isTargeted || list.pinned) && !isDefault"></a>
 
-        <span v-if="!isRenaming">{{ list.name }} {{ list.index.length }}</span>
+        <template v-if="!isRenaming">
+            <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
+            <span class="item-text uk-flex-1">{{ list.name }}</span>
 
-        <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
+            <template v-if="isTargeted">
+                <a
+                    href="#"
+                    uk-tooltip="delay: 1500; title: View menu"
+                    uk-icon="ratio: 0.7; icon: more"
+                    @click.stop="vnull"
+                    class="uk-margin-small-left uk-icon item-control"></a>
+                <uk-dropdown
+                    :pos="'right-center'"
+                    :delay-hide="0"
+                    @show="isMenuOpened = true"
+                    @hide="isMenuOpened = false">
 
-        <el-input
-            v-if="isRenaming"
-            v-input-focus
-            v-model="newName"
+                    <ul class="uk-nav uk-dropdown-nav">
 
-            @focus.once="onFocus"
-            @blur="renameCancel"
+                        <li :class="{ 'uk-active': list.pinned }">
+                            <a href="#" class="uk-flex uk-flex-middle"
+                                @click.stop="togglePinned">
 
-            @mousedown.native.stop="() => {}"
-            @click.native.stop="() => {}"
+                                <span class="uk-flex-1">Pinned</span>
+                                <span uk-icon="icon: check" v-if="list.pinned"></span>
+                            </a>
+                        </li>
 
-            @keyup.native.enter="renameComplete"
-            @keyup.native.esc="renameCancel"></el-input>
+                        <li :class="{ 'uk-active': list.hidden }">
+                            <a href="#" class="uk-flex uk-flex-middle"
+                                @click.stop="toggleHidden">
+
+                                <span class="uk-flex-1">Hidden</span>
+                                <span uk-icon="icon: check" v-if="list.hidden"></span>
+                            </a>
+                        </li>
+
+                        <li :class="{ 'uk-active': isDefault }">
+                            <a href="#" class="uk-flex uk-flex-middle"
+                                @click.stop="setDefault">
+
+                                <span class="uk-flex-1">Default</span>
+                                <span uk-icon="icon: check" v-if="isDefault"></span>
+                            </a>
+                        </li>
+
+                        <li class="uk-nav-divider"></li>
+
+                        <li><a href="#">Edit</a></li>
+                        <li><a href="#" @click.stop="deleteList">Delete</a></li>
+
+                    </ul>
+
+                </uk-dropdown>
+
+            </template>
+
+            <a
+                href="#"
+                :uk-icon="`ratio: 0.7; icon: chevron-${ item.expanded ? 'up' : 'down' }`"
+                v-if="(!item.expanded || isTargeted) && item.items.length > 0"
+                @click.stop="toggleExpand"
+                class="uk-icon item-control"></a>
+
+            <span
+                class="item-control uk-margin-small-right uk-text-muted">{{ list.index.length }}</span>
+
+        </template>
+
+        <template v-else>
+            <el-input
+                class="name-input"
+                v-input-focus
+                v-model="newName"
+
+                @focus.once="onFocus"
+                @blur="renameCancel"
+
+                @mousedown.native.stop="() => {}"
+                @click.native.stop="() => {}"
+
+                @keyup.native.enter="renameComplete"
+                @keyup.native.esc="renameCancel"></el-input>
+        </template>
+
+
     </div>
 </template>
 
@@ -45,7 +117,8 @@ import {
     Inject,
     Model,
     Prop,
-    Watch
+    Watch,
+    Emit
 } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
@@ -57,6 +130,7 @@ import {
     CollectionState
 } from '../../store/modules/collection/index';
 import CollectionBus from './collection-bus';
+import UkDropdownV from '../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -70,7 +144,8 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        FontAwesomeIcon
+        FontAwesomeIcon,
+        'uk-dropdown': UkDropdownV
     },
     directives: {
         // Register a local custom directive called `v-input-focus`
@@ -89,28 +164,67 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionItemV extends Vue {
-    @ActionCL setListName: any;
+    @Emit('default')
+    emDefault(payload: { listId: string }) {}
 
+    @Emit('pinned')
+    emPinned(payload: { listId: string; value: boolean }) {}
+
+    @Emit('hidden')
+    emHidden(payload: { listId: string; value: boolean }) {}
+
+    @Emit('expanded')
+    emExpanded(payload: { listId: string; value: boolean }) {}
+
+    @Emit('delete')
+    emDelete(payload: { listId: string }) {}
+
+    // communication with collection view
     @Inject() bus: CollectionBus;
 
+    // passed in CollectionTree object
     @Prop() item: CollectionTree;
 
+    // an array of selected lists
     @StateCL selectedLists: CollectionList[];
+
+    // a object map of all lists available
     @StateCL lists: CollectionListMap;
+
+    // the id of the default list
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
-    // TODO: oin list action
-
+    /**
+     * The CollectionList object of the current CollectionTree object
+     */
     get list(): CollectionList {
         return this.lists[this.item.listId]!;
     }
 
+    /**
+     * The flag indicating if this list is one of the selected lists.
+     */
     get isSelected(): boolean {
         return this.selectedLists.some(
             selectedList => this.list.id === selectedList.id
         );
     }
+
+    /**
+     * The flag indicating if this list is the default list in the collection.
+     */
+    get isDefault(): boolean {
+        return this.item.listId === this.defaultListId;
+    }
+
+    isHovered: boolean = false;
+    isMenuOpened: boolean = false;
+    get isTargeted(): boolean {
+        return this.isHovered || this.isMenuOpened;
+    }
+
+    // #region renaming
 
     isRenaming: boolean = false;
     newName: string | null = null;
@@ -120,8 +234,6 @@ export default class CollectionItemV extends Vue {
 
         this.bus.mountComplete(this.list.id);
     }
-
-    onPinClick(): void {}
 
     renameStart(listId: string): void {
         console.log('rename start', this.item.listId, listId);
@@ -143,37 +255,110 @@ export default class CollectionItemV extends Vue {
         this.bus.renameCancel(this.item.listId);
     }
 
+    // #endregion renaming
+
     /**
      * Preselect the current list name on focus.
      */
     onFocus(event: FocusEvent): void {
         (<HTMLInputElement>event.target).select();
     }
+
+    setDefault(): void {
+        this.emDefault({ listId: this.list.id });
+    }
+
+    togglePinned(): void {
+        this.emPinned({ listId: this.list.id, value: !this.list.pinned });
+    }
+
+    toggleHidden(): void {
+        this.emHidden({ listId: this.list.id, value: !this.list.hidden });
+    }
+
+    toggleExpand(): void {
+        this.emExpanded({ listId: this.list.id, value: !this.item.expanded });
+    }
+
+    deleteList(): void {
+        this.emDelete({ listId: this.list.id });
+    }
+
+    vnull(): void {}
 }
 </script>
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
+.collection-item {
+    position: relative;
+    height: 34px;
+
+    &.checked {
+        background-color: darken($secondary-colour, 10%);
+    }
+
+    &.hover {
+        background-color: $secondary-colour;
+    }
+}
+
+.item-text {
+    margin-left: calc(0.5rem + 30px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    user-select: none;
+    pointer-events: none;
+}
+
+.item-control {
+    padding: 0.5rem;
+
+    &.default {
+        position: absolute;
+        left: 0.25rem;
+    }
+
+    &.active {
+        color: $accent-colour;
+    }
+}
+
+.uk-nav a.uk-flex {
+    display: flex !important;
+}
+
+$base-indent: 1rem;
+
+@for $i from 0 through 10 {
+    .item-text,
+    .name-input {
+        .level-#{$i} & {
+            padding-left: $i * $base-indent;
+        }
+    }
+}
+
+////////
+
 // TODO: move this inot common styles
-.icon-button {
+/* .icon-button {
     color: $even-darker-secondary-colour;
     border: none;
     background: transparent;
     padding: 0;
     margin: 0;
-}
+} */
 
 .collection-item {
-    height: 34px;
-    display: flex;
-    align-items: center;
     // margin: 0 0.5rem 0 0.5rem;
 
-    margin-left: 1.5rem;
+    // margin-left: 1.5rem;
 
     span {
-        line-height: 1.5rem;
+        // line-height: 1.5rem;
     }
 
     &.selected,
@@ -184,7 +369,8 @@ export default class CollectionItemV extends Vue {
     }
 
     &.selected .highlight {
-        background-color: darken($secondary-colour, 10%);
+        background-color: rgba($color: $accent-colour, $alpha: 0.1);
+        border-left: 4px solid $accent-colour;
     }
 
     &:hover .highlight {
@@ -194,9 +380,9 @@ export default class CollectionItemV extends Vue {
     .highlight {
         content: '';
         position: absolute;
-        width: 100%;
         height: 100%;
         left: 0;
+        right: 0;
         z-index: -1;
 
         &.selected {
@@ -219,7 +405,7 @@ export default class CollectionItemV extends Vue {
     top: 0;
 }
 
-.icon-button {
+/* .icon-button {
     color: $dark-secondary-colour;
     font-size: 0.8rem;
     cursor: pointer;
@@ -257,10 +443,11 @@ export default class CollectionItemV extends Vue {
 }
 
 .pin-flag {
-}
+} */
 
-.el-input /deep/ {
+.name-input /deep/ {
     font-size: 1rem;
+    margin-left: calc(0.5rem + 30px);
 
     input {
         font-family: Segoe UI;
@@ -270,10 +457,10 @@ export default class CollectionItemV extends Vue {
 }
 
 // adjust visual center
-.pin-flag {
+/* .pin-flag {
     svg {
         position: relative;
         top: 2px;
     }
-}
+} */
 </style>

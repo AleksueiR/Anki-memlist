@@ -21,10 +21,16 @@
 
                 <span class="highlight"></span>
 
-                <component
+                <slot
                     class="item"
+                    :item="item"
+                    :level="level"></slot>
+
+                <!-- <component
+                    class="item"
+                    :class="`level-${level}`"
                     :is="renderer"
-                    :item="item"></component>
+                    :item="item"></component> -->
 
             </div>
 
@@ -34,8 +40,8 @@
                 @mouseout="mouseOut"></span>
         </div>
 
-        <div class="children"
-            role="group">
+        <div class="children" role="group"
+            v-if="item.expanded">
             <treee-node
                 v-for="(subItem, index) in item.items"
                 :renderer="renderer"
@@ -43,6 +49,10 @@
                 :level="level + 1"
                 :index="index"
                 :key="`${index}-node`">
+
+                <template slot-scope="{ item, level }">
+                    <slot :item="item" :level="level"></slot>
+                </template>
             </treee-node>
         </div>
 
@@ -300,7 +310,7 @@ export default class TreeeNode extends Vue {
     }
 }
 
-$base-indent: 16px;
+$base-indent: 1rem;
 
 @for $i from 0 through 10 {
     .divider.after,
@@ -312,7 +322,7 @@ $base-indent: 16px;
 
     .content {
         .level-#{$i} & {
-            padding-left: $i * $base-indent;
+            // padding-left: $i * $base-indent;
         }
     }
 }

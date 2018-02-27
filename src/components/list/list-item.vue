@@ -3,39 +3,33 @@
         @click="select"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false"
-        :class="{ hover: isHovered || isControlsVisible, checked: selectedWords.includes(word) }">
+        :class="{ hover: isHovered || isTargeted, checked: isSelected }">
 
         <a
             href="#"
             @click.stop="toggleFavourite"
             uk-tooltip="delay: 500; title: Favourite"
             uk-icon="ratio: 0.7; icon: star"
-            class="uk-icon uk-position-center-left item-control star"
-            v-if="isControlsVisible || word.favourite"
+            class="uk-icon uk-position-center-left item-control favourite"
+            v-if="isTargeted || word.favourite"
             :class="{ active: word.favourite }"></a>
 
         <span class="item-text uk-flex-1">{{ word.text }}</span>
 
-        <template v-if="isControlsVisible">
-            <a
-                href="#"
-                uk-tooltip="delay: 500; title: Archive"
-                uk-icon="ratio: 0.7; icon: check"
-                class="uk-margin-small-left uk-icon item-control"></a>
-
-            <a
+        <template v-if="isTargeted">
+            <!-- <a
                 href="#"
                 uk-tooltip="delay: 500; title: Delete"
                 uk-icon="ratio: 0.7; icon: close"
                 @click.stop="deleteWord"
-                class="uk-icon item-control"></a>
+                class="uk-icon item-control"></a> -->
 
             <a
                 href="#"
                 uk-tooltip="delay: 1500; title: View menu"
                 uk-icon="ratio: 0.7; icon: more"
                 @click.stop="vnull"
-                class="uk-margin-small-right uk-icon item-control"></a>
+                class="uk-margin-small-left uk-icon item-control"></a>
             <uk-dropdown
                 :pos="'right-center'"
                 :delay-hide="0"
@@ -43,33 +37,46 @@
                 @hide="isMenuOpened = false">
 
                 <ul class="uk-nav uk-dropdown-nav">
+
                     <li :class="{ 'uk-active': word.favourite }">
                         <a href="#" class="uk-flex uk-flex-middle"
                             @click.stop="toggleFavourite">
+
                             <span class="uk-flex-1">Favourite</span>
                             <span uk-icon="icon: check" v-if="word.favourite"></span>
-                    </a></li>
+                        </a>
+                    </li>
+
                     <li :class="{ 'uk-active': word.archived }">
                         <a href="#" class="uk-flex uk-flex-middle"
                             @click.stop="toggleArchived">
-                        <span class="uk-flex-1">Archived</span>
-                        <span uk-icon="icon: check" v-if="word.archived"></span>
-                    </a></li>
+
+                            <span class="uk-flex-1">Archived</span>
+                            <span uk-icon="icon: check" v-if="word.archived"></span>
+                        </a>
+                    </li>
 
                     <li class="uk-nav-divider"></li>
 
                     <li><a href="#">Edit</a></li>
                     <li><a href="#" @click.stop="deleteWord">Delete</a></li>
                     <li><a href="#">Move</a></li>
+
                 </ul>
 
             </uk-dropdown>
+
+            <a
+                href="#"
+                uk-tooltip="delay: 500; title: Archive"
+                uk-icon="ratio: 0.7; icon: check"
+                class="uk-margin-small-right uk-icon item-control"></a>
         </template>
 
         <span
             uk-icon="ratio: 0.7; icon: comment"
-            class="uk-margin-small-left uk-margin-small-right uk-icon item-control transient"
-            v-show="!isControlsVisible"
+            class="uk-margin-small-left uk-margin-small-right uk-icon item-control"
+            v-show="!isTargeted"
             v-if="word.hasNotes"></span>
 
     </div>
@@ -116,16 +123,11 @@ export default class WordItem extends Vue {
 
     @StateCL selectedWords: CollectionWord[];
 
-    /* @ActionCL selectWord: (wordId: string) => void;
-    @ActionCL
-    archiveWord: (payload: { wordId: string; archived: boolean }) => void;
-    @ActionCL removeWord: (wordId: string) => void; */
-
     @Prop() word: CollectionWord;
 
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
-    get isControlsVisible(): boolean {
+    get isTargeted(): boolean {
         return this.isHovered || this.isMenuOpened;
     }
 
@@ -133,35 +135,9 @@ export default class WordItem extends Vue {
         return this.selectedWords.includes(this.word);
     }
 
-    dateFormat(date: number): string {
+    /* dateFormat(date: number): string {
         return moment(date).fromNow(); //format('YYYY-MM-DD HH:mm:ss');
-    }
-
-    /* archive(): void {
-        this.$emit('archive', this.word);
-    }
-
-    select(): void {
-        console.log('edit clicked!');
-        // this.$emit('edit', this.word);
-        this.$emit('select', this.word);
-    }
-
-    remove(): void {
-        this.$emit('remove', this.word);
     } */
-
-    /* ap = { value: 0 };
-
-    @ActionCL
-    setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
-
-    @ActionCL
-    setWordFavourite_: (
-        payload: { word: CollectionWord; value: boolean }
-    ) => void;
-
-    @ActionCL feck: () => void; */
 
     select(event: MouseEvent): void {
         this.emSelect({ wordId: this.word.id, append: event.ctrlKey });
@@ -191,25 +167,17 @@ export default class WordItem extends Vue {
     height: 34px;
 
     &.checked {
-        background-color: darken($secondary-colour, 10%);
+        background-color: rgba($color: $accent-colour, $alpha: 0.1);
+        border-right: 4px solid $accent-colour;
     }
 
     &.hover {
         background-color: $secondary-colour;
-
-        /* .item-control {
-            &.hidden {
-                display: block;
-            }
-            &.transient {
-                display: none;
-            }
-        } */
     }
 }
 
 .item-text {
-    padding-left: 0.5rem + 2rem;
+    margin-left: calc(0.5rem + 30px);
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
@@ -220,8 +188,8 @@ export default class WordItem extends Vue {
 .item-control {
     padding: 0.5rem;
 
-    &.star {
-        left: 0.5rem;
+    &.favourite {
+        left: 0.25rem;
     }
 
     &.active {
@@ -232,23 +200,4 @@ export default class WordItem extends Vue {
 .uk-nav a.uk-flex {
     display: flex !important;
 }
-
-/* .el-row {
-    height: 36px;
-    padding: 8px;
-    cursor: pointer;
-}
-
-button {
-    border: none;
-    background: none;
-}
-
-.word-controls {
-    text-align: right;
-}
-
-.over {
-    // background-color: $secondary-colour;
-} */
 </style>

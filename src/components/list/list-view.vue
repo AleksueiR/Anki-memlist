@@ -158,6 +158,8 @@ export default class WordList extends Vue {
 
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
+        // TODO: removing items from the array as you are traversing it
+        // cache the ids of the removed words on the first pass and then remove them on the second
         this.selectedWords.forEach(word => {
             if (!this.getPooledWords.includes(word)) {
                 this.deselectWord({ wordId: word.id });

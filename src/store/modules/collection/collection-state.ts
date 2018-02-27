@@ -160,19 +160,22 @@ export class CollectionIndex {
 export interface CollectionTreeOptions {
     listId?: string;
     items?: CollectionTree[];
+    expanded?: boolean;
 }
 
 export class CollectionTree {
     readonly listId: string;
     readonly items: CollectionTree[];
+    _expanded: boolean;
 
     private root: CollectionIndex;
 
     constructor(options: CollectionTreeOptions = {}, root: CollectionIndex) {
-        const { listId = `I'm root`, items = [] } = options;
+        const { listId = `I'm root`, items = [], expanded = true } = options;
 
         this.listId = listId;
         this.items = items.map(item => new CollectionTree(item, root));
+        this.expanded = expanded;
 
         this.root = root;
     }
@@ -186,6 +189,14 @@ export class CollectionTree {
         // TODO: implement
     }
 
+    get expanded(): boolean {
+        return this._expanded;
+    }
+
+    set expanded(value: boolean) {
+        this._expanded = value;
+    }
+
     update(): void {
         this.root.update();
     }
@@ -193,6 +204,7 @@ export class CollectionTree {
     get safeJSON(): CollectionTreeOptions {
         return {
             listId: this.listId,
+            expanded: this.expanded,
             items: this.items.map(item => item.safeJSON) as CollectionTree[]
         };
     }
@@ -350,8 +362,13 @@ export class CollectionList {
         this.update();
     }
 
-    removeWord(word: CollectionWord): void {
-        // this.words.delete(word.id);
+    /**
+     * Deletes the worf from the list.
+     *
+     * @param {CollectionWord} word
+     * @memberof CollectionList
+     */
+    deleteWord(word: CollectionWord): void {
         delete this.words[word.id];
 
         const index = this.index.indexOf(word.id);

@@ -158,16 +158,16 @@ const actions = {
      * Add the specified list to the `selectedLists` array
      *
      * @param {CollectionContext} context
-     * @param {{ listId: string; annex: boolean }} options
+     * @param {{ listId: string; append: boolean }} options
      * @returns
      */
     selectList(
         context: CollectionContext,
-        options: { listId: string; annex: boolean }
+        options: { listId: string; append: boolean }
     ) {
-        const { listId, annex = false } = options;
+        const { listId, append = false } = options;
 
-        if (!annex) {
+        if (!append) {
             context.commit('DESELECT_ALL_LISTS');
         }
 
@@ -238,12 +238,17 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    removeWord(context: CollectionContext, options: { wordId: string }): void {
+    // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
+
+    deleteWord(
+        context: CollectionContext,
+        { wordId }: { wordId: string }
+    ): void {
         /* const list = Array.from(state.lists.values()).find(list =>
             list.words.has(options.wordId)
         ); */
         const list = Object.values(state.lists).find(
-            list => list.words[options.wordId] !== undefined
+            list => list.words[wordId] !== undefined
         );
 
         if (!list) {
@@ -251,13 +256,13 @@ const actions = {
         }
 
         //const word = list.words.get(options.wordId);
-        const word: CollectionWord | undefined = list.words[options.wordId];
+        const word: CollectionWord | undefined = list.words[wordId];
 
         if (!word) {
             return;
         }
 
-        context.commit('REMOVE_WORD', { list, word });
+        context.commit('DELETE_WORD', { list, word });
         context.commit('DESELECT_WORD', word);
         actions.writeList(context, list.id);
     },
@@ -292,10 +297,7 @@ const actions = {
         context: CollectionContext,
         { wordId, value }: { wordId: string; value: boolean }
     ): void {
-        const word: CollectionWord | null = helpers.getWordFromPooled(
-            context,
-            wordId
-        );
+        const word = helpers.getWordFromPooled(context, wordId);
 
         if (!word) {
             return;
@@ -304,20 +306,31 @@ const actions = {
         context.commit('SET_WORD_FAVOURITE', { word, value });
     },
 
-    setWordFavourite_(
+    setWordArchived(
         context: CollectionContext,
-        { word, value }: { word: CollectionWord; value: boolean }
+        {
+            wordId,
+            value,
+            searchAll
+        }: { wordId: string; value: boolean; searchAll?: boolean }
     ): void {
-        word.favourite = value;
+        const { word, list } = helpers.findWord(context, wordId, searchAll);
+
+        if (!word || !list) {
+            return;
+        }
+
+        context.commit('SET_WORD_ARCHIVED', { word, value });
+        actions.writeList(context, list.id);
     },
 
     selectWord(
         context: CollectionContext,
-        options: { wordId: string; annex: boolean }
+        options: { wordId: string; append: boolean }
     ): void {
-        const { wordId, annex = false } = options;
+        const { wordId, append = false } = options;
 
-        if (!annex) {
+        if (!append) {
             context.commit('DESELECT_ALL_WORDS');
         }
 
@@ -446,11 +459,17 @@ const mutations = {
         list.addWord(word);
     },
 
-    REMOVE_WORD(
+    /**
+     * Commits DELETE_WORD mutation.
+     *
+     * @param {CollectionState} state
+     * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
+     */
+    DELETE_WORD(
         state: CollectionState,
         { list, word }: { list: CollectionList; word: CollectionWord }
     ): void {
-        list.removeWord(word);
+        list.deleteWord(word);
     },
 
     // #endregion
@@ -517,6 +536,28 @@ const mutations = {
 };
 
 const helpers = {
+    findWord(
+        context: CollectionContext,
+        wordId: string,
+        searchAll: boolean = false
+    ): { word: CollectionWord | null; list: CollectionList | null } {
+        const listToSearch = searchAll
+            ? Object.values(context.state.lists)
+            : context.state.selectedLists;
+        const list = listToSearch.find(
+            list => list.words[wordId] !== undefined
+        );
+
+        if (list === undefined) {
+            return { word: null, list: null };
+        }
+
+        // the word will be in the found list
+        const word = list.words[wordId];
+
+        return { word, list };
+    },
+
     getWordFromPooled(
         context: CollectionContext,
         wordId: string

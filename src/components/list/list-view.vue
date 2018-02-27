@@ -2,8 +2,19 @@
 
     <section class="list-view">
 
+
         <section class="lookup">
-            <el-input
+
+            <div class="uk-margin">
+                <input
+                    class="uk-input"
+                    type="text"
+                    placeholder="Input"
+                    v-model.trim="lookup"
+                    @keyup.enter="addWordTemp">
+            </div>
+
+            <!-- <el-input
                 @keyup.enter.native="addOrEditWord()"
                 @keyup.esc.native="clearLookup"
                 @input="blah"
@@ -14,12 +25,12 @@
                 autofocus
                 :hint="lookupHint"
                 :clearable="true">
-            </el-input>
+            </el-input> -->
         </section>
 
-        <span class="text-smaller">{{ lookupHint }}</span>
+        <!-- <span class="text-smaller">{{ lookupHint }}</span> -->
 
-        <section class="_cm-scrollbar virtual-list-container" ref="virtualListContainer">
+        <section class="virtual-list-container" ref="virtualListContainer">
             <!-- <ul class="list">
                 <list-item
                     v-for="word in getPooledWords"
@@ -39,10 +50,10 @@
 
                 <list-item
                     v-for="item in getPooledWords"
+                    @select="selectWord"
                     @favourite="setWordFavourite"
-                    @archive="archiveWord"
-                    @edit="editWord"
-                    @remove="removeWord"
+                    @archive="setWordArchived"
+                    @delete="deleteWord"
                     :key="item.id"
                     :word="item"></list-item>
 
@@ -103,15 +114,6 @@ const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
 import anki from './../../api/anki';
 
-import {
-    Word,
-    dSyncWords,
-    rItems,
-    cSelectWord,
-    cRemoveWord,
-    cAddWord
-} from './../../store/modules/words';
-
 import listItem from './list-item.vue';
 /* import wordMenu from './word-menu.vue'; */
 
@@ -140,12 +142,19 @@ export default class WordList extends Vue {
 
     @ActionCL
     addWord: (payload: { listId: string; word: CollectionWord }) => void;
+
     @ActionCL
-    selectWord: (payload: { wordId: string; annex?: Boolean }) => void;
+    selectWord: (payload: { wordId: string; append?: Boolean }) => void;
+
     @ActionCL deselectWord: (payload: { wordId: string }) => void;
 
     @ActionCL
     setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
+
+    @ActionCL
+    setWordArchived: (payload: { wordId: string; value: boolean }) => void;
+
+    @ActionCL deleteWord: (payload: { wordId: string }) => void;
 
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
@@ -154,6 +163,12 @@ export default class WordList extends Vue {
                 this.deselectWord({ wordId: word.id });
             }
         });
+    }
+
+    addWordTemp(): void {
+        const listId = this.selectedLists[0].id;
+        const word = new CollectionWord({ text: this.lookup });
+        this.addWord({ listId, word });
     }
 
     /* get visibleHeight(): number {
@@ -185,9 +200,9 @@ export default class WordList extends Vue {
         }, 2000);
     } */
 
-    blah = debounce(this.foobar, 500);
+    //blah = debounce(this.foobar, 500);
 
-    foobar(a: any): void {
+    /* foobar(a: any): void {
         console.log('!!!', a, this.lookup);
         if (!this.isLookupValid) {
             log.info(`[word-list] not a word`);
@@ -199,13 +214,13 @@ export default class WordList extends Vue {
         const word = new Word({ text: this.lookup });
 
         cSelectWord(this.$store, word);
-    }
+    } */
 
     get isLookupValid(): boolean {
         return this.lookup !== '' && this.lookup !== null;
     }
 
-    get lookupHint(): string {
+    /* get lookupHint(): string {
         if (!this.isLookupValid) {
             return '';
         }
@@ -213,12 +228,12 @@ export default class WordList extends Vue {
         return this.isLookupNew
             ? `Nothing found. Press 'Enter' to add to the list.`
             : `Already exists. Press 'Enter' to edit.`;
-    }
+    } */
 
     /**
      * Checks if the lookup is a new word - it's not new if it has an exact duplicate.
      */
-    get isLookupNew() {
+    /* get isLookupNew() {
         if (!this.isLookupValid) {
             return false;
         }
@@ -226,9 +241,9 @@ export default class WordList extends Vue {
         const isNew = !this.items.some(result => result.text === this.lookup);
 
         return isNew;
-    }
+    } */
 
-    get items(): Word[] {
+    /* get items(): Word[] {
         console.log('get items');
 
         const filteredItems = rItems(this.$store)
@@ -256,14 +271,10 @@ export default class WordList extends Vue {
                 }
                 return 0;
             });
-        /* .sort((wordA: Word, wordB: Word) => {
-                if (wordA.text > wordB.text) { return 1; }
-                if (wordA.text < wordB.text) { return -1; }
-                return 0;
-            }); */
+
 
         return filteredItems;
-    }
+    } */
 
     addOrEditWord(): void {
         const listId = this.selectedLists[0].id;
@@ -283,7 +294,7 @@ export default class WordList extends Vue {
         this.lookup = '';
     }
 
-    addNewWord(): void {
+    /* addNewWord(): void {
         cAddWord(this.$store, new Word({ text: this.lookup }));
         dSyncWords(this.$store);
 
@@ -293,22 +304,22 @@ export default class WordList extends Vue {
     archiveWord(word: Word): void {
         word.archived = true;
         dSyncWords(this.$store);
-    }
+    } */
 
-    editWord(word: Word): void {
+    /* editWord(word: Word): void {
         //cSelectWord(word);
         //this.$router.push({ name: 'editor', params: { id: word.id } });
         //EventBus.$emit(WORD_SELECTED, word);
-    }
+    } */
 
     /* selectWord(word: Word): void {
         cSelectWord(this.$store, word);
     } */
 
-    removeWord(word: Word): void {
+    /* removeWord(word: Word): void {
         cRemoveWord(this.$store, word);
         dSyncWords(this.$store);
-    }
+    } */
 }
 </script>
 
@@ -316,7 +327,7 @@ export default class WordList extends Vue {
 @import './../../styles/variables';
 
 .list-view {
-    width: 17em;
+    width: 15em;
     flex-shrink: 0;
 
     display: flex;

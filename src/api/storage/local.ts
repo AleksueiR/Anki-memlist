@@ -9,7 +9,9 @@ import {
     CollectionIndexOptions,
     CollectionListOptions,
     CollectionWord,
-    CollectionListMap
+    CollectionListMap,
+    CollectionWordOptions,
+    CollectionWordMap
 } from '../../store/modules/collection/index';
 
 /* console.log('padht', jsonStorage.getDataPath());
@@ -127,6 +129,19 @@ const local: Storage = {
                             [string, CollectionWord]
                         >(word => [word.id, new CollectionWord(word)])
                     ); */
+
+                    // type words in the dictionary
+                    data.words = Object.values(data.words!).reduce(
+                        (
+                            map: CollectionWordMap,
+                            wordOptions: CollectionWordOptions
+                        ) => {
+                            const word = new CollectionWord(wordOptions);
+                            map[word.id] = word;
+                            return map;
+                        },
+                        {}
+                    );
 
                     // TODO: handle errors
                     resolve(new CollectionList(data));

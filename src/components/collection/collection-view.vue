@@ -124,7 +124,7 @@ export default class CollectionView extends Vue {
     // select the list
     @ActionCL
     selectList: (
-        { listId, annex }: { listId: string; annex?: boolean }
+        { listId, append }: { listId: string; append?: boolean }
     ) => void;
     @ActionCL deselectList: (value: { listId: string }) => void;
 
@@ -148,7 +148,7 @@ export default class CollectionView extends Vue {
         ) {
             this.deselectList({ listId: node.listId });
         } else {
-            this.selectList({ listId: node.listId, annex: event.ctrlKey });
+            this.selectList({ listId: node.listId, append: event.ctrlKey });
         }
     }
 

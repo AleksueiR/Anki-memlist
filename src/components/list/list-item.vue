@@ -1,6 +1,6 @@
 <template>
     <div class="list-item uk-flex uk-flex-middle"
-        @click="event => selectWord({ wordId: word.id, annex: event.ctrlKey })"
+        @click="select"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false"
         :class="{ hover: isHovered || isControlsVisible, checked: selectedWords.includes(word) }">
@@ -27,6 +27,7 @@
                 href="#"
                 uk-tooltip="delay: 500; title: Delete"
                 uk-icon="ratio: 0.7; icon: close"
+                @click.stop="deleteWord"
                 class="uk-icon item-control"></a>
 
             <a
@@ -43,11 +44,14 @@
 
                 <ul class="uk-nav uk-dropdown-nav">
                     <li :class="{ 'uk-active': word.favourite }">
-                        <a href="#" class="uk-flex uk-flex-middle" @click.stop="toggleFavourite">
+                        <a href="#" class="uk-flex uk-flex-middle"
+                            @click.stop="toggleFavourite">
                             <span class="uk-flex-1">Favourite</span>
                             <span uk-icon="icon: check" v-if="word.favourite"></span>
                     </a></li>
-                    <li :class="{ 'uk-active': word.archived }"><a href="#" class="uk-flex uk-flex-middle">
+                    <li :class="{ 'uk-active': word.archived }">
+                        <a href="#" class="uk-flex uk-flex-middle"
+                            @click.stop="toggleArchived">
                         <span class="uk-flex-1">Archived</span>
                         <span uk-icon="icon: check" v-if="word.archived"></span>
                     </a></li>
@@ -55,7 +59,7 @@
                     <li class="uk-nav-divider"></li>
 
                     <li><a href="#">Edit</a></li>
-                    <li><a href="#">Delete</a></li>
+                    <li><a href="#" @click.stop="deleteWord">Delete</a></li>
                     <li><a href="#">Move</a></li>
                 </ul>
 
@@ -98,22 +102,26 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class WordItem extends Vue {
-    @Emit()
-    favourite(payload: { wordId: string; value: boolean }) {}
+    @Emit('select')
+    emSelect(payload: { wordId: string; append: boolean }) {}
+
+    @Emit('favourite')
+    emFavourite(payload: { wordId: string; value: boolean }) {}
+
+    @Emit('archive')
+    emArchive(payload: { wordId: string; value: boolean }) {}
+
+    @Emit('delete')
+    emDelete(payload: { wordId: string }) {}
 
     @StateCL selectedWords: CollectionWord[];
 
-    @ActionCL selectWord: (wordId: string) => void;
+    /* @ActionCL selectWord: (wordId: string) => void;
     @ActionCL
     archiveWord: (payload: { wordId: string; archived: boolean }) => void;
-    @ActionCL removeWord: (wordId: string) => void;
+    @ActionCL removeWord: (wordId: string) => void; */
 
     @Prop() word: CollectionWord;
-
-    @Watch('word.favourite', { deep: true })
-    onWordChanged(one: any, two: any) {
-        console.log(one, two);
-    }
 
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
@@ -155,14 +163,20 @@ export default class WordItem extends Vue {
 
     @ActionCL feck: () => void; */
 
+    select(event: MouseEvent): void {
+        this.emSelect({ wordId: this.word.id, append: event.ctrlKey });
+    }
+
     toggleFavourite(): void {
-        this.favourite({ wordId: this.word.id, value: !this.word.favourite });
-        // this.ap.value++;
-        /* this.setWordFavourite({
-            wordId: this.word.id,
-            value: !this.word.favourite
-        });
-        this.feck(); */
+        this.emFavourite({ wordId: this.word.id, value: !this.word.favourite });
+    }
+
+    toggleArchived(): void {
+        this.emArchive({ wordId: this.word.id, value: !this.word.archived });
+    }
+
+    deleteWord(): void {
+        this.emDelete({ wordId: this.word.id });
     }
 
     vnull(): void {}

@@ -277,7 +277,7 @@ export default class CollectionView extends Vue {
 }
 
 .collection {
-    width: 14em;
+    width: 16em;
 
     /* flex: 1;
     display: flex;

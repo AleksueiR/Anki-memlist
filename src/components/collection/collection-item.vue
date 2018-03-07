@@ -6,20 +6,32 @@
 
         <span class="highlight"></span>
 
+        <!--     transform: scale(0.7); -->
+
+        <!-- <mdi-comment-alert-icon style="transform: scale(0.7);" /> -->
+
+
+        <!-- uk-icon="ratio: 0.7; icon: bookmark" -->
+
         <span
-            uk-icon="ratio: 0.7; icon: bookmark"
             uk-tooltip="delay: 1500; title: Default list"
             class="uk-icon uk-position-center-left item-control default active"
-            v-if="isDefault"></span>
+            v-if="isDefault">
+            <font-awesome-icon icon="bookmark" />
+        </span>
+
+        <!-- uk-icon="ratio: 0.7; icon: hashtag" -->
 
         <a
             href="#"
-            uk-icon="ratio: 0.7; icon: hashtag"
             uk-tooltip="delay: 1500; title: Pin"
             @click.stop="togglePinned"
             :class="{ active: list.pinned }"
             class="uk-margin-small-right uk-icon item-control default"
-            v-if="(isTargeted || list.pinned) && !isDefault"></a>
+            v-if="(isTargeted || list.pinned) && !isDefault">
+            <font-awesome-icon :icon="['fas', 'thumbtack']" />
+            <!-- <mdi-pin-icon style="transform: scale(0.7);" /> -->
+        </a>
 
         <template v-if="!isRenaming">
             <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
@@ -78,15 +90,25 @@
 
             </template>
 
+            <span
+                v-else
+                class="item-control item-word-count uk-text-muted">{{ list.index.length }}</span>
+
+            <!-- :uk-icon="`ratio: 0.7; icon: chevron-${ item.expanded ? 'up' : 'down' }`" -->
+
             <a
                 href="#"
+                class="uk-icon item-control uk-margin-small-right"
                 :uk-icon="`ratio: 0.7; icon: chevron-${ item.expanded ? 'up' : 'down' }`"
-                v-if="(!item.expanded || isTargeted) && item.items.length > 0"
-                @click.stop="toggleExpand"
-                class="uk-icon item-control"></a>
+                v-if="item.items.length > 0"
+                @click.stop="toggleExpand">
+                <!-- <font-awesome-icon :icon="['far', 'angle-up']" /> -->
+            </a>
 
             <span
-                class="item-control uk-margin-small-right uk-text-muted">{{ list.index.length }}</span>
+                uk-icon="ratio: 0.7; icon: chevron-up"
+                class="uk-icon item-control uk-margin-small-right uk-invisible"
+                v-else></span>
 
         </template>
 
@@ -293,7 +315,7 @@ export default class CollectionItemV extends Vue {
 
 .collection-item {
     position: relative;
-    height: 34px;
+    height: 30px;
 
     &.checked {
         background-color: darken($secondary-colour, 10%);
@@ -311,6 +333,11 @@ export default class CollectionItemV extends Vue {
     overflow: hidden;
     user-select: none;
     pointer-events: none;
+    font-size: 0.8rem;
+}
+
+.item-word-count {
+    font-size: 0.8rem;
 }
 
 .item-control {
@@ -318,7 +345,7 @@ export default class CollectionItemV extends Vue {
 
     &.default {
         position: absolute;
-        left: 0.25rem;
+        left: 6px;
     }
 
     &.active {
@@ -463,4 +490,13 @@ $base-indent: 1rem;
         top: 2px;
     }
 } */
+
+.uk-margin-small-right {
+    // margin-right: 0.5rem !important;
+    margin-right: 2px !important;
+}
+.uk-margin-small-left {
+    // margin-left: 0.5rem !important;
+    margin-left: 2px !important;
+}
 </style>

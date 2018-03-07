@@ -15,6 +15,10 @@ declare module 'vue-perfect-scrollbar';
 declare module 'vue-virtual-scroll-list';
 
 declare module '@fortawesome/vue-fontawesome';
+declare module '@fortawesome/fontawesome-free-regular/faThumbtack';
+declare module '@fortawesome/fontawesome-free-regular/faBookmark';
+declare module '@fortawesome/fontawesome-free-solid/farAngleUp';
+declare module '@fortawesome/fontawesome-free-solid/farAngleDown';
 declare module '@fortawesome/fontawesome-free-solid/faAngleUp';
 declare module '@fortawesome/fontawesome-free-solid/faAngleDown';
 declare module '@fortawesome/fontawesome-free-solid/faFile';

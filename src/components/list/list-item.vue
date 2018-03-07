@@ -84,14 +84,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import {
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch,
-    Emit
-} from 'vue-property-decorator';
+import { Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import moment from 'moment';
@@ -119,7 +112,7 @@ export default class WordItem extends Vue {
     emArchive(payload: { wordId: string; value: boolean }) {}
 
     @Emit('delete')
-    emDelete(payload: { wordId: string }) {}
+    emDelete() {}
 
     @StateCL selectedWords: CollectionWord[];
 
@@ -152,7 +145,7 @@ export default class WordItem extends Vue {
     }
 
     deleteWord(): void {
-        this.emDelete({ wordId: this.word.id });
+        this.emDelete();
     }
 
     vnull(): void {}

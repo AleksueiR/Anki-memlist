@@ -42,18 +42,13 @@ const local: Storage = {
     async loadCollection(): Promise<CollectionState> {
         const index = await this.loadIndex();
 
-        const listPromises = index.flatTree.map(listId =>
-            this.loadList(listId)
-        );
+        const listPromises = index.flatTree.map(listId => this.loadList(listId));
 
         const listArray = await Promise.all(listPromises);
-        const lists: CollectionListMap = listArray.reduce(
-            (map: CollectionListMap, list) => {
-                map[list.id] = list;
-                return map;
-            },
-            {}
-        );
+        const lists: CollectionListMap = listArray.reduce((map: CollectionListMap, list) => {
+            map[list.id] = list;
+            return map;
+        }, {});
         /* const lists = new Map(
             listArray.map<[string, CollectionList]>(list => [list.id, list])
         ); */
@@ -66,8 +61,8 @@ const local: Storage = {
             (list: CollectionList) => local.saveList(list)
         ); */
 
-        const promises: Promise<void>[] = Object.values(state.lists).map(
-            (list: CollectionList) => local.saveList(list)
+        const promises: Promise<void>[] = Object.values(state.lists).map((list: CollectionList) =>
+            local.saveList(list)
         );
 
         promises.push(local.saveIndex(state.index));
@@ -91,6 +86,8 @@ const local: Storage = {
         const promise = new Promise<void>((resolve, reject) => {
             jsonStorage.set(listFileName(list.id), list.safeJSON, error => {
                 // TODO: handle errors
+                console.log('save list', list.id, list.safeJSON);
+
                 resolve();
             });
         });
@@ -100,13 +97,10 @@ const local: Storage = {
 
     loadIndex(): Promise<CollectionIndex> {
         const promise = new Promise<CollectionIndex>((resolve, reject) => {
-            jsonStorage.get(
-                indexFileName(),
-                (error, data: CollectionIndexOptions) => {
-                    // TODO: handle errors
-                    resolve(new CollectionIndex(data));
-                }
-            );
+            jsonStorage.get(indexFileName(), (error, data: CollectionIndexOptions) => {
+                // TODO: handle errors
+                resolve(new CollectionIndex(data));
+            });
         });
 
         return promise;
@@ -114,39 +108,33 @@ const local: Storage = {
 
     loadList(listId: string): Promise<CollectionList> {
         const promise = new Promise<CollectionList>((resolve, reject) => {
-            jsonStorage.get(
-                listFileName(listId),
-                (error, data: CollectionListOptions) => {
-                    // convert word dictionary into a proper Map of CollectionWord object
-                    /* data.words = new Map(
+            jsonStorage.get(listFileName(listId), (error, data: CollectionListOptions) => {
+                // convert word dictionary into a proper Map of CollectionWord object
+                /* data.words = new Map(
                         Array.from(Object.values(data.words)).map<
                             [string, CollectionWord]
                         >(word => [word.id, new CollectionWord(word)])
                     ); */
 
-                    /* data.words = new Map(
+                /* data.words = new Map(
                         Array.from(Object.values(data.words)).map<
                             [string, CollectionWord]
                         >(word => [word.id, new CollectionWord(word)])
                     ); */
 
-                    // type words in the dictionary
-                    data.words = Object.values(data.words!).reduce(
-                        (
-                            map: CollectionWordMap,
-                            wordOptions: CollectionWordOptions
-                        ) => {
-                            const word = new CollectionWord(wordOptions);
-                            map[word.id] = word;
-                            return map;
-                        },
-                        {}
-                    );
+                // type words in the dictionary
+                data.words = Object.values(data.words!).reduce(
+                    (map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
+                        const word = new CollectionWord(wordOptions);
+                        map[word.id] = word;
+                        return map;
+                    },
+                    {}
+                );
 
-                    // TODO: handle errors
-                    resolve(new CollectionList(data));
-                }
-            );
+                // TODO: handle errors
+                resolve(new CollectionList(data));
+            });
         });
 
         return promise;

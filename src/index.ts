@@ -71,6 +71,6 @@ const rootVue = new Vue({
     components: { app }
 });
 
-// router.replace({ name: 'list' });
+// UIkit.notification("<span uk-icon='icon: check'></span> Message", { timeout: 55555555 });
 
 // dev tools: ./node_modules/.bin/vue-devtools

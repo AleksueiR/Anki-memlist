@@ -113,10 +113,7 @@ const actions = {
         }
     },
 
-    setIndexTree(
-        context: CollectionContext,
-        options: { tree: CollectionTree }
-    ): void {
+    setIndexTree(context: CollectionContext, options: { tree: CollectionTree }): void {
         const { tree } = options;
 
         context.commit('SET_INDEX_TREE', { tree });
@@ -144,10 +141,7 @@ const actions = {
         // context.commit('REMOVE_LIST_FROM_TREE', { tree: state.index.tree, list });
     },
 
-    setIndexDefaultList(
-        context: CollectionContext,
-        { listId }: { listId: string }
-    ): void {
+    setIndexDefaultList(context: CollectionContext, { listId }: { listId: string }): void {
         if (state.index.defaultListId === listId) {
             return;
         }
@@ -161,10 +155,7 @@ const actions = {
         actions.writeIndex(context);
     },
 
-    setIndexExpandedTree(
-        context: CollectionContext,
-        { listId, value }: { listId: string, value: boolean }
-    ): void {
+    setIndexExpandedTree(context: CollectionContext, { listId, value }: { listId: string; value: boolean }): void {
         const stack: CollectionTree[] = [];
         let tree: CollectionTree | undefined = undefined;
 
@@ -198,10 +189,7 @@ const actions = {
      * @param {{ listId: string; append: boolean }} options
      * @returns
      */
-    selectList(
-        context: CollectionContext,
-        options: { listId: string; append: boolean }
-    ) {
+    selectList(context: CollectionContext, options: { listId: string; append: boolean }) {
         const { listId, append = false } = options;
 
         if (!append) {
@@ -224,10 +212,7 @@ const actions = {
      * @param {{ listId: string }} { listId }
      * @returns {void}
      */
-    deselectList(
-        context: CollectionContext,
-        { listId }: { listId: string }
-    ): void {
+    deselectList(context: CollectionContext, { listId }: { listId: string }): void {
         // const list = state.lists.get(listId);
         const list = state.lists[listId];
         if (list === undefined) {
@@ -245,13 +230,10 @@ const actions = {
 
     // #region EDIT LIST
 
-    setListName(
-        context: CollectionContext,
-        { listId, name }: { listId: string; name: string }
-    ): void {
+    setListName(context: CollectionContext, { listId, name }: { listId: string; name: string }): void {
         //const list = state.lists.get(listId);
         const list = state.lists[listId];
-        if (list === undefined) {
+        if (list == undefined) {
             return;
         }
 
@@ -260,12 +242,9 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    setListPinned(
-        context: CollectionContext,
-        { listId, value }: { listId: string; value: boolean }
-    ): void {
+    setListPinned(context: CollectionContext, { listId, value }: { listId: string; value: boolean }): void {
         const list = state.lists[listId];
-        if (list === undefined) {
+        if (list == undefined) {
             return;
         }
 
@@ -274,13 +253,10 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    addWord(
-        context: CollectionContext,
-        { listId, word }: { listId: string; word: CollectionWord }
-    ): void {
+    addWord(context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord }): void {
         //const list = state.lists.get(listId);
         const list = state.lists[listId];
-        if (list === undefined) {
+        if (list == undefined) {
             return;
         }
 
@@ -291,31 +267,58 @@ const actions = {
 
     // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
 
-    deleteWord(
-        context: CollectionContext,
-        { wordId }: { wordId: string }
-    ): void {
+    deleteWord(context: CollectionContext, { wordId }: { wordId: string }): void {
         /* const list = Array.from(state.lists.values()).find(list =>
             list.words.has(options.wordId)
         ); */
-        const list = Object.values(state.lists).find(
-            list => list.words[wordId] !== undefined
-        );
+        const list = Object.values(state.lists).find(list => list.words[wordId] != undefined);
 
-        if (!list) {
+        if (list == undefined) {
             return;
         }
 
         //const word = list.words.get(options.wordId);
         const word: CollectionWord | undefined = list.words[wordId];
 
-        if (!word) {
+        if (word == undefined) {
             return;
         }
 
-        context.commit('DELETE_WORD', { list, word });
         context.commit('DESELECT_WORD', word);
+        context.commit('DELETE_WORD', { list, word });
         actions.writeList(context, list.id);
+    },
+
+    /**
+     * Deletes all currently selected words from the corresponding lists.
+     *
+     * @param {CollectionContext} context
+     */
+    deleteSelectedWords(context: CollectionContext): void {
+        type AggregatedLists = { [name: string]: { list: CollectionList; words: CollectionWord[] } };
+
+        const lists = state.selectedWords.reduce<AggregatedLists>((map, { id }) => {
+            const { word, list } = helpers.findWord(context, id);
+            if (word == undefined || list == undefined) {
+                return map;
+            }
+
+            if (map[list.id] == undefined) {
+                map[list.id] = { list, words: [] };
+            }
+
+            map[list.id].words.push(word);
+
+            return map;
+        }, {});
+
+        Object.values(lists).forEach(({ list, words }) => {
+            words.forEach(word => {
+                context.commit('DESELECT_WORD', word);
+                context.commit('DELETE_WORD', { list, word });
+            });
+            actions.writeList(context, list.id);
+        });
     },
 
     // #endregion
@@ -329,13 +332,8 @@ const actions = {
      * @param {{ wordId: string; value: string }} { wordId, value }
      * @returns {void}
      */
-    setWordText(
-        context: CollectionContext,
-        { wordId, value }: { wordId: string; value: string }
-    ): void {
-        const word: CollectionWord = context.getters.getPooledWords.find(
-            (word: CollectionWord) => word.id === wordId
-        );
+    setWordText(context: CollectionContext, { wordId, value }: { wordId: string; value: string }): void {
+        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
 
         if (word === undefined) {
             return;
@@ -344,10 +342,7 @@ const actions = {
         context.commit('SET_WORD_TEXT', { word, value });
     },
 
-    setWordFavourite(
-        context: CollectionContext,
-        { wordId, value }: { wordId: string; value: boolean }
-    ): void {
+    setWordFavourite(context: CollectionContext, { wordId, value }: { wordId: string; value: boolean }): void {
         const word = helpers.getWordFromPooled(context, wordId);
 
         if (!word) {
@@ -359,15 +354,11 @@ const actions = {
 
     setWordArchived(
         context: CollectionContext,
-        {
-            wordId,
-            value,
-            searchAll
-        }: { wordId: string; value: boolean; searchAll?: boolean }
+        { wordId, value, searchAll }: { wordId: string; value: boolean; searchAll?: boolean }
     ): void {
         const { word, list } = helpers.findWord(context, wordId, searchAll);
 
-        if (!word || !list) {
+        if (word == undefined || list == undefined) {
             return;
         }
 
@@ -375,19 +366,14 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    selectWord(
-        context: CollectionContext,
-        options: { wordId: string; append: boolean }
-    ): void {
+    selectWord(context: CollectionContext, options: { wordId: string; append: boolean }): void {
         const { wordId, append = false } = options;
 
         if (!append) {
             context.commit('DESELECT_ALL_WORDS');
         }
 
-        const word: CollectionWord = context.getters.getPooledWords.find(
-            (word: CollectionWord) => word.id === wordId
-        );
+        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
 
         //const word = state.lists.get(listId);
         if (word === undefined) {
@@ -397,19 +383,14 @@ const actions = {
         context.commit('SELECT_WORD', word);
     },
 
-    deselectWord(
-        context: CollectionContext,
-        options: { wordId: string }
-    ): void {
+    deselectWord(context: CollectionContext, options: { wordId: string }): void {
         const { wordId } = options;
 
         // find a list with the provided wordId
         /* const list = Array.from(state.lists.values()).find(list =>
             list.words.has(wordId)
         ); */
-        const list = Object.values(state.lists).find(
-            list => list.words[wordId] !== undefined
-        );
+        const list = Object.values(state.lists).find(list => list.words[wordId] !== undefined);
 
         if (list === undefined) {
             return;
@@ -449,17 +430,11 @@ const mutations = {
         state.lists = lists;
     },
 
-    SET_INDEX_DEFAULT_LIST(
-        state: CollectionState,
-        { list }: { list: CollectionList }
-    ): void {
+    SET_INDEX_DEFAULT_LIST(state: CollectionState, { list }: { list: CollectionList }): void {
         state.index.defaultListId = list.id;
     },
 
-    SET_INDEX_EXPANDED_TREE(
-        state: CollectionState,
-        { tree, value }: { tree: CollectionTree, value: boolean }
-    ): void {
+    SET_INDEX_EXPANDED_TREE(state: CollectionState, { tree, value }: { tree: CollectionTree; value: boolean }): void {
         tree.expanded = value;
     },
 
@@ -467,18 +442,13 @@ const mutations = {
         state.index.tree = options.tree;
     },
 
-    ADD_LIST(
-        state: CollectionState,
-        { tree, list }: { tree: CollectionTree; list: CollectionList }
-    ): void {
+    ADD_LIST(state: CollectionState, { tree, list }: { tree: CollectionTree; list: CollectionList }): void {
         state.addList(tree, list);
     },
 
     SELECT_LIST(state: CollectionState, list: CollectionList): void {
         // do not select the same list twice
-        const index = state.selectedLists.findIndex(
-            selectedList => selectedList.id === list.id
-        );
+        const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
         if (index !== -1) {
             return;
         }
@@ -487,9 +457,7 @@ const mutations = {
     },
 
     DESELECT_LIST(state: CollectionState, list: CollectionList): void {
-        const index = state.selectedLists.findIndex(
-            selectedList => selectedList.id === list.id
-        );
+        const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
 
         if (index === -1) {
             return;
@@ -506,24 +474,15 @@ const mutations = {
 
     // #region EDIT LIST
 
-    SET_LIST_NAME(
-        state: CollectionState,
-        { list, value }: { list: CollectionList; value: string }
-    ): void {
+    SET_LIST_NAME(state: CollectionState, { list, value }: { list: CollectionList; value: string }): void {
         list.name = value;
     },
 
-    SET_LIST_PINNED(
-        state: CollectionState,
-        { list, value }: { list: CollectionList; value: boolean }
-    ): void {
+    SET_LIST_PINNED(state: CollectionState, { list, value }: { list: CollectionList; value: boolean }): void {
         list.pinned = value;
     },
 
-    ADD_WORD(
-        state: CollectionState,
-        { list, word }: { list: CollectionList; word: CollectionWord }
-    ): void {
+    ADD_WORD(state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
         list.addWord(word);
     },
 
@@ -533,10 +492,7 @@ const mutations = {
      * @param {CollectionState} state
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
-    DELETE_WORD(
-        state: CollectionState,
-        { list, word }: { list: CollectionList; word: CollectionWord }
-    ): void {
+    DELETE_WORD(state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
         list.deleteWord(word);
     },
 
@@ -544,39 +500,25 @@ const mutations = {
 
     // #region EDIT WORD
 
-    SET_WORD_TEXT(
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value: string }
-    ): void {
+    SET_WORD_TEXT(state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
         word.text = value;
     },
 
-    SET_WORD_FAVOURITE(
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value: boolean }
-    ): void {
+    SET_WORD_FAVOURITE(state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
         word.favourite = value;
     },
 
-    SET_WORD_ARCHIVED(
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value: boolean }
-    ): void {
+    SET_WORD_ARCHIVED(state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
         word.archived = value;
     },
 
-    SET_WORD_NOTES(
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value: string }
-    ): void {
+    SET_WORD_NOTES(state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
         word.notes = value;
     },
 
     SELECT_WORD(state: CollectionState, word: CollectionWord): void {
         // do not select the same list twice
-        const index = state.selectedWords.findIndex(
-            selectedWord => selectedWord.id === word.id
-        );
+        const index = state.selectedWords.findIndex(selectedWord => selectedWord.id === word.id);
         if (index !== -1) {
             return;
         }
@@ -585,9 +527,7 @@ const mutations = {
     },
 
     DESELECT_WORD(state: CollectionState, word: CollectionWord): void {
-        const index = state.selectedWords.findIndex(
-            selectedWord => selectedWord.id === word.id
-        );
+        const index = state.selectedWords.findIndex(selectedWord => selectedWord.id === word.id);
 
         if (index === -1) {
             return;
@@ -605,28 +545,27 @@ const mutations = {
 
 const helpers = {
     /**
-     * Finds and returns a CollectionWord object give its id.
+     * Finds and returns a CollectionWord object and its parent CollectionList given its id.
      * By default, searches only in the selected lists.
      *
      * @param {CollectionContext} context context to search in
      * @param {string} wordId word id
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower
-     * @returns {({ word: CollectionWord | null; list: CollectionList | null })}
+     * @returns {({ word: CollectionWord | undefined; list: CollectionList | undefined })}
      */
     findWord(
         context: CollectionContext,
         wordId: string,
         searchAll: boolean = false
-    ): { word: CollectionWord | null; list: CollectionList | null } {
+    ): { word: CollectionWord | undefined; list: CollectionList | undefined } {
         const listToSearch = searchAll
-            ? Object.values(context.state.lists)
+            ? Object.values(context.state.lists) // get all the lists
             : context.state.selectedLists;
-        const list = listToSearch.find(
-            list => list.words[wordId] !== undefined
-        );
 
-        if (list === undefined) {
-            return { word: null, list: null };
+        const list = listToSearch.find(list => list.words[wordId] != undefined);
+
+        if (list == undefined) {
+            return { word: undefined, list: undefined };
         }
 
         // the word will be in the found list
@@ -635,13 +574,10 @@ const helpers = {
         return { word, list };
     },
 
-    getWordFromPooled(
-        context: CollectionContext,
-        wordId: string
-    ): CollectionWord | null {
-        const word: CollectionWord = context.getters.getPooledWords.find(
-            (word: CollectionWord) => word.id === wordId
-        );
+    // TODO: why do I need these two function that do almost the same things?
+    // TODO: deprecated
+    getWordFromPooled(context: CollectionContext, wordId: string): CollectionWord | null {
+        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
 
         if (word === undefined) {
             return null;
@@ -658,14 +594,3 @@ export const collection = {
     actions,
     mutations
 };
-
-/**
- * A helper function to get a CollectionList by its ide from the lists array.
- * TODO: use a dictionary for fast lookup as specified here: https://forum.vuejs.org/t/error-form-binding-with-vuex-do-not-mutate-vuex-store-state-outside-mutation-handlers/11941/8
- *
- * @param {string} listId
- * @returns {(CollectionList | null)}
- */
-/* function state.lists.get(listId: string): CollectionList | null {
-    return state.lists.find(l => l.id === listId) || null;
-} */

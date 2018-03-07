@@ -53,7 +53,7 @@
                     @select="selectWord"
                     @favourite="setWordFavourite"
                     @archive="setWordArchived"
-                    @delete="deleteWord"
+                    @delete="deleteSelectedWords"
                     :key="item.id"
                     :word="item"></list-item>
 
@@ -117,10 +117,7 @@ import anki from './../../api/anki';
 import listItem from './list-item.vue';
 /* import wordMenu from './word-menu.vue'; */
 
-import {
-    CollectionList,
-    CollectionWord
-} from '../../store/modules/collection/index';
+import { CollectionList, CollectionWord } from '../../store/modules/collection/index';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
@@ -140,27 +137,23 @@ export default class WordList extends Vue {
 
     @GetterCL getPooledWords: CollectionWord[];
 
-    @ActionCL
-    addWord: (payload: { listId: string; word: CollectionWord }) => void;
+    @ActionCL addWord: (payload: { listId: string; word: CollectionWord }) => void;
 
-    @ActionCL
-    selectWord: (payload: { wordId: string; append?: Boolean }) => void;
+    @ActionCL selectWord: (payload: { wordId: string; append?: Boolean }) => void;
 
     @ActionCL deselectWord: (payload: { wordId: string }) => void;
 
-    @ActionCL
-    setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
+    @ActionCL setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
 
-    @ActionCL
-    setWordArchived: (payload: { wordId: string; value: boolean }) => void;
+    @ActionCL setWordArchived: (payload: { wordId: string; value: boolean }) => void;
 
     @ActionCL deleteWord: (payload: { wordId: string }) => void;
 
+    @ActionCL deleteSelectedWords: () => void;
+
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
-        // TODO: removing items from the array as you are traversing it
-        // cache the ids of the removed words on the first pass and then remove them on the second
-        this.selectedWords.forEach(word => {
+        this.selectedWords.slice().forEach(word => {
             if (!this.getPooledWords.includes(word)) {
                 this.deselectWord({ wordId: word.id });
             }
@@ -183,8 +176,7 @@ export default class WordList extends Vue {
     visibleHeight: number = -1;
 
     mounted(): void {
-        this.visibleHeight =
-            (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 36;
+        this.visibleHeight = (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 36;
     }
 
     lookup: string = '';

@@ -26,8 +26,8 @@
                 class="treee"
                 v-model="treeItems"
                 :draggable="isTreeDraggable"
-                :renderer="renderer"
                 @node-click="nodeClick">
+                <!-- :renderer="renderer" -->
 
                 <template slot-scope="{ item, level }">
                     <collection-item
@@ -97,7 +97,7 @@ export default class CollectionView extends Vue {
 
     @Provide() bus = new CollectionBus();
 
-    renderer = CollectionItemV;
+    // renderer = CollectionItemV;
 
     // #region vuex
 

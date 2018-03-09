@@ -2,7 +2,6 @@
 
     <section class="list-view">
 
-
         <section class="lookup">
 
             <div class="uk-margin">
@@ -47,13 +46,12 @@
                 :bench="20"
                 class="cm-scrollbar">
 
-
                 <list-item
                     v-for="item in getPooledWords"
                     @select="selectWord"
                     @favourite="setWordFavourite"
                     @archive="setWordArchived"
-                    @delete="deleteSelectedWords"
+                    @delete="deleteWords"
                     :key="item.id"
                     :word="item"></list-item>
 
@@ -139,9 +137,7 @@ export default class WordList extends Vue {
 
     @ActionCL addWord: (payload: { listId: string; word: CollectionWord }) => void;
 
-    @ActionCL selectWord: (payload: { wordId: string; append?: Boolean }) => void;
-
-    @ActionCL deselectWord: (payload: { wordId: string }) => void;
+    @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
 
     @ActionCL setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
 
@@ -155,7 +151,9 @@ export default class WordList extends Vue {
     onGetPooledWordsChanged(value: CollectionWord[]): void {
         this.selectedWords.slice().forEach(word => {
             if (!this.getPooledWords.includes(word)) {
-                this.deselectWord({ wordId: word.id });
+                console.log('deselecting', word);
+
+                this.selectWord({ wordId: word.id, value: false });
             }
         });
     }
@@ -164,6 +162,15 @@ export default class WordList extends Vue {
         const listId = this.selectedLists[0].id;
         const word = new CollectionWord({ text: this.lookup });
         this.addWord({ listId, word });
+    }
+
+    deleteWords({ wordId }: { wordId: string }): void {
+        const word = this.selectedWords.find(word => word.id === wordId);
+        if (word) {
+            this.deleteSelectedWords();
+        } else {
+            this.deleteWord({ wordId });
+        }
     }
 
     /* get visibleHeight(): number {

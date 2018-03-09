@@ -112,7 +112,7 @@ export default class WordItem extends Vue {
     emArchive(payload: { wordId: string; value: boolean }) {}
 
     @Emit('delete')
-    emDelete() {}
+    emDelete(payload: { wordId: string }) {}
 
     @StateCL selectedWords: CollectionWord[];
 
@@ -120,6 +120,10 @@ export default class WordItem extends Vue {
 
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
+
+    /**
+     * Indicates that this item is enhaged: either is hovered or over its menu is opened.
+     */
     get isTargeted(): boolean {
         return this.isHovered || this.isMenuOpened;
     }
@@ -145,7 +149,7 @@ export default class WordItem extends Vue {
     }
 
     deleteWord(): void {
-        this.emDelete();
+        this.emDelete({ wordId: this.word.id });
     }
 
     vnull(): void {}

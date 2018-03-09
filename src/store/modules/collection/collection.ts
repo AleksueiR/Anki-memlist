@@ -16,6 +16,12 @@ type CollectionContext = ActionContext<CollectionState, RootState>;
 
 const state: CollectionState = new CollectionState();
 
+enum MutationType {
+    DeleteWord = 'DELETE_WORD',
+    SelectWord = 'SELECT_WORD',
+    DeselectAllWords = 'DESELECT_ALL_WORDS'
+}
+
 // getters
 const getters = {
     getPooledWords(state: CollectionState): CollectionWord[] {
@@ -190,7 +196,10 @@ const actions = {
      * @param {{ listId: string; append: boolean }} {listId, append  = false}
      * @returns
      */
-    selectList(context: CollectionContext, { listId, append = false }: { listId: string; append: boolean }) {
+    selectList(
+        context: CollectionContext,
+        { listId, append = false, value }: { listId: string; append: boolean; value?: boolean }
+    ) {
         if (!append) {
             context.commit('DESELECT_ALL_LISTS');
         }
@@ -200,7 +209,7 @@ const actions = {
             return;
         }
 
-        context.commit('SELECT_LIST', { list });
+        context.commit('SELECT_LIST', { list, value });
     },
 
     deselectAllLists(context: CollectionContext): void {
@@ -249,25 +258,15 @@ const actions = {
     // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
 
     deleteWord(context: CollectionContext, { wordId }: { wordId: string }): void {
-        /* const list = Array.from(state.lists.values()).find(list =>
-            list.words.has(options.wordId)
-        ); */
-        const list = Object.values(state.lists).find(list => list.words[wordId] != undefined);
+        const { word, list } = helpers.findWord(context, wordId, true);
 
-        if (list == undefined) {
+        if (!word) {
             return;
         }
 
-        //const word = list.words.get(options.wordId);
-        const word: CollectionWord | undefined = list.words[wordId];
-
-        if (word == undefined) {
-            return;
-        }
-
-        context.commit('DESELECT_WORD', word);
-        context.commit('DELETE_WORD', { list, word });
-        actions.writeList(context, list.id);
+        context.commit(MutationType.SelectWord, { word, value: false });
+        context.commit(MutationType.DeleteWord, { list, word });
+        actions.writeList(context, list!.id);
     },
 
     /**
@@ -278,13 +277,14 @@ const actions = {
     deleteSelectedWords(context: CollectionContext): void {
         type AggregatedLists = { [name: string]: { list: CollectionList; words: CollectionWord[] } };
 
+        // map selected words to their corresponding lists, so each lists can be processed in turn
         const lists = state.selectedWords.reduce<AggregatedLists>((map, { id }) => {
             const { word, list } = helpers.findWord(context, id);
-            if (word == undefined || list == undefined) {
+            if (!word || !list) {
                 return map;
             }
 
-            if (map[list.id] == undefined) {
+            if (!map[list.id]) {
                 map[list.id] = { list, words: [] };
             }
 
@@ -295,8 +295,8 @@ const actions = {
 
         Object.values(lists).forEach(({ list, words }) => {
             words.forEach(word => {
-                context.commit('DESELECT_WORD', word);
-                context.commit('DELETE_WORD', { list, word });
+                context.commit(MutationType.SelectWord, { word, value: false });
+                context.commit(MutationType.DeleteWord, { list, word });
             });
             actions.writeList(context, list.id);
         });
@@ -347,49 +347,32 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    selectWord(context: CollectionContext, options: { wordId: string; append: boolean }): void {
-        const { wordId, append = false } = options;
-
+    /**
+     *
+     *
+     * @param {CollectionContext} context
+     * @param {{ wordId: string; append: boolean; value?: boolean }} { wordId, append = false, value }
+     * @returns {void}
+     */
+    selectWord(
+        context: CollectionContext,
+        { wordId, append = false, value }: { wordId: string; append: boolean; value?: boolean }
+    ): void {
         if (!append) {
-            context.commit('DESELECT_ALL_WORDS');
+            context.commit(MutationType.DeselectAllWords);
         }
 
-        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
+        const { word, list } = helpers.findWord(context, wordId);
 
-        //const word = state.lists.get(listId);
-        if (word === undefined) {
+        if (!word) {
             return;
         }
 
-        context.commit('SELECT_WORD', word);
-    },
-
-    deselectWord(context: CollectionContext, options: { wordId: string }): void {
-        const { wordId } = options;
-
-        // find a list with the provided wordId
-        /* const list = Array.from(state.lists.values()).find(list =>
-            list.words.has(wordId)
-        ); */
-        const list = Object.values(state.lists).find(list => list.words[wordId] !== undefined);
-
-        if (list === undefined) {
-            return;
-        }
-
-        // get the word from the list
-        // const word: CollectionWord | undefined = list.words.get(wordId);
-        const word: CollectionWord | undefined = list.words[wordId];
-
-        if (word === undefined) {
-            return;
-        }
-
-        context.commit('DESELECT_WORD', word);
+        context.commit(MutationType.SelectWord, { word, value });
     },
 
     deselectAllWords(context: CollectionContext): void {
-        context.commit('DESELECT_ALL_Words');
+        context.commit(MutationType.DeselectAllWords);
     }
 
     // #endregion
@@ -397,10 +380,6 @@ const actions = {
 
 // mutations
 const mutations = {
-    FECK(state: CollectionState, value: boolean): void {
-        state.halp.feck = value;
-    },
-
     // #region EDIT INDEX
 
     SET_INDEX(state: CollectionState, index: CollectionIndex): void {
@@ -427,13 +406,19 @@ const mutations = {
         state.addList(tree, list);
     },
 
-    SELECT_LIST(state: CollectionState, { list }: { list: CollectionList }): void {
+    SELECT_LIST(state: CollectionState, { list, value }: { list: CollectionList; value?: boolean }): void {
         const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
 
+        // if no value specified, toggle the state of the list
+        if (value === undefined) {
+            value = index === -1;
+        }
+
         // add a list to the selection, or remove already selected list from the selection
-        if (index === -1) {
+        if (value) {
             state.selectedLists.push(list);
-        } else {
+        } else if (index !== -1) {
+            // do not remove if it's not in the list; with index === -1, the last item from the list will be removed
             state.selectedLists.splice(index, 1);
         }
     },
@@ -488,27 +473,27 @@ const mutations = {
         word.notes = value;
     },
 
-    SELECT_WORD(state: CollectionState, word: CollectionWord): void {
-        // do not select the same list twice
-        const index = state.selectedWords.findIndex(selectedWord => selectedWord.id === word.id);
-        if (index !== -1) {
-            return;
-        }
-
-        state.selectedWords.push(word);
-    },
-
-    DESELECT_WORD(state: CollectionState, word: CollectionWord): void {
+    [MutationType.SelectWord](
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value?: boolean }
+    ): void {
         const index = state.selectedWords.findIndex(selectedWord => selectedWord.id === word.id);
 
-        if (index === -1) {
-            return;
+        // if no value specified, toggle the state of the word
+        if (value === undefined) {
+            value = index === -1;
         }
 
-        state.selectedWords.splice(index, 1);
+        // add a word to the selection, or remove already selected word from the selection
+        if (value) {
+            state.selectedWords.push(word);
+        } else if (index !== -1) {
+            // do not remove if it's not in the list; with index === -1, the last item from the list will be removed
+            state.selectedWords.splice(index, 1);
+        }
     },
 
-    DESELECT_ALL_WORDS(state: CollectionState): void {
+    [MutationType.DeselectAllWords](state: CollectionState): void {
         state.selectedWords.splice(0);
     }
 
@@ -517,27 +502,27 @@ const mutations = {
 
 const helpers = {
     /**
-     * Finds and returns a CollectionWord object and its parent CollectionList given its id.
+     * Finds and returns a CollectionWord object (given its id) and its parent CollectionList.
      * By default, searches only in the selected lists.
      *
      * @param {CollectionContext} context context to search in
      * @param {string} wordId word id
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower
-     * @returns {({ word: CollectionWord | undefined; list: CollectionList | undefined })}
+     * @returns {({ word: CollectionWord?; list?: CollectionList })}
      */
     findWord(
         context: CollectionContext,
         wordId: string,
         searchAll: boolean = false
-    ): { word: CollectionWord | undefined; list: CollectionList | undefined } {
+    ): { word?: CollectionWord; list?: CollectionList } {
         const listToSearch = searchAll
             ? Object.values(context.state.lists) // get all the lists
             : context.state.selectedLists;
 
-        const list = listToSearch.find(list => list.words[wordId] != undefined);
+        const list = listToSearch.find(list => list.words[wordId] !== undefined);
 
-        if (list == undefined) {
-            return { word: undefined, list: undefined };
+        if (!list) {
+            return {};
         }
 
         // the word will be in the found list

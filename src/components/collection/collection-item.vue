@@ -133,15 +133,7 @@
 </template>
 
 <script lang="ts">
-import {
-    Vue,
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch,
-    Emit
-} from 'vue-property-decorator';
+import { Vue, Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
@@ -228,9 +220,7 @@ export default class CollectionItemV extends Vue {
      * The flag indicating if this list is one of the selected lists.
      */
     get isSelected(): boolean {
-        return this.selectedLists.some(
-            selectedList => this.list.id === selectedList.id
-        );
+        return this.selectedLists.some(selectedList => this.list.id === selectedList.id);
     }
 
     /**
@@ -254,6 +244,7 @@ export default class CollectionItemV extends Vue {
     mounted(): void {
         this.bus.$on('rename-start', this.renameStart);
 
+        // TODO: what is this???
         this.bus.mountComplete(this.list.id);
     }
 

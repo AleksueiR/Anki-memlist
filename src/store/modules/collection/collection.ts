@@ -77,7 +77,7 @@ const actions = {
             return;
         }
 
-        context.commit('SELECT_LIST', defaultList);
+        context.commit('SELECT_LIST', { list: defaultList });
     },
 
     writeCollection(context: CollectionContext): void {
@@ -183,43 +183,24 @@ const actions = {
     },
 
     /**
-     * Add the specified list to the `selectedLists` array
+     * Add the specified list to the `selectedLists` array; if the list is already selected, it will be removed from the selection.
+     * When appending, already selected lists will not be deselected.
      *
      * @param {CollectionContext} context
-     * @param {{ listId: string; append: boolean }} options
+     * @param {{ listId: string; append: boolean }} {listId, append  = false}
      * @returns
      */
-    selectList(context: CollectionContext, options: { listId: string; append: boolean }) {
-        const { listId, append = false } = options;
-
+    selectList(context: CollectionContext, { listId, append = false }: { listId: string; append: boolean }) {
         if (!append) {
             context.commit('DESELECT_ALL_LISTS');
         }
 
-        // const list = state.lists.get(listId);
         const list = state.lists[listId];
-        if (list === undefined) {
+        if (!list) {
             return;
         }
 
-        context.commit('SELECT_LIST', list);
-    },
-
-    /**
-     * Removes the specified list from the `selectedLists` array.
-     *
-     * @param {CollectionContext} context
-     * @param {{ listId: string }} { listId }
-     * @returns {void}
-     */
-    deselectList(context: CollectionContext, { listId }: { listId: string }): void {
-        // const list = state.lists.get(listId);
-        const list = state.lists[listId];
-        if (list === undefined) {
-            return;
-        }
-
-        context.commit('DESELECT_LIST', list);
+        context.commit('SELECT_LIST', { list });
     },
 
     deselectAllLists(context: CollectionContext): void {
@@ -446,24 +427,15 @@ const mutations = {
         state.addList(tree, list);
     },
 
-    SELECT_LIST(state: CollectionState, list: CollectionList): void {
-        // do not select the same list twice
-        const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
-        if (index !== -1) {
-            return;
-        }
-
-        state.selectedLists.push(list);
-    },
-
-    DESELECT_LIST(state: CollectionState, list: CollectionList): void {
+    SELECT_LIST(state: CollectionState, { list }: { list: CollectionList }): void {
         const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
 
+        // add a list to the selection, or remove already selected list from the selection
         if (index === -1) {
-            return;
+            state.selectedLists.push(list);
+        } else {
+            state.selectedLists.splice(index, 1);
         }
-
-        state.selectedLists.splice(index, 1);
     },
 
     DESELECT_ALL_LISTS(state: CollectionState): void {

@@ -50,15 +50,7 @@
  * TODO: use keyboard events to move the focus up and down the tree, as it seems the build it focus moves but does not change the current node key to go with it
  */
 
-import {
-    Vue,
-    Component,
-    Provide,
-    Model,
-    Prop,
-    Watch,
-    Emit
-} from 'vue-property-decorator';
+import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
@@ -93,11 +85,9 @@ export default class CollectionView extends Vue {
 
     @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
 
-    @ActionCL
-    setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
 
-    @ActionCL
-    setListPinned: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL setListPinned: (payload: { listId: string; value: boolean }) => void;
 
     isExpanded: boolean = true;
 
@@ -138,11 +128,7 @@ export default class CollectionView extends Vue {
     // sets a new list name
     @ActionCL setListName: (payload: { listId: string; name: string }) => void;
     // select the list
-    @ActionCL
-    selectList: (
-        { listId, append }: { listId: string; append?: boolean }
-    ) => void;
-    @ActionCL deselectList: (value: { listId: string }) => void;
+    @ActionCL selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
 
     // #endregion vuex
 
@@ -158,45 +144,19 @@ export default class CollectionView extends Vue {
      * If the clicked list is already selected, removes from the selection array. (not holding Ctrl key will deselected everything except the one clicked)
      */
     nodeClick(node: CollectionTree, event: MouseEvent): void {
-        if (
-            this.selectedLists.find(list => list.id === node.listId) &&
-            event.ctrlKey
-        ) {
-            this.deselectList({ listId: node.listId });
-        } else {
-            this.selectList({ listId: node.listId, append: event.ctrlKey });
-        }
+        this.selectList({ listId: node.listId, append: event.ctrlKey });
     }
-
-    // ctrlPressed: boolean = false;
 
     keyDownHandler(event: KeyboardEvent): void {
         // assume at least one list is selected
-        if (
-            event.keyCode === Vue.config.keyCodes.f2 &&
-            this.selectedLists.length > 0
-        ) {
+        if (event.keyCode === Vue.config.keyCodes.f2 && this.selectedLists.length > 0) {
             // this.renamedListId = this.selectedLists[0].id;
 
             event.preventDefault();
             this.isTreeDraggable = false;
             this.bus.renameStart(this.selectedLists[0].id);
         }
-
-        // track ctrl key
-        // TODO: move ctrl tracking up to the app-level
-        /* if (event.keyCode === Vue.config.keyCodes.ctrl) {
-            this.ctrlPressed = true;
-        }
-
-        console.log(event.keyCode, 'is pressed'); */
     }
-
-    /* keyUpHandler(event: KeyboardEvent): void {
-        if (event.keyCode === Vue.config.keyCodes.ctrl) {
-            this.ctrlPressed = false;
-        }
-    } */
 
     onRenameComplete(listId: string, name: string) {
         this.isTreeDraggable = true;
@@ -209,7 +169,6 @@ export default class CollectionView extends Vue {
 
     mounted() {
         this.$el.addEventListener('keydown', this.keyDownHandler);
-        // this.$el.addEventListener('keyup', this.keyUpHandler);
 
         this.bus.$on('rename-complete', this.onRenameComplete);
     }

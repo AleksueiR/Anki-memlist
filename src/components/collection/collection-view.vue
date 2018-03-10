@@ -27,7 +27,6 @@
                 v-model="treeItems"
                 :draggable="isTreeDraggable"
                 @node-click="nodeClick">
-                <!-- :renderer="renderer" -->
 
                 <template slot-scope="{ item, level }">
                     <collection-item
@@ -39,8 +38,8 @@
                         @expanded="setIndexExpandedTree"
                         @rename-start="onRenameStart"
                         @rename-complete="onRenameComplete"
-                        @rename-cancel="onRenameComplete"
-                        ></collection-item>
+                        @rename-cancel="onRenameComplete">
+                    </collection-item>
                 </template>
             </treee>
 
@@ -53,7 +52,6 @@
 /**
  * TODO: use keyboard events to move the focus up and down the tree, as it seems the build it focus moves but does not change the current node key to go with it
  */
-
 import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 
@@ -86,15 +84,6 @@ export default class CollectionView extends Vue {
     // #region vuex
 
     @StateCL index: CollectionIndex;
-
-    @StateCL lists: CollectionListMap;
-
-    @StateCL selectedLists: CollectionList[];
-
-    @StateCL((state: CollectionState) => state.index.defaultListId)
-    defaultListId: string;
-
-    @GetterCL getPooledWords: CollectionWord[];
 
     @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
 
@@ -249,33 +238,4 @@ export default class CollectionView extends Vue {
         }
     }
 }
-
-/* .el-tree /deep/ {
-    color: $text-colour;
-    user-select: none;
-
-    // move caret icon to the right
-    .el-tree-node__expand-icon {
-        order: 1;
-        transform: rotate(90deg);
-
-        &.expanded {
-            transform: rotate(-90deg);
-        }
-    }
-
-    .el-tree-node {
-        &:focus > .el-tree-node__content {
-            background-color: transparent;
-        }
-
-        &.is-checked > .el-tree-node__content {
-            background-color: darken($secondary-colour, 10%);
-        }
-
-        &:hover > .el-tree-node__content {
-            background-color: $secondary-colour;
-        }
-    }
-} */
 </style>

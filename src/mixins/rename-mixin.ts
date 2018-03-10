@@ -2,7 +2,7 @@ import { Vue, Component, Emit } from 'vue-property-decorator';
 
 /**
  * to use:
- * 'extends mixins(UpdateRouteMixin)'
+ * 'extends mixins(RenameMixin)'
  * Then everything on this class will be available
  */
 @Component
@@ -23,6 +23,7 @@ export default class RenameMixin extends Vue {
 
     // provided by the parent component
     id: string;
+
     // provided by the parent component
     getCurrentName(): string {
         return '';
@@ -39,17 +40,11 @@ export default class RenameMixin extends Vue {
                 break;
 
             case Vue.config.keyCodes.enter:
-                if (!this.isRenaming) {
-                    return;
-                }
                 this.completeRename();
 
                 break;
 
             case Vue.config.keyCodes.esc:
-                if (!this.isRenaming) {
-                    return;
-                }
                 this.cancelRename();
 
                 break;
@@ -66,14 +61,30 @@ export default class RenameMixin extends Vue {
     }
 
     completeRename(): void {
+        if (!this.isRenaming) {
+            return;
+        }
+
+        console.log('completRename');
         this.renameComplete({ id: this.id, name: this.newName });
         this.isRenaming = false;
         this.$el.focus();
     }
 
-    cancelRename(): void {
+    cancelRename(keepFocus: boolean = true): void {
+        if (!this.isRenaming) {
+            return;
+        }
+
+        console.log('cancelRename', keepFocus);
+
         this.renameCancel({ id: this.id });
         this.isRenaming = false;
+
+        if (!keepFocus) {
+            return;
+        }
+
         this.$el.focus();
     }
 

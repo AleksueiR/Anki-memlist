@@ -41,19 +41,24 @@
             </ul> -->
 
             <virtual-list
-                :size="36"
+                :size="30"
                 :remain="visibleHeight"
                 :bench="20"
                 class="cm-scrollbar">
 
                 <list-item
                     v-for="item in getPooledWords"
+                    :key="item.id"
+                    :word="item"
+
                     @select="selectWord"
                     @favourite="setWordFavourite"
                     @archive="setWordArchived"
                     @delete="deleteWords"
-                    :key="item.id"
-                    :word="item"></list-item>
+
+                    @rename-start="onRenameStart"
+                    @rename-complete="onRenameComplete"
+                    @rename-cancel="onRenameComplete"></list-item>
 
             </virtual-list>
 
@@ -125,8 +130,6 @@ const ActionCL = namespace('collection', Action);
     components: {
         'virtual-list': VirtualScrollList,
         listItem
-
-        //wordMenu
     }
 })
 export default class WordList extends Vue {
@@ -139,6 +142,8 @@ export default class WordList extends Vue {
 
     @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
 
+    @ActionCL setWordText: (payload: { wordId: string; value: string; searchAll?: boolean }) => void;
+
     @ActionCL setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
 
     @ActionCL setWordArchived: (payload: { wordId: string; value: boolean }) => void;
@@ -147,6 +152,7 @@ export default class WordList extends Vue {
 
     @ActionCL deleteSelectedWords: () => void;
 
+    // TODO: this doesn't seem to belong here
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
         this.selectedWords.slice().forEach(word => {
@@ -183,7 +189,7 @@ export default class WordList extends Vue {
     visibleHeight: number = -1;
 
     mounted(): void {
-        this.visibleHeight = (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 36;
+        this.visibleHeight = (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 30;
     }
 
     lookup: string = '';
@@ -321,6 +327,18 @@ export default class WordList extends Vue {
         cRemoveWord(this.$store, word);
         dSyncWords(this.$store);
     } */
+
+    onRenameStart({ id }: { id: string }) {
+        // TODO: grey out the rest of the list
+    }
+
+    onRenameComplete({ id, name }: { id: string; name?: string }) {
+        if (!name) {
+            return;
+        }
+
+        this.setWordText({ wordId: id, value: name });
+    }
 }
 </script>
 

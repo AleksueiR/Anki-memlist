@@ -19,6 +19,7 @@ const state: CollectionState = new CollectionState();
 enum MutationType {
     SetListName = 'SET_LIST_NAME',
 
+    SetWordText = 'SET_WORD_TEXT',
     DeleteWord = 'DELETE_WORD',
     SelectWord = 'SELECT_WORD',
     DeselectAllWords = 'DESELECT_ALL_WORDS'
@@ -155,7 +156,7 @@ const actions = {
         }
 
         const list = state.lists[listId];
-        if (list === undefined) {
+        if (!list) {
             return;
         }
 
@@ -314,24 +315,30 @@ const actions = {
      * @param {{ wordId: string; value: string }} { wordId, value }
      * @returns {void}
      */
-    setWordText(context: CollectionContext, { wordId, value }: { wordId: string; value: string }): void {
-        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
-
-        if (word === undefined) {
+    setWordText(
+        context: CollectionContext,
+        { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }
+    ): void {
+        const { word, list } = helpers.findWord(context, wordId, searchAll);
+        if (!word) {
             return;
         }
 
-        context.commit('SET_WORD_TEXT', { word, value });
+        context.commit(MutationType.SetWordText, { word, value });
+        actions.writeList(context, list!.id);
     },
 
-    setWordFavourite(context: CollectionContext, { wordId, value }: { wordId: string; value: boolean }): void {
-        const word = helpers.getWordFromPooled(context, wordId);
-
+    setWordFavourite(
+        context: CollectionContext,
+        { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }
+    ): void {
+        const { word, list } = helpers.findWord(context, wordId, searchAll);
         if (!word) {
             return;
         }
 
         context.commit('SET_WORD_FAVOURITE', { word, value });
+        actions.writeList(context, list!.id);
     },
 
     setWordArchived(
@@ -458,7 +465,7 @@ const mutations = {
 
     // #region EDIT WORD
 
-    SET_WORD_TEXT(state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
+    [MutationType.SetWordText](state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
         word.text = value;
     },
 

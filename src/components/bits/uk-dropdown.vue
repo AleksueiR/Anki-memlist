@@ -8,7 +8,6 @@
 import Vue from 'vue';
 import { Component, Prop, Emit } from 'vue-property-decorator';
 
-import moment from 'moment';
 import UIkit from 'uikit';
 
 interface UkDropdown extends HTMLElement {
@@ -35,9 +34,7 @@ export default class UkDropdownV extends Vue {
     }
 
     get options(): string {
-        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${
-            this.delayHide
-        }`;
+        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${this.delayHide}`;
     }
 
     mounted(): void {

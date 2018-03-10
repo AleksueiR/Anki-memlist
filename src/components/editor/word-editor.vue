@@ -86,13 +86,7 @@ import sources from './../../sources';
 
 import { EventBus, WORD_SELECTED } from './../../event-bus';
 
-import {
-    Word,
-    dFetchWods,
-    dSyncWords,
-    rSelectedItem,
-    rItems
-} from './../../store/modules/words';
+import { Word, dFetchWods, dSyncWords, rSelectedItem, rItems } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
 
@@ -140,6 +134,7 @@ export default class WordList extends Vue {
             return null;
         }
 
+        // TODO: when a word is renamed, reload the editor
         return this.selectedWords[0];
 
         //return rSelectedItem(this.$store);
@@ -167,19 +162,13 @@ export default class WordList extends Vue {
             return;
         }
 
-        anki
-            .retrieveMediaFile('earth_global_circulation1_-_en.svg.png')
-            .then((data: any) => {
-                //console.log(data);
-            });
+        anki.retrieveMediaFile('earth_global_circulation1_-_en.svg.png').then((data: any) => {
+            //console.log(data);
+        });
 
         this.modelFields = await anki.getModelFieldNames('Word Vault');
 
-        this.notes = await anki.findNotes(
-            'English::Word Vault',
-            'Word',
-            this.word!.text
-        );
+        this.notes = await anki.findNotes('English::Word Vault', 'Word', this.word!.text);
         this.noteFields = await anki.getFields(this.notes[0]);
 
         /* anki.getNotes('English::Word Vault', 'Word', this.word!.text).then(data => {

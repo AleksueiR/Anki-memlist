@@ -1,4 +1,5 @@
 <template>
+
     <div class="collection-item uk-flex uk-flex-middle"
         :class="{ selected: isSelected }"
         tabindex="0"
@@ -13,7 +14,7 @@
 
 
         <!-- uk-icon="ratio: 0.7; icon: bookmark" -->
-
+        <!-- TODO: only show icons when not renaming -->
         <span
             uk-tooltip="delay: 1500; title: Default list"
             class="uk-icon uk-position-center-left item-control default active"
@@ -115,22 +116,12 @@
 
         <template v-else>
 
-            <el-input
-                class="name-input"
-                v-input-focus
+             <rename-input
                 v-model="newName"
+                @blur.native="cancelRename(false)">
+            </rename-input>
 
-                @focus.once="onFocus"
-                @blur="cancelRename"
-
-                @mousedown.native.stop="vnull"
-                @click.native.stop="vnull"
-
-                ></el-input>
         </template>
-
-        <!-- @keyup.native.enter="completeRename"
-                @keyup.native.esc="cancelRename" -->
 
     </div>
 </template>
@@ -138,6 +129,7 @@
 <script lang="ts">
 import { Vue, Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import { mixins } from 'vue-class-component';
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
 import {
@@ -146,9 +138,8 @@ import {
     CollectionTree,
     CollectionState
 } from '../../store/modules/collection/index';
-import CollectionBus from './collection-bus';
 import UkDropdownV from '../bits/uk-dropdown.vue';
-import { mixins } from 'vue-class-component';
+import RenameInputV from './../bits/rename-input.vue';
 import RenameMixin from './../../mixins/rename-mixin';
 
 const StateCL = namespace('collection', State);
@@ -164,7 +155,8 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         FontAwesomeIcon,
-        'uk-dropdown': UkDropdownV
+        'uk-dropdown': UkDropdownV,
+        'rename-input': RenameInputV
     },
     directives: {
         // Register a local custom directive called `v-input-focus`
@@ -252,16 +244,10 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     }
 
     mounted(): void {
+        // start the rename process for a newly created list
         if (this.list.id === this.mintListId) {
             this.startRename();
         }
-    }
-
-    /**
-     * Preselect the current list name on focus.
-     */
-    onFocus(event: FocusEvent): void {
-        (<HTMLInputElement>event.target).select();
     }
 
     setDefault(): void {
@@ -294,6 +280,7 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 .collection-item {
     position: relative;
     height: 30px;
+    font-size: 0.8rem;
 
     &.checked {
         background-color: darken($secondary-colour, 10%);
@@ -311,11 +298,9 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     overflow: hidden;
     user-select: none;
     pointer-events: none;
-    font-size: 0.8rem;
 }
 
 .item-word-count {
-    font-size: 0.8rem;
 }
 
 .item-control {
@@ -338,10 +323,15 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 $base-indent: 1rem;
 
 @for $i from 0 through 10 {
-    .item-text,
-    .name-input {
+    .item-text {
         .level-#{$i} & {
             padding-left: $i * $base-indent;
+        }
+    }
+
+    .rename-input {
+        .level-#{$i} & {
+            margin-left: calc(0.5rem + 30px - 10px + #{$i} * #{$base-indent});
         }
     }
 }
@@ -450,15 +440,9 @@ $base-indent: 1rem;
 .pin-flag {
 } */
 
-.name-input /deep/ {
-    font-size: 1rem;
-    margin-left: calc(0.5rem + 30px);
-
-    input {
-        font-family: Segoe UI;
-        height: 1.5rem;
-        border-radius: 0;
-    }
+.rename-input {
+    font-size: 0.8rem;
+    height: 1.5rem;
 }
 
 // adjust visual center

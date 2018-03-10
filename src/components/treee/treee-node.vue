@@ -1,6 +1,5 @@
 <template>
     <div class="treee-node"
-        tabindex="-1"
         :class="{ 'no-drop': isDragSource }"
         role="treeitem">
 
@@ -21,10 +20,9 @@
 
                 <span class="highlight"></span>
 
-                <slot
-                    class="item"
-                    :item="item"
-                    :level="level"></slot>
+                <div ref="slot">
+                    <slot :item="item" :level="level"></slot>
+                </div>
 
                 <!-- <component
                     class="item"
@@ -65,20 +63,9 @@
 </template>
 
 <script lang="ts">
-import {
-    Vue,
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch
-} from 'vue-property-decorator';
+import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { CollectionTree } from './../../store/modules/collection/index';
-import Treee, {
-    TreeDragItem,
-    TreeDropTarget,
-    TreeeDropPosition
-} from './treee.vue';
+import Treee, { TreeDragItem, TreeDropTarget, TreeeDropPosition } from './treee.vue';
 
 @Component
 export default class TreeeNode extends Vue {
@@ -121,12 +108,7 @@ export default class TreeeNode extends Vue {
         this.treee.$on('start-drag', this.onDragStart);
         this.treee.$on('stop-drag', this.onDragStop);
 
-        console.log(
-            'parent tree',
-            this.item.listId,
-            this.level,
-            this.hasChildren
-        );
+        console.log('parent tree', this.item.listId, this.level, this.hasChildren);
     }
 
     onDragStart(dragItem: TreeDragItem): void {
@@ -150,7 +132,7 @@ export default class TreeeNode extends Vue {
         // prevent text from being selected when dragging
         event.preventDefault();
 
-        const original = <HTMLElement>this.$refs.content;
+        const original = this.$refs.content as HTMLElement;
         const clone = original.cloneNode(true) as HTMLElement;
 
         // the clone is positioned absolute and the width must be set manually
@@ -198,9 +180,8 @@ export default class TreeeNode extends Vue {
             return;
         }
 
-        console.log('uini', event);
-
-        this.$el.focus();
+        // set focus to the item occupying the tree node slot
+        (<HTMLElement>(<HTMLElement>this.$refs.slot).firstElementChild!).focus();
 
         this.treee.$emit('node-click', this.item, event);
     }

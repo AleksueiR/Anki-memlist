@@ -17,6 +17,8 @@ type CollectionContext = ActionContext<CollectionState, RootState>;
 const state: CollectionState = new CollectionState();
 
 enum MutationType {
+    SetListName = 'SET_LIST_NAME',
+
     DeleteWord = 'DELETE_WORD',
     SelectWord = 'SELECT_WORD',
     DeselectAllWords = 'DESELECT_ALL_WORDS'
@@ -220,14 +222,13 @@ const actions = {
 
     // #region EDIT LIST
 
-    setListName(context: CollectionContext, { listId, name }: { listId: string; name: string }): void {
-        //const list = state.lists.get(listId);
+    setListName(context: CollectionContext, { listId, value }: { listId: string; value: string }): void {
         const list = state.lists[listId];
-        if (list == undefined) {
+        if (!list) {
             return;
         }
 
-        context.commit('SET_LIST_NAME', { list, name });
+        context.commit(MutationType.SetListName, { list, value });
 
         actions.writeList(context, list.id);
     },
@@ -431,7 +432,7 @@ const mutations = {
 
     // #region EDIT LIST
 
-    SET_LIST_NAME(state: CollectionState, { list, value }: { list: CollectionList; value: string }): void {
+    [MutationType.SetListName](state: CollectionState, { list, value }: { list: CollectionList; value: string }): void {
         list.name = value;
     },
 

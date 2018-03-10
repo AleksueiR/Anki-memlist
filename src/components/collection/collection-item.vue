@@ -1,6 +1,7 @@
 <template>
     <div class="collection-item uk-flex uk-flex-middle"
         :class="{ selected: isSelected }"
+        tabindex="0"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false">
 
@@ -113,21 +114,23 @@
         </template>
 
         <template v-else>
+
             <el-input
                 class="name-input"
                 v-input-focus
                 v-model="newName"
 
                 @focus.once="onFocus"
-                @blur="renameCancel"
+                @blur="cancelRename"
 
-                @mousedown.native.stop="() => {}"
-                @click.native.stop="() => {}"
+                @mousedown.native.stop="vnull"
+                @click.native.stop="vnull"
 
-                @keyup.native.enter="renameComplete"
-                @keyup.native.esc="renameCancel"></el-input>
+                ></el-input>
         </template>
 
+        <!-- @keyup.native.enter="completeRename"
+                @keyup.native.esc="cancelRename" -->
 
     </div>
 </template>
@@ -145,6 +148,8 @@ import {
 } from '../../store/modules/collection/index';
 import CollectionBus from './collection-bus';
 import UkDropdownV from '../bits/uk-dropdown.vue';
+import { mixins } from 'vue-class-component';
+import RenameMixin from './../../mixins/rename-mixin';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -177,7 +182,7 @@ const ActionCL = namespace('collection', Action);
         }
     }
 })
-export default class CollectionItemV extends Vue {
+export default class CollectionItemV extends mixins(RenameMixin) {
     @Emit('default')
     emDefault(payload: { listId: string }) {}
 
@@ -193,11 +198,11 @@ export default class CollectionItemV extends Vue {
     @Emit('delete')
     emDelete(payload: { listId: string }) {}
 
-    // communication with collection view
-    @Inject() bus: CollectionBus;
-
     // passed in CollectionTree object
     @Prop() item: CollectionTree;
+
+    // id of the newly created, mind list; trigger auto-renaming
+    @Prop() mintListId: string;
 
     // an array of selected lists
     @StateCL selectedLists: CollectionList[];
@@ -208,6 +213,16 @@ export default class CollectionItemV extends Vue {
     // the id of the default list
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
+
+    // used by the rename mixin
+    get id(): string {
+        return this.list.id;
+    }
+
+    // used by the rename mixin
+    getCurrentName(): string {
+        return this.list.name;
+    }
 
     /**
      * The CollectionList object of the current CollectionTree object
@@ -236,39 +251,11 @@ export default class CollectionItemV extends Vue {
         return this.isHovered || this.isMenuOpened;
     }
 
-    // #region renaming
-
-    isRenaming: boolean = false;
-    newName: string | null = null;
-
     mounted(): void {
-        this.bus.$on('rename-start', this.renameStart);
-
-        // TODO: what is this???
-        this.bus.mountComplete(this.list.id);
-    }
-
-    renameStart(listId: string): void {
-        console.log('rename start', this.item.listId, listId);
-        if (this.item.listId !== listId) {
-            return;
+        if (this.list.id === this.mintListId) {
+            this.startRename();
         }
-
-        this.isRenaming = true;
-        this.newName = this.list.name;
     }
-
-    renameComplete(): void {
-        this.isRenaming = false;
-        this.bus.renameComplete(this.item.listId, this.newName);
-    }
-
-    renameCancel() {
-        this.isRenaming = false;
-        this.bus.renameCancel(this.item.listId);
-    }
-
-    // #endregion renaming
 
     /**
      * Preselect the current list name on focus.

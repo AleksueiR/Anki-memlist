@@ -33,9 +33,13 @@
                     <collection-item
                         :class="`level-${level}`"
                         :item="item"
+                        :mint-list-id="mintListId"
                         @default="setIndexDefaultList"
                         @pinned="setListPinned"
                         @expanded="setIndexExpandedTree"
+                        @rename-start="onRenameStart"
+                        @rename-complete="onRenameComplete"
+                        @rename-cancel="onRenameComplete"
                         ></collection-item>
                 </template>
             </treee>
@@ -67,8 +71,6 @@ import {
     CollectionListMap
 } from '../../store/modules/collection';
 
-import CollectionBus from './collection-bus';
-
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
@@ -81,6 +83,17 @@ const ActionCL = namespace('collection', Action);
     }
 })
 export default class CollectionView extends Vue {
+    // #region vuex
+
+    @StateCL index: CollectionIndex;
+
+    @StateCL lists: CollectionListMap;
+
+    @StateCL selectedLists: CollectionList[];
+
+    @StateCL((state: CollectionState) => state.index.defaultListId)
+    defaultListId: string;
+
     @GetterCL getPooledWords: CollectionWord[];
 
     @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
@@ -89,17 +102,19 @@ export default class CollectionView extends Vue {
 
     @ActionCL setListPinned: (payload: { listId: string; value: boolean }) => void;
 
-    isExpanded: boolean = true;
+    // replaces the existing tree index with the new one
+    @ActionCL setIndexTree: (options: { tree: CollectionTree }) => void;
 
-    toggleIsExpanded(): void {
-        this.isExpanded = !this.isExpanded;
-    }
+    // adds a new list to the bottom of the top level of the list tree
+    @ActionCL addList: (list: CollectionList) => void;
 
-    @Provide() bus = new CollectionBus();
+    // sets a new list name
+    @ActionCL setListName: (payload: { listId: string; value: string }) => void;
 
-    // renderer = CollectionItemV;
+    // select the list
+    @ActionCL selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
 
-    // #region vuex
+    // #endregion vuex
 
     // Treee needs a sturcture without circular dependencies
     // returns a safe list
@@ -115,22 +130,13 @@ export default class CollectionView extends Vue {
         this.setIndexTree({ tree: newIndexTree });
     }
 
-    @StateCL index: CollectionIndex;
-    @StateCL lists: CollectionListMap;
-    @StateCL selectedLists: CollectionList[];
-    @StateCL((state: CollectionState) => state.index.defaultListId)
-    defaultListId: string;
+    isExpanded: boolean = true;
 
-    // replaces the existing tree index with the new one
-    @ActionCL setIndexTree: (options: { tree: CollectionTree }) => void;
-    // adds a new list to the bottom of the top level of the list tree
-    @ActionCL addList: (list: CollectionList) => void;
-    // sets a new list name
-    @ActionCL setListName: (payload: { listId: string; name: string }) => void;
-    // select the list
-    @ActionCL selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
+    toggleIsExpanded(): void {
+        this.isExpanded = !this.isExpanded;
+    }
 
-    // #endregion vuex
+    mintListId: string | null = null;
 
     /**
      * Specifies if the Treee can be reordered.
@@ -147,30 +153,20 @@ export default class CollectionView extends Vue {
         this.selectList({ listId: node.listId, append: event.ctrlKey });
     }
 
-    keyDownHandler(event: KeyboardEvent): void {
-        // assume at least one list is selected
-        if (event.keyCode === Vue.config.keyCodes.f2 && this.selectedLists.length > 0) {
-            // this.renamedListId = this.selectedLists[0].id;
-
-            event.preventDefault();
-            this.isTreeDraggable = false;
-            this.bus.renameStart(this.selectedLists[0].id);
-        }
+    onRenameStart({ id }: { id: string }) {
+        // TODO: maybe don't block dragging on rename
+        this.isTreeDraggable = false;
     }
 
-    onRenameComplete(listId: string, name: string) {
+    onRenameComplete({ id, name }: { id: string; name?: string }) {
         this.isTreeDraggable = true;
+        this.mintListId = null;
 
-        this.setListName({ listId, name });
+        if (!name) {
+            return;
+        }
 
-        // TODO: is this needed?
-        this.$el.focus();
-    }
-
-    mounted() {
-        this.$el.addEventListener('keydown', this.keyDownHandler);
-
-        this.bus.$on('rename-complete', this.onRenameComplete);
+        this.setListName({ listId: id, value: name });
     }
 
     /**
@@ -179,16 +175,8 @@ export default class CollectionView extends Vue {
      */
     createNewList(): void {
         const list = new CollectionList();
+        this.mintListId = list.id;
         this.addList(list);
-
-        this.bus.$on('mount-complete', (listId: string) => {
-            if (listId !== list.id) {
-                return;
-            }
-
-            this.bus.$off('mount-complete');
-            this.bus.renameStart(list.id);
-        });
     }
 }
 </script>

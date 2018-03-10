@@ -61,6 +61,7 @@ Vue.config.keyCodes = {
     right: 39,
     f2: 113,
     enter: 13,
+    esc: 27,
     ctrl: 17
 };
 

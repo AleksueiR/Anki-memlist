@@ -1,5 +1,7 @@
 <template>
 
+    <!-- TODO: use https://github.com/DominikSerafin/vuebar for scrollbar  -->
+
     <div class="collection-item uk-flex uk-flex-middle"
         :class="{ selected: isSelected }"
         tabindex="0"

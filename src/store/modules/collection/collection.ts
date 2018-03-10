@@ -18,6 +18,7 @@ const state: CollectionState = new CollectionState();
 
 enum MutationType {
     SetListName = 'SET_LIST_NAME',
+    DeleteList = 'DELETE_LIST',
 
     SetWordText = 'SET_WORD_TEXT',
     DeleteWord = 'DELETE_WORD',
@@ -114,7 +115,7 @@ const actions = {
         function _writeList(lId: string) {
             // const list = state.lists.get(lId);
             const list = state.lists[lId];
-            if (list === undefined) {
+            if (!list) {
                 return;
             }
 
@@ -145,9 +146,35 @@ const actions = {
         actions.writeIndex(context);
     },
 
-    removeList(context: CollectionContext, listId: string): void {
-        // find its tree parent
-        // context.commit('REMOVE_LIST_FROM_TREE', { tree: state.index.tree, list });
+    deleteList(context: CollectionContext, { listId }: { listId: string }): void {
+        const list = state.lists[listId];
+        if (!list) {
+            return;
+        }
+
+        const { parentTree } = helpers.findTree(context, listId);
+        if (!parentTree) {
+            return;
+        }
+
+        console.log('deleteList', list, parentTree);
+
+        // remove the list from the index first
+        context.commit(MutationType.DeleteList, { list, tree: parentTree });
+        storage.deleteList(listId);
+
+        // check if there are any orphaned lists left and remove them as well
+        const flatTree = state.index.flatTree;
+
+        Object.keys(state.lists).forEach(listId => {
+            if (flatTree.includes(listId)) {
+                return;
+            }
+
+            storage.deleteList(listId);
+        });
+
+        actions.writeIndex(context);
     },
 
     setIndexDefaultList(context: CollectionContext, { listId }: { listId: string }): void {
@@ -183,7 +210,7 @@ const actions = {
             }
         }
 
-        if (tree === undefined) {
+        if (!tree) {
             return;
         }
 
@@ -406,8 +433,8 @@ const mutations = {
         tree.expanded = value;
     },
 
-    SET_INDEX_TREE(state: CollectionState, options: { tree: CollectionTree }) {
-        state.index.tree = options.tree;
+    SET_INDEX_TREE(state: CollectionState, { tree }: { tree: CollectionTree }) {
+        state.index.tree = tree;
     },
 
     ADD_LIST(state: CollectionState, { tree, list }: { tree: CollectionTree; list: CollectionList }): void {
@@ -435,6 +462,13 @@ const mutations = {
         state.selectedLists.splice(0);
     },
 
+    [MutationType.DeleteList](
+        state: CollectionState,
+        { list, tree }: { list: CollectionList; tree: CollectionTree }
+    ): void {
+        tree.deleteList(list);
+    },
+
     // #endregion EDIT INDEX
 
     // #region EDIT LIST
@@ -457,7 +491,10 @@ const mutations = {
      * @param {CollectionState} state
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
-    DELETE_WORD(state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
+    [MutationType.DeleteWord](
+        state: CollectionState,
+        { list, word }: { list: CollectionList; word: CollectionWord }
+    ): void {
         list.deleteWord(word);
     },
 
@@ -537,6 +574,28 @@ const helpers = {
         const word = list.words[wordId];
 
         return { word, list };
+    },
+
+    findTree(context: CollectionContext, listId: string): { parentTree?: CollectionTree; listTree?: CollectionTree } {
+        const stack: { parent: CollectionTree; list: CollectionTree }[] = [];
+        let root: CollectionTree = context.state.index.tree;
+
+        stack.push.apply(stack, root.items.map(item => ({ parent: root, list: item })));
+
+        // check if the list in the stack has matching id and return it and its parent
+        while (stack.length !== 0) {
+            const { list, parent } = stack.pop()!;
+
+            if (list.listId === listId) {
+                return { parentTree: parent, listTree: list };
+            }
+
+            if (list.items.length !== 0) {
+                stack.push.apply(stack, list.items.map(item => ({ parent: list, list: item })).reverse());
+            }
+        }
+
+        return {};
     },
 
     // TODO: why do I need these two function that do almost the same things?

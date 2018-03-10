@@ -138,6 +138,19 @@ const local: Storage = {
         });
 
         return promise;
+    },
+
+    deleteList(listId: string): Promise<void> {
+        const promise = new Promise<void>((resolve, reject) => {
+            jsonStorage.remove(listFileName(listId), error => {
+                // TODO: handle errors
+                console.log('delete list', listId);
+
+                resolve();
+            });
+        });
+
+        return promise;
     }
 };
 

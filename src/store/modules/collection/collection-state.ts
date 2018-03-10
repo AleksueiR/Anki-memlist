@@ -49,12 +49,7 @@ export class CollectionState {
     readonly selectedWords: CollectionWord[];
 
     constructor(options: CollectionStateOptions = {}) {
-        const {
-            index = new CollectionIndex(),
-            lists = {},
-            selectedLists = [],
-            selectedWords = []
-        } = options;
+        const { index = new CollectionIndex(), lists = {}, selectedLists = [], selectedWords = [] } = options;
 
         this.index = index;
         this.lists = lists;
@@ -185,8 +180,14 @@ export class CollectionTree {
         this.update();
     }
 
-    removeList(list: CollectionList): void {
-        // TODO: implement
+    deleteList(list: CollectionList): void {
+        const index = this.items.findIndex(item => item.listId === list.id);
+        if (index === -1) {
+            return;
+        }
+
+        this.items.splice(index, 1);
+        this.update();
     }
 
     get expanded(): boolean {
@@ -396,11 +397,7 @@ export class CollectionList {
         ); */
 
         const safeWords = Object.values(this.words).reduce(
-            (
-                map: { [name: string]: CollectionWordOptions },
-                word: CollectionWord,
-                {}
-            ) => {
+            (map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
                 map[word.id] = word.safeJSON;
                 return map;
             },

@@ -33,9 +33,12 @@
                         :class="`level-${level}`"
                         :item="item"
                         :mint-list-id="mintListId"
+
                         @default="setIndexDefaultList"
                         @pinned="setListPinned"
                         @expanded="setIndexExpandedTree"
+                        @delete="deleteLists"
+
                         @rename-start="onRenameStart"
                         @rename-complete="onRenameComplete"
                         @rename-cancel="onRenameComplete">
@@ -85,6 +88,8 @@ export default class CollectionView extends Vue {
 
     @StateCL index: CollectionIndex;
 
+    @StateCL selectedLists: CollectionList[];
+
     @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
 
     @ActionCL setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
@@ -92,10 +97,12 @@ export default class CollectionView extends Vue {
     @ActionCL setListPinned: (payload: { listId: string; value: boolean }) => void;
 
     // replaces the existing tree index with the new one
-    @ActionCL setIndexTree: (options: { tree: CollectionTree }) => void;
+    @ActionCL setIndexTree: (payload: { tree: CollectionTree }) => void;
 
     // adds a new list to the bottom of the top level of the list tree
     @ActionCL addList: (list: CollectionList) => void;
+
+    @ActionCL deleteList: (payload: { listId: string }) => void;
 
     // sets a new list name
     @ActionCL setListName: (payload: { listId: string; value: string }) => void;
@@ -156,6 +163,15 @@ export default class CollectionView extends Vue {
         }
 
         this.setListName({ listId: id, value: name });
+    }
+
+    deleteLists({ listId }: { listId: string }): void {
+        const list = this.selectedLists.find(list => list.id === listId);
+        if (list) {
+            // this.deleteSelectedLists();
+        } else {
+            this.deleteList({ listId });
+        }
     }
 
     /**

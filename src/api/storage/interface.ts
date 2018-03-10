@@ -1,9 +1,4 @@
-import {
-    CollectionState,
-    CollectionIndex,
-    CollectionList,
-    CollectionTree
-} from './../../store/modules/collection';
+import { CollectionState, CollectionIndex, CollectionList, CollectionTree } from './../../store/modules/collection';
 
 export default interface Storage {
     id: string;
@@ -17,4 +12,6 @@ export default interface Storage {
     saveCollection(state: CollectionState): Promise<void>;
     saveIndex(index: CollectionIndex): Promise<void>;
     saveList(list: CollectionList): Promise<void>;
+
+    deleteList(listId: string): Promise<void>;
 };

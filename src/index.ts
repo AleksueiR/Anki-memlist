@@ -22,6 +22,9 @@ Vue.use(ElementUI);
 
 const store: Store<State> = createStore();
 
+import OctoIconV from './components/bits/octo-icon.vue';
+Vue.component('octo-icon', OctoIconV);
+
 import fontawesome from '@fortawesome/fontawesome';
 
 import farAngleUp from '@fortawesome/fontawesome-free-solid/farAngleUp';
@@ -69,7 +72,9 @@ const rootVue = new Vue({
     el: '#app',
     store,
     template: '<app/>',
-    components: { app }
+    components: {
+        app
+    }
 });
 
 // UIkit.notification("<span uk-icon='icon: check'></span> Message", { timeout: 55555555 });

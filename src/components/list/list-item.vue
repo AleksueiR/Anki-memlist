@@ -5,34 +5,30 @@
         @click="select"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false"
-        :class="{ hover: isHovered || isTargeted, checked: isSelected }">
-
-        <a
-            href="#"
-            @click.stop="toggleFavourite"
-            uk-tooltip="delay: 500; title: Favourite"
-            uk-icon="ratio: 0.7; icon: star"
-            class="uk-icon uk-position-center-left item-control favourite"
-            v-if="isTargeted || word.favourite"
-            :class="{ active: word.favourite }"></a>
-
-        <span class="item-text uk-flex-1">{{ word.text }}</span>
+        :class="{ hover: isHovered || isTargeted, selected: isSelected }">
 
         <template v-if="!isRenaming">
+            <a
+                href="#"
+                @click.stop="toggleFavourite"
+                uk-tooltip="delay: 500; title: Favourite"
+                class="uk-icon uk-position-center-left item-control favourite"
+                v-if="isTargeted || word.favourite"
+                :class="{ active: word.favourite }">
+                <octo-icon name="star"></octo-icon>
+            </a>
+
+            <span class="item-text uk-flex-1">{{ word.text }}</span>
+
             <template v-if="isTargeted">
-                <!-- <a
-                    href="#"
-                    uk-tooltip="delay: 500; title: Delete"
-                    uk-icon="ratio: 0.7; icon: close"
-                    @click.stop="deleteWord"
-                    class="uk-icon item-control"></a> -->
 
                 <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
-                    uk-icon="ratio: 0.7; icon: more"
                     @click.stop="vnull"
-                    class="uk-margin-small-left uk-icon item-control"></a>
+                    class="uk-margin-small-left uk-icon item-control">
+                    <octo-icon name="kebab-horizontal"></octo-icon>
+                </a>
                 <uk-dropdown
                     :pos="'right-center'"
                     :delay-hide="0"
@@ -46,7 +42,7 @@
                                 @click.stop="toggleFavourite">
 
                                 <span class="uk-flex-1">Favourite</span>
-                                <span uk-icon="icon: check" v-if="word.favourite"></span>
+                                <octo-icon name="check" v-if="word.favourite"></octo-icon>
                             </a>
                         </li>
 
@@ -55,7 +51,7 @@
                                 @click.stop="toggleArchived">
 
                                 <span class="uk-flex-1">Archived</span>
-                                <span uk-icon="icon: check" v-if="word.archived"></span>
+                                <octo-icon name="check" v-if="word.archived"></octo-icon>
                             </a>
                         </li>
 
@@ -72,15 +68,17 @@
                 <a
                     href="#"
                     uk-tooltip="delay: 500; title: Archive"
-                    uk-icon="ratio: 0.7; icon: check"
-                    class="uk-margin-small-right uk-icon item-control"></a>
+                    class="uk-margin-small-right uk-icon item-control">
+                    <octo-icon name="check"></octo-icon>
+                </a>
             </template>
 
             <span
-                uk-icon="ratio: 0.7; icon: comment"
                 class="uk-margin-small-left uk-margin-small-right uk-icon item-control"
                 v-show="!isTargeted"
-                v-if="word.hasNotes"></span>
+                v-if="word.hasNotes">
+                <octo-icon name="comment"></octo-icon>
+            </span>
         </template>
 
         <template v-else>
@@ -183,7 +181,7 @@ export default class WordItem extends mixins(RenameMixin) {
     height: 30px;
     font-size: 0.8rem;
 
-    &.checked {
+    &.selected {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);
         border-right: 4px solid $accent-colour;
     }
@@ -194,16 +192,21 @@ export default class WordItem extends mixins(RenameMixin) {
 }
 
 .item-text {
+    line-height: 30px;
     margin-left: calc(0.5rem + 30px);
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
     user-select: none;
     pointer-events: none;
+
+    .selected & {
+        font-weight: 500;
+    }
 }
 
 .item-control {
-    padding: 0.5rem;
+    padding: 0 0.5rem;
 
     &.favourite {
         left: 0.25rem;
@@ -221,5 +224,6 @@ export default class WordItem extends mixins(RenameMixin) {
 .rename-input {
     font-size: 0.8rem;
     height: 1.5rem;
+    margin-left: calc(0.5rem + 30px - 10px);
 }
 </style>

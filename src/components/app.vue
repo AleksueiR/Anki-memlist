@@ -25,11 +25,7 @@ import wordEditor from './editor/word-editor.vue';
 import settings from './dialogs/settings.vue';
 import bulkimport from './dialogs/bulk-import.vue';
 
-import {
-    rIsImportOpen,
-    rIsSettingsOpen,
-    cOpenSettings
-} from './../store/modules/app';
+import { rIsImportOpen, rIsSettingsOpen, cOpenSettings } from './../store/modules/app';
 
 import { dFetchWods } from './../store/modules/words';
 

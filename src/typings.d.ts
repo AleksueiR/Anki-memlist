@@ -29,6 +29,8 @@ declare module '@fortawesome/fontawesome-free-solid/faThumbtack';
 declare module 'uikit';
 declare module 'uikit/dist/js/uikit-icons';
 
+declare module 'octicons';
+
 /* declare module 'quill/modules/toolbar';
 declare module 'quill/themes/snow';
 declare module 'quill/formats/header';

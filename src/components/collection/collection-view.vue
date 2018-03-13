@@ -3,9 +3,12 @@
 
         <nav class="toolbar uk-flex uk-flex-column">
 
-            <a href="" uk-icon="album" class="uk-padding-small uk-icon"
+            <a href=""
+                class="toolbar-item uk-icon"
                 :class="{ selected: isExpanded }"
-                @click.prevent="toggleIsExpanded"></a>
+                @click.prevent="toggleIsExpanded">
+                <octo-icon name="repo" scale="1.5"></octo-icon>
+            </a>
 
         </nav>
 
@@ -208,6 +211,11 @@ export default class CollectionView extends Vue {
         color: $accent-colour;
     }
 
+    .toolbar-item {
+        width: 50px;
+        height: 50px;
+    }
+
     /* display: flex;
     flex-direction: column;
     align-items: center; */
@@ -247,8 +255,7 @@ export default class CollectionView extends Vue {
 
     &.dragging /deep/ {
         .collection-item {
-            .highlight,
-            .icon-button {
+            .item-control {
                 display: none;
             }
         }

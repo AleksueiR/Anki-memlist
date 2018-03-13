@@ -10,44 +10,37 @@
 
         <span class="highlight"></span>
 
-        <!--     transform: scale(0.7); -->
-
-        <!-- <mdi-comment-alert-icon style="transform: scale(0.7);" /> -->
-
-
-        <!-- uk-icon="ratio: 0.7; icon: bookmark" -->
-        <!-- TODO: only show icons when not renaming -->
-        <span
-            uk-tooltip="delay: 1500; title: Default list"
-            class="uk-icon uk-position-center-left item-control default active"
-            v-if="isDefault">
-            <font-awesome-icon icon="bookmark" />
-        </span>
-
-        <!-- uk-icon="ratio: 0.7; icon: hashtag" -->
-
-        <a
-            href="#"
-            uk-tooltip="delay: 1500; title: Pin"
-            @click.stop="togglePinned"
-            :class="{ active: list.pinned }"
-            class="uk-margin-small-right uk-icon item-control default"
-            v-if="(isTargeted || list.pinned) && !isDefault">
-            <font-awesome-icon :icon="['fas', 'thumbtack']" />
-            <!-- <mdi-pin-icon style="transform: scale(0.7);" /> -->
-        </a>
-
         <template v-if="!isRenaming">
-            <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
-            <span class="item-text uk-flex-1">{{ list.name }}</span>
 
+            <span
+                uk-tooltip="delay: 1500; title: Default list"
+                class="uk-icon uk-position-center-left item-control default active"
+                v-if="isDefault">
+                <octo-icon name="bookmark"></octo-icon>
+            </span>
+
+            <a
+                href="#"
+                uk-tooltip="delay: 1500; title: Pin"
+                @click.stop="togglePinned"
+                :class="{ active: list.pinned }"
+                class="uk-margin-small-right uk-icon item-control default"
+                v-if="(isTargeted || list.pinned) && !isDefault">
+                <octo-icon name="pin"></octo-icon>
+            </a>
+
+            <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
+            <span class="item-text">{{ list.name }}</span>
+            <span
+                class="item-control item-word-count uk-flex-1 uk-text-muted"
+                :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
             <template v-if="isTargeted">
                 <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
-                    uk-icon="ratio: 0.7; icon: more"
                     @click.stop="vnull"
-                    class="uk-margin-small-left uk-icon item-control"></a>
+                    class="uk-margin-small-left uk-icon item-control">
+                    <octo-icon name="kebab-horizontal"></octo-icon></a>
                 <uk-dropdown
                     :pos="'right-center'"
                     :delay-hide="0"
@@ -61,7 +54,7 @@
                                 @click.stop="togglePinned">
 
                                 <span class="uk-flex-1">Pinned</span>
-                                <span uk-icon="icon: check" v-if="list.pinned"></span>
+                                <octo-icon name="check" v-if="list.pinned"></octo-icon>
                             </a>
                         </li>
 
@@ -70,7 +63,7 @@
                                 @click.stop="toggleHidden">
 
                                 <span class="uk-flex-1">Hidden</span>
-                                <span uk-icon="icon: check" v-if="list.hidden"></span>
+                                <octo-icon name="check" v-if="list.hidden"></octo-icon>
                             </a>
                         </li>
 
@@ -79,7 +72,7 @@
                                 @click.stop="setDefault">
 
                                 <span class="uk-flex-1">Default</span>
-                                <span uk-icon="icon: check" v-if="isDefault"></span>
+                                <octo-icon name="check" v-if="isDefault"></octo-icon>
                             </a>
                         </li>
 
@@ -94,25 +87,13 @@
 
             </template>
 
-            <span
-                v-else
-                class="item-control item-word-count uk-text-muted">{{ list.index.length }}</span>
-
-            <!-- :uk-icon="`ratio: 0.7; icon: chevron-${ item.expanded ? 'up' : 'down' }`" -->
-
             <a
                 href="#"
                 class="uk-icon item-control uk-margin-small-right"
-                :uk-icon="`ratio: 0.7; icon: chevron-${ item.expanded ? 'up' : 'down' }`"
-                v-if="item.items.length > 0"
+                :class="{ 'uk-invisible': item.items.length === 0}"
                 @click.stop="toggleExpand">
-                <!-- <font-awesome-icon :icon="['far', 'angle-up']" /> -->
+                <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
             </a>
-
-            <span
-                uk-icon="ratio: 0.7; icon: chevron-up"
-                class="uk-icon item-control uk-margin-small-right uk-invisible"
-                v-else></span>
 
         </template>
 
@@ -283,6 +264,7 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     position: relative;
     height: 30px;
     font-size: 0.8rem;
+    outline: none;
 
     &.checked {
         background-color: darken($secondary-colour, 10%);
@@ -294,23 +276,25 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 }
 
 .item-text {
+    line-height: 30px;
     margin-left: calc(0.5rem + 30px);
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
     user-select: none;
     pointer-events: none;
-}
 
-.item-word-count {
+    .selected & {
+        font-weight: 500;
+    }
 }
 
 .item-control {
-    padding: 0.5rem;
+    padding: 0 0.5rem;
 
     &.default {
         position: absolute;
-        left: 6px;
+        left: 4px;
     }
 
     &.active {
@@ -338,33 +322,7 @@ $base-indent: 1rem;
     }
 }
 
-////////
-
-// TODO: move this inot common styles
-/* .icon-button {
-    color: $even-darker-secondary-colour;
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-} */
-
 .collection-item {
-    // margin: 0 0.5rem 0 0.5rem;
-
-    // margin-left: 1.5rem;
-
-    span {
-        // line-height: 1.5rem;
-    }
-
-    &.selected,
-    &:hover {
-        .hidden-button {
-            opacity: 1;
-        }
-    }
-
     &.selected .highlight {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);
         border-left: 4px solid $accent-colour;
@@ -372,6 +330,14 @@ $base-indent: 1rem;
 
     &:hover .highlight {
         background-color: $secondary-colour;
+    }
+
+    &:focus .highlight {
+        background-color: rgba($color: $accent-colour, $alpha: 0.2);
+    }
+
+    &:focus:not(.selected) .highlight {
+        background-color: rgba($color: $accent-colour, $alpha: 0.05);
     }
 
     .highlight {
@@ -456,11 +422,9 @@ $base-indent: 1rem;
 } */
 
 .uk-margin-small-right {
-    // margin-right: 0.5rem !important;
     margin-right: 2px !important;
 }
 .uk-margin-small-left {
-    // margin-left: 0.5rem !important;
     margin-left: 2px !important;
 }
 </style>

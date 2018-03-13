@@ -41,6 +41,7 @@
         "mdi-vue": "^0.2.11",
         "moment": "^2.20.1",
         "node-sass": "^4.7.2",
+        "octicons": "^7.1.0",
         "poi": "^9.6.13",
         "poi-preset-babel-minify": "^1.0.3",
         "poi-preset-karma": "^9.2.4",
@@ -66,7 +67,7 @@
     "scripts": {
         "test": "poi test",
         "dev": "poi --port 3031 --templateCompiler true src/index.ts",
-        "build": "poi build src/index.ts",
+        "build": "poi build --templateCompiler true src/index.ts",
         "both": "concurrently \"npm run dev\" \"npm run app\" -k",
         "app": "electron electron/index.js"
     },

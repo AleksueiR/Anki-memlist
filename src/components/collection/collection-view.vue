@@ -1,45 +1,41 @@
 <template>
-    <section class="collection-view uk-flex uk-flex-none">
+    <section class="collection-view uk-flex uk-flex-column uk-flex-none">
 
-        <div class="collection uk-flex uk-flex-column" v-show="isExpanded">
+        <div class="collection-header uk-flex">
+            <span class="title uk-flex-1">Collections</span>
+            <a
+                href="#"
+                @click="createNewList"
+                uk-tooltip="delay: 500; title: New"
+                class="uk-icon item-control favourite">
+                <octo-icon name="plus"></octo-icon>
+            </a>
+        </div>
 
-            <div class="collection-header uk-flex uk-flex-none">
-                <span class="title uk-flex-1">Collections</span>
-                <a
-                    href="#"
-                    @click="createNewList"
-                    uk-tooltip="delay: 500; title: New"
-                    class="uk-icon item-control favourite">
-                    <octo-icon name="plus"></octo-icon>
-                </a>
-            </div>
+        <div class="collection-tree cm-scrollbar uk-margin-small-top uk-flex-1">
+            <treee
+                class="treee"
+                v-model="treeItems"
+                :draggable="isTreeDraggable"
+                @node-click="nodeClick">
 
-            <div class="cm-scrollbar uk-margin-small-top">
-                <treee
-                    class="treee"
-                    v-model="treeItems"
-                    :draggable="isTreeDraggable"
-                    @node-click="nodeClick">
+                <template slot-scope="{ item, level }">
+                    <collection-item
+                        :class="`level-${level}`"
+                        :item="item"
+                        :mint-list-id="mintListId"
 
-                    <template slot-scope="{ item, level }">
-                        <collection-item
-                            :class="`level-${level}`"
-                            :item="item"
-                            :mint-list-id="mintListId"
+                        @default="setIndexDefaultList"
+                        @pinned="setListPinned"
+                        @expanded="setIndexExpandedTree"
+                        @delete="deleteLists"
 
-                            @default="setIndexDefaultList"
-                            @pinned="setListPinned"
-                            @expanded="setIndexExpandedTree"
-                            @delete="deleteLists"
-
-                            @rename-start="onRenameStart"
-                            @rename-complete="onRenameComplete"
-                            @rename-cancel="onRenameComplete">
-                        </collection-item>
-                    </template>
-                </treee>
-            </div>
-
+                        @rename-start="onRenameStart"
+                        @rename-complete="onRenameComplete"
+                        @rename-cancel="onRenameComplete">
+                    </collection-item>
+                </template>
+            </treee>
         </div>
 
     </section>
@@ -117,12 +113,6 @@ export default class CollectionView extends Vue {
         this.setIndexTree({ tree: newIndexTree });
     }
 
-    isExpanded: boolean = true;
-
-    toggleIsExpanded(): void {
-        this.isExpanded = !this.isExpanded;
-    }
-
     mintListId: string | null = null;
 
     /**
@@ -180,13 +170,15 @@ export default class CollectionView extends Vue {
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
-.collection {
+.collection-view {
     width: 16em;
 
     .collection-header {
         margin-left: calc(0.5rem + 30px);
-        padding: 0.5rem 0.5rem 0 0;
-        // border-bottom: 1px solid rgba(0, 0, 0, 0.24);
+        padding: 0 0.5rem 0 0;
+
+        height: 3rem;
+        align-items: center;
 
         .title {
             font-size: 1.2rem;

@@ -22,7 +22,7 @@ Vue.use(ElementUI);
 
 const store: Store<RootState> = createStore();
 
-import OctoIconV from './components/bits/octo-icon.vue';
+import OctoIconV from '@/components/bits/octo-icon.vue';
 Vue.component('octo-icon', OctoIconV);
 
 import fontawesome from '@fortawesome/fontawesome';
@@ -35,7 +35,7 @@ import faAngleUp from '@fortawesome/fontawesome-free-solid/faAngleUp';
 import faAngleDown from '@fortawesome/fontawesome-free-solid/faAngleDown';
 import file from '@fortawesome/fontawesome-free-solid/faFile';
 import faBookmark from '@fortawesome/fontawesome-free-solid/faBookmark';
-import faPlus from '@fortawesome/fontawesome-free-solid/faPlus';
+/* import faPlus from '@fortawesome/fontawesome-free-solid/faPlus';
 import faThumbtack from '@fortawesome/fontawesome-free-solid/faThumbtack'; */
 
 /* import 'mdi-vue/CommentAlertIcon';
@@ -52,10 +52,10 @@ fontawesome.library.add(
     faThumbtack
 ); */
 
-import UIkit from 'uikit';
-import Icons from 'uikit/dist/js/uikit-icons';
+/* import UIkit from 'uikit';
+import Icons from 'uikit/dist/js/uikit-icons'; */
 
-UIkit.use(Icons);
+// UIkit.use(Icons);
 
 Vue.config.keyCodes = {
     up: 38,

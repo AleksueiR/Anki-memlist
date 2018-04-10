@@ -5,7 +5,7 @@ import {
     CollectionState,
     CollectionIndex,
     CollectionList,
-    CollectionTree,
+    // CollectionTree,
     CollectionIndexOptions,
     CollectionListOptions,
     CollectionWord,

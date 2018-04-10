@@ -1,12 +1,8 @@
 <template>
 
-    <section class="list-view uk-flex uk-flex-column">
+    <section class="list-view uk-flex uk-flex-column uk-flex-none">
 
-        <!-- <div class="collection-header uk-flex">
-            <span class="title uk-flex-1">Words</span>
-        </div> -->
-
-        <div class="lookup uk-margin-small uk-inline">
+        <div class="list-header uk-flex uk-inline">
             <span class="uk-form-icon uk-form-icon">
                 <octo-icon name="search" scale="0.8"></octo-icon>
             </span>
@@ -48,7 +44,7 @@
 
         <!-- <span class="text-smaller">{{ lookupHint }}</span> -->
 
-        <div class="virtual-list-container" ref="virtualListContainer">
+        <div class="uk-flex-1 uk-margin-small-top" ref="virtualListContainer">
             <!-- <ul class="list">
                 <list-item
                     v-for="word in getPooledWords"
@@ -115,7 +111,7 @@
 
         <div>
             <span>{{ getPooledWords.length }} words</span>
-            <span v-if="selectedLists.length > 1"> {{ selectedLists.length }} lists</span>
+            <span v-if="selectedLists.length > 1"> in {{ selectedLists.length }} lists</span>
         </div>
 
     </section>
@@ -366,25 +362,18 @@ export default class WordList extends Vue {
 
 .list-view {
     width: 15em;
-    flex-shrink: 0;
 
-    /* display: flex;
-    flex-direction: column; */
-}
+    .list-header {
+        height: 3rem;
+        align-items: center;
 
-.collection-header {
-    margin-left: calc(0.5rem + 30px);
-    padding: 0.5rem 0.5rem 0 0;
-    //border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+        .uk-input {
+            padding-left: calc(0.5rem + 30px - 1px) !important;
 
-    .title {
-        font-size: 1.2rem;
-    }
-}
-
-.lookup {
-    .uk-input {
-        padding-left: calc(0.5rem + 30px - 1px) !important;
+            // always show border
+            border-color: #e5e5e5;
+            border-style: dashed;
+        }
     }
 }
 
@@ -394,17 +383,7 @@ export default class WordList extends Vue {
     margin: 0;
 }
 
-.virtual-list-container {
-    flex: 1;
-}
-
 .word-menu {
     text-align: right;
-}
-
-.divider {
-    width: 1px;
-    background-color: rgba(0, 0, 0, 0.24);
-    margin: 0.5rem;
 }
 </style>

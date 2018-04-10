@@ -48,6 +48,7 @@
                 :index="index"
                 :key="`${index}-node`">
 
+                <!-- slot-scope let's you pass `item` and `level` which are properties of the items being iterated on into the slot -->
                 <template slot-scope="{ item, level }">
                     <slot :item="item" :level="level"></slot>
                 </template>

@@ -24,7 +24,7 @@
                 uk-tooltip="delay: 1500; title: Pin"
                 @click.stop="togglePinned"
                 :class="{ active: list.pinned }"
-                class="uk-margin-small-right uk-icon item-control default"
+                class="uk-icon item-control default"
                 v-if="(isTargeted || list.pinned) && !isDefault">
                 <octo-icon name="pin"></octo-icon>
             </a>
@@ -34,12 +34,13 @@
             <span
                 class="item-control item-word-count uk-flex-1 uk-text-muted"
                 :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
+
             <template v-if="isTargeted">
                 <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
                     @click.stop="vnull"
-                    class="uk-margin-small-left uk-icon item-control">
+                    class="uk-icon item-control">
                     <octo-icon name="kebab-horizontal"></octo-icon></a>
                 <uk-dropdown
                     :pos="'right-center'"
@@ -89,7 +90,7 @@
 
             <a
                 href="#"
-                class="uk-icon item-control uk-margin-small-right"
+                class="uk-icon item-control"
                 :class="{ 'uk-invisible': item.items.length === 0}"
                 @click.stop="toggleExpand">
                 <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
@@ -115,15 +116,10 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
 import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
-import {
-    CollectionList,
-    CollectionListMap,
-    CollectionTree,
-    CollectionState
-} from '../../store/modules/collection/index';
-import UkDropdownV from '../bits/uk-dropdown.vue';
+import { CollectionList, CollectionListMap, CollectionTree, CollectionState } from '@/store/modules/collection/index';
+import UkDropdownV from './../bits/uk-dropdown.vue';
 import RenameInputV from './../bits/rename-input.vue';
-import RenameMixin from './../../mixins/rename-mixin';
+import RenameMixin from '@/mixins/rename-mixin';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -325,7 +321,7 @@ $base-indent: 1rem;
 .collection-item {
     &.selected .highlight {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);
-        border-left: 4px solid $accent-colour;
+        // border-left: 2px solid $accent-colour;
     }
 
     &:hover .highlight {
@@ -420,11 +416,4 @@ $base-indent: 1rem;
         top: 2px;
     }
 } */
-
-.uk-margin-small-right {
-    margin-right: 2px !important;
-}
-.uk-margin-small-left {
-    margin-left: 2px !important;
-}
 </style>

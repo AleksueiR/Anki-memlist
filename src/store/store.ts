@@ -6,7 +6,7 @@ import { app } from './modules/app';
 import { words } from './modules/words';
 import { collection } from './modules/collection';
 
-import { State as RootState } from './state';
+import { RootState } from './state';
 
 Vue.use(Vuex);
 

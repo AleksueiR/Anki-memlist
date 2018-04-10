@@ -1,6 +1,6 @@
 import { ActionContext, Store } from 'vuex';
 
-import storage from './../../../api/storage';
+import storage from '@/api/storage';
 import {
     CollectionState,
     CollectionIndex,
@@ -9,7 +9,7 @@ import {
     CollectionWord,
     CollectionListMap
 } from './collection-state';
-import { State as RootState } from './../../state';
+import { RootState } from '@/store/state';
 import { isArray } from 'util';
 
 type CollectionContext = ActionContext<CollectionState, RootState>;
@@ -596,18 +596,6 @@ const helpers = {
         }
 
         return {};
-    },
-
-    // TODO: why do I need these two function that do almost the same things?
-    // TODO: deprecated
-    getWordFromPooled(context: CollectionContext, wordId: string): CollectionWord | null {
-        const word: CollectionWord = context.getters.getPooledWords.find((word: CollectionWord) => word.id === wordId);
-
-        if (word === undefined) {
-            return null;
-        }
-
-        return word;
     }
 };
 

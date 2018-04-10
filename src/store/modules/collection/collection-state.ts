@@ -2,7 +2,7 @@ import uniqid from 'uniqid';
 import moment from 'moment';
 
 import electron from 'electron';
-import WordList from '../../../components/editor/word-editor.vue';
+import WordList from '@/components/editor/word-editor.vue';
 
 // remote module has a limitation which prevents preventing the close event
 // see https://github.com/electron/electron/issues/4473 and https://github.com/electron/electron/issues/3362

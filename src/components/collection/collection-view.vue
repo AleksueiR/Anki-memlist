@@ -1,53 +1,44 @@
 <template>
     <section class="collection-view uk-flex uk-flex-none">
 
-        <nav class="toolbar uk-flex uk-flex-column">
+        <div class="collection uk-flex uk-flex-column" v-show="isExpanded">
 
-            <a href=""
-                class="toolbar-item uk-icon"
-                :class="{ selected: isExpanded }"
-                @click.prevent="toggleIsExpanded">
-                <octo-icon name="repo" scale="1.5"></octo-icon>
-            </a>
-
-        </nav>
-
-        <div class="collection cm-scrollbar" v-show="isExpanded">
-
-            <!-- <div class="uk-inline">
-                <button class="uk-button uk-button-default uk-icon-button" type="button" uk-icon="icon: plus; ratio: 0.7">Hover</button>
-                <div uk-dropdown>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.</div>
+            <div class="collection-header uk-flex uk-flex-none">
+                <span class="title uk-flex-1">Collections</span>
+                <a
+                    href="#"
+                    @click="createNewList"
+                    uk-tooltip="delay: 500; title: New"
+                    class="uk-icon item-control favourite">
+                    <octo-icon name="plus"></octo-icon>
+                </a>
             </div>
 
-            <button class="uk-button uk-button-default uk-width-1-1 uk-margin-small-bottom">Button</button> -->
+            <div class="cm-scrollbar uk-margin-small-top">
+                <treee
+                    class="treee"
+                    v-model="treeItems"
+                    :draggable="isTreeDraggable"
+                    @node-click="nodeClick">
 
-            <el-button class="button" @click="createNewList" type="plain">
-                <font-awesome-icon icon="plus" /> Add List
-            </el-button>
+                    <template slot-scope="{ item, level }">
+                        <collection-item
+                            :class="`level-${level}`"
+                            :item="item"
+                            :mint-list-id="mintListId"
 
-            <treee
-                class="treee"
-                v-model="treeItems"
-                :draggable="isTreeDraggable"
-                @node-click="nodeClick">
+                            @default="setIndexDefaultList"
+                            @pinned="setListPinned"
+                            @expanded="setIndexExpandedTree"
+                            @delete="deleteLists"
 
-                <template slot-scope="{ item, level }">
-                    <collection-item
-                        :class="`level-${level}`"
-                        :item="item"
-                        :mint-list-id="mintListId"
-
-                        @default="setIndexDefaultList"
-                        @pinned="setListPinned"
-                        @expanded="setIndexExpandedTree"
-                        @delete="deleteLists"
-
-                        @rename-start="onRenameStart"
-                        @rename-complete="onRenameComplete"
-                        @rename-cancel="onRenameComplete">
-                    </collection-item>
-                </template>
-            </treee>
+                            @rename-start="onRenameStart"
+                            @rename-complete="onRenameComplete"
+                            @rename-cancel="onRenameComplete">
+                        </collection-item>
+                    </template>
+                </treee>
+            </div>
 
         </div>
 
@@ -60,8 +51,6 @@
  */
 import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
-
-import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
 import CollectionItemV from './collection-item.vue';
 import Treee from './../treee/treee.vue';
@@ -81,7 +70,6 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        FontAwesomeIcon,
         Treee,
         'collection-item': CollectionItemV
     }
@@ -192,72 +180,30 @@ export default class CollectionView extends Vue {
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
-.collection-view {
-    // width: 20em;
-
-    // flex-shrink: 0;
-    // display: flex;
-}
-
-.toolbar {
-    // $toolbar-width: 3em;
-
-    border: 1px solid $dark-secondary-colour;
-    border-width: 0 1px 0 1px;
-    // width: $toolbar-width;
-    flex-shrink: 0;
-
-    .selected {
-        color: $accent-colour;
-    }
-
-    .toolbar-item {
-        width: 50px;
-        height: 50px;
-    }
-
-    /* display: flex;
-    flex-direction: column;
-    align-items: center; */
-
-    /* .button {
-        border: none;
-        width: $toolbar-width;
-        height: $toolbar-width;
-        border-radius: 0;
-        padding: 0;
-        margin: 0;
-        background-color: transparent;
-
-        svg {
-            width: $toolbar-width / 2;
-            height: $toolbar-width / 2;
-        }
-    } */
-}
-
 .collection {
     width: 16em;
 
-    /* flex: 1;
-    display: flex;
-    flex-direction: column; */
+    .collection-header {
+        margin-left: calc(0.5rem + 30px);
+        padding: 0.5rem 0.5rem 0 0;
+        // border-bottom: 1px solid rgba(0, 0, 0, 0.24);
 
-    .el-tree {
-        flex: 1;
+        .title {
+            font-size: 1.2rem;
+        }
     }
 }
 
 .treee {
-    /deep/ .divider {
-        margin-left: calc(0.5rem + 30px);
-    }
-
     &.dragging /deep/ {
-        .collection-item {
-            .item-control {
-                display: none;
-            }
+        // hide icons while dragging collection items
+        .collection-item .item-control {
+            display: none;
+        }
+
+        // offset all tree dividers shown while draggin
+        .divider {
+            margin-left: calc(0.5rem + 30px);
         }
     }
 }

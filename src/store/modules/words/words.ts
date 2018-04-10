@@ -4,7 +4,7 @@ import { getStoreAccessors } from 'vuex-typescript';
 import gists from './../../../api/gists';
 
 import { Word, WordsState } from './words-state';
-import { State as RootState } from './../../state';
+import { RootState } from './../../state';
 
 import { gistIdSetting, gistFileNameSetting } from './../../../settings';
 
@@ -49,11 +49,7 @@ const actions = {
     },
 
     async syncWords(context: WordsContext): Promise<void> {
-        return await gists.post<WordsState>(
-            state,
-            gistIdSetting.get(),
-            gistFileNameSetting.get()
-        );
+        return await gists.post<WordsState>(state, gistIdSetting.get(), gistFileNameSetting.get());
     }
 };
 
@@ -98,9 +94,7 @@ export const words = {
     mutations
 };
 
-const { commit, read, dispatch } = getStoreAccessors<WordsState, RootState>(
-    'words'
-);
+const { commit, read, dispatch } = getStoreAccessors<WordsState, RootState>('words');
 
 // getter
 export const rItems = read(getters.items);

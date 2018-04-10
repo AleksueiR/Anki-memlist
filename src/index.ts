@@ -15,19 +15,19 @@ import 'element-ui/lib/theme-chalk/index.css';
 import app from './components/app.vue';
 
 import { createStore } from './store';
-import { State } from './store/state';
+import { RootState } from './store/state';
 
 Vue.use(Vuex);
 Vue.use(ElementUI);
 
-const store: Store<State> = createStore();
+const store: Store<RootState> = createStore();
 
 import OctoIconV from './components/bits/octo-icon.vue';
 Vue.component('octo-icon', OctoIconV);
 
 import fontawesome from '@fortawesome/fontawesome';
 
-import farAngleUp from '@fortawesome/fontawesome-free-solid/farAngleUp';
+/* import farAngleUp from '@fortawesome/fontawesome-free-solid/farAngleUp';
 import farAngleDown from '@fortawesome/fontawesome-free-solid/farAngleDown';
 import farBookmark from '@fortawesome/fontawesome-free-regular/faBookmark';
 //import farThumbtack from '@fortawesome/fontawesome-free-regular/faThumbtack';
@@ -36,9 +36,9 @@ import faAngleDown from '@fortawesome/fontawesome-free-solid/faAngleDown';
 import file from '@fortawesome/fontawesome-free-solid/faFile';
 import faBookmark from '@fortawesome/fontawesome-free-solid/faBookmark';
 import faPlus from '@fortawesome/fontawesome-free-solid/faPlus';
-import faThumbtack from '@fortawesome/fontawesome-free-solid/faThumbtack';
+import faThumbtack from '@fortawesome/fontawesome-free-solid/faThumbtack'; */
 
-import 'mdi-vue/CommentAlertIcon';
+/* import 'mdi-vue/CommentAlertIcon';
 import 'mdi-vue/PinIcon';
 
 fontawesome.library.add(
@@ -50,7 +50,7 @@ fontawesome.library.add(
     faBookmark,
     faPlus,
     faThumbtack
-);
+); */
 
 import UIkit from 'uikit';
 import Icons from 'uikit/dist/js/uikit-icons';

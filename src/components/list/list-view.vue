@@ -1,18 +1,38 @@
 <template>
 
-    <section class="list-view">
+    <section class="list-view uk-flex uk-flex-column">
 
-        <section class="lookup">
+        <!-- <div class="collection-header uk-flex">
+            <span class="title uk-flex-1">Words</span>
+        </div> -->
 
-            <div class="uk-margin">
+        <div class="lookup uk-margin-small uk-inline">
+            <span class="uk-form-icon uk-form-icon">
+                <octo-icon name="search" scale="0.8"></octo-icon>
+            </span>
+
+            <input
+                class="uk-input uk-form-blank uk-form-small"
+                type="text"
+                placeholder="lookup / add"
+                v-model.trim="lookup"
+                @keyup.enter="addWordTemp">
+        </div>
+
+        <!-- <div class="lookup">
+
+            <div class="uk-margin uk-inline">
+                <span class="uk-form-icon uk-form-icon-flip"><octo-icon  name="search"></octo-icon></span>
+
                 <input
-                    class="uk-input"
+                    class="uk-input uk-form-blank_"
                     type="text"
                     placeholder="Input"
                     v-model.trim="lookup"
                     @keyup.enter="addWordTemp">
             </div>
 
+        </div> -->
             <!-- <el-input
                 @keyup.enter.native="addOrEditWord()"
                 @keyup.esc.native="clearLookup"
@@ -25,11 +45,10 @@
                 :hint="lookupHint"
                 :clearable="true">
             </el-input> -->
-        </section>
 
         <!-- <span class="text-smaller">{{ lookupHint }}</span> -->
 
-        <section class="virtual-list-container" ref="virtualListContainer">
+        <div class="virtual-list-container" ref="virtualListContainer">
             <!-- <ul class="list">
                 <list-item
                     v-for="word in getPooledWords"
@@ -92,7 +111,7 @@
 
             <!--  -->
 
-        </section>
+        </div>
 
         <div>
             <span>{{ getPooledWords.length }} words</span>
@@ -349,21 +368,24 @@ export default class WordList extends Vue {
     width: 15em;
     flex-shrink: 0;
 
-    display: flex;
-    flex-direction: column;
+    /* display: flex;
+    flex-direction: column; */
 }
 
-/* .container {
-    display: flex;
-    flex-direction: column;
+.collection-header {
+    margin-left: calc(0.5rem + 30px);
+    padding: 0.5rem 0.5rem 0 0;
+    //border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+
+    .title {
+        font-size: 1.2rem;
+    }
 }
- */
 
 .lookup {
-    height: 4em;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
+    .uk-input {
+        padding-left: calc(0.5rem + 30px - 1px) !important;
+    }
 }
 
 .list {
@@ -378,5 +400,11 @@ export default class WordList extends Vue {
 
 .word-menu {
     text-align: right;
+}
+
+.divider {
+    width: 1px;
+    background-color: rgba(0, 0, 0, 0.24);
+    margin: 0.5rem;
 }
 </style>

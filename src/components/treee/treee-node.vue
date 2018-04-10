@@ -301,11 +301,11 @@ $base-indent: 1rem;
         }
     }
 
-    .content {
+    /* .content {
         .level-#{$i} & {
-            // padding-left: $i * $base-indent;
+            padding-left: $i * $base-indent;
         }
-    }
+    } */
 }
 
 .clone {

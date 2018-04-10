@@ -34,7 +34,7 @@ export default class UkDropdownV extends Vue {
     }
 
     get options(): string {
-        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${this.delayHide}`;
+        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${this.delayHide};`;
     }
 
     mounted(): void {
@@ -49,6 +49,7 @@ export default class UkDropdownV extends Vue {
     }
 
     positionDropdown(): void {
+        // TODO: hide the menu only if actual scroll event happens
         document.addEventListener('wheel', this.hide);
 
         this.emShow();

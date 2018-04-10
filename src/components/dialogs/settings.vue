@@ -23,23 +23,12 @@
 </template>
 
 <script lang="ts">
-import {
-    Vue,
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch
-} from 'vue-property-decorator';
+import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import { cOpenSettings } from './../../store/modules/app';
-import { Setting } from './../../settings';
+// import { cOpenSettings } from './../../store/modules/app';
+// import { Setting } from './../../settings';
 
-import {
-    gistTokenSetting,
-    gistIdSetting,
-    gistFileNameSetting
-} from './../../settings';
+// import { gistTokenSetting, gistIdSetting, gistFileNameSetting } from './../../settings';
 
 interface SettingFrom {
     gist_id: string;
@@ -50,7 +39,7 @@ interface SettingFrom {
 
 @Component
 export default class Settings extends Vue {
-    @Prop() isOpen: boolean;
+    /* @Prop() isOpen: boolean;
 
     formItems: Setting[] = [
         gistTokenSetting,
@@ -160,7 +149,7 @@ export default class Settings extends Vue {
                 trigger: 'change'
             }
         ]
-    };
+    }; */
 }
 </script>
 

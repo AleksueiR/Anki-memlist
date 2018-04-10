@@ -1,34 +1,34 @@
 import { ActionContext, Store } from 'vuex';
-import { getStoreAccessors } from 'vuex-typescript';
 
+import storage from '@/api/storage';
 import { AppState } from './app-state';
-import { State as RootState } from './../../state';
+import { RootState } from '@/store/state';
 
 type AppContext = ActionContext<AppState, RootState>;
 
 const state: AppState = {
-    isImportOpen: false,
-    isSettingsOpen: false
+    isCollectionViewOpen: true
 };
 
-// getters
-// retuns Word collection from the WordsState store
-const getters = {
-    isImportOpen: (state: AppState): boolean => state.isImportOpen,
-    isSettingsOpen: (state: AppState): boolean => state.isSettingsOpen
+enum Action {
+    openCollectionView = 'openCollectionView'
+}
+
+enum Mutation {
+    SET_COLLECTION_VIEW_OPEN_STATE = 'SET_COLLECTION_VIEW_OPEN_STATE'
+}
+
+const getters = {};
+
+const actions = {
+    [Action.openCollectionView](context: AppContext, { value }: { value: boolean }): void {
+        context.commit(Mutation.SET_COLLECTION_VIEW_OPEN_STATE, { value });
+    }
 };
 
-// actions
-const actions = {};
-
-// mutations
 const mutations = {
-    openImport(state: AppState, value: boolean): void {
-        state.isImportOpen = value;
-    },
-
-    openSettings(state: AppState, value: boolean): void {
-        state.isSettingsOpen = value;
+    [Mutation.SET_COLLECTION_VIEW_OPEN_STATE](state: AppState, { value }: { value: boolean }): void {
+        state.isCollectionViewOpen = value;
     }
 };
 
@@ -39,20 +39,3 @@ export const app = {
     actions,
     mutations
 };
-
-const { commit, read, dispatch } = getStoreAccessors<AppState, RootState>(
-    'app'
-);
-
-export { getters };
-
-// getter
-export const rIsImportOpen = read(getters.isImportOpen);
-export const rIsSettingsOpen = read(getters.isSettingsOpen);
-
-// action
-// export const dSyncWords = dispatch(actions.syncWords);
-
-//mutations
-export const cOpenImport = commit(mutations.openImport);
-export const cOpenSettings = commit(mutations.openSettings);

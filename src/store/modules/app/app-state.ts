@@ -1,4 +1,9 @@
 export interface AppState {
-    isImportOpen: boolean;
-    isSettingsOpen: boolean;
+    /**
+     * Specifies if the collection view is visible or nor.
+     *
+     * @type {boolean}
+     * @memberof AppState
+     */
+    isCollectionViewOpen: boolean;
 }

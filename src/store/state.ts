@@ -1,6 +1,7 @@
-import { WordsState } from './modules/words';
+import { WordsState } from '@/store/modules/words';
+import { AppState } from '@/store/modules/app';
 
-export interface State {
+export interface RootState {
     words: WordsState;
-    // TDOD: ? add app state?
+    app: AppState;
 }

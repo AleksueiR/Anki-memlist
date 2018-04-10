@@ -26,7 +26,7 @@
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
                     @click.stop="vnull"
-                    class="uk-margin-small-left uk-icon item-control">
+                    class="uk-icon item-control">
                     <octo-icon name="kebab-horizontal"></octo-icon>
                 </a>
                 <uk-dropdown
@@ -68,13 +68,13 @@
                 <a
                     href="#"
                     uk-tooltip="delay: 500; title: Archive"
-                    class="uk-margin-small-right uk-icon item-control">
+                    class=" uk-icon item-control">
                     <octo-icon name="check"></octo-icon>
                 </a>
             </template>
 
             <span
-                class="uk-margin-small-left uk-margin-small-right uk-icon item-control"
+                class="uk-icon item-control"
                 v-show="!isTargeted"
                 v-if="word.hasNotes">
                 <octo-icon name="comment"></octo-icon>
@@ -183,7 +183,7 @@ export default class WordItem extends mixins(RenameMixin) {
 
     &.selected {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);
-        border-right: 4px solid $accent-colour;
+        // border-right: 4px solid $accent-colour;
     }
 
     &.hover {

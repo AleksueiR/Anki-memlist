@@ -25,27 +25,15 @@
 </template>
 
 <script lang="ts">
-import {
-    Vue,
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch
-} from 'vue-property-decorator';
+import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import { cOpenImport } from './../../store/modules/app';
+// import { cOpenImport } from './../../store/modules/app';
 
-import {
-    Word,
-    dSyncWords,
-    cAddWord,
-    rItems
-} from './../../store/modules/words';
+// import { Word, dSyncWords, cAddWord, rItems } from './../../store/modules/words';
 
 @Component
 export default class BulkImport extends Vue {
-    @Prop() isOpen: boolean;
+    /* @Prop() isOpen: boolean;
 
     bulkValue: string = '';
 
@@ -59,13 +47,11 @@ export default class BulkImport extends Vue {
             return;
         }
 
-        this.bulkLines
-            .filter(line => !this.bulkDuplicates.includes(line))
-            .forEach(line => {
-                console.log(line);
-                const word: Word = new Word({ text: line });
-                cAddWord(this.$store, word);
-            });
+        this.bulkLines.filter(line => !this.bulkDuplicates.includes(line)).forEach(line => {
+            console.log(line);
+            const word: Word = new Word({ text: line });
+            cAddWord(this.$store, word);
+        });
 
         dSyncWords(this.$store);
         this.close();
@@ -97,9 +83,7 @@ export default class BulkImport extends Vue {
 
         const existingWords: Word[] = rItems(this.$store);
 
-        const duplicates = this.bulkLines.filter(line =>
-            existingWords.find(word => word.text === line.trim())
-        );
+        const duplicates = this.bulkLines.filter(line => existingWords.find(word => word.text === line.trim()));
 
         return duplicates;
     }
@@ -113,15 +97,15 @@ export default class BulkImport extends Vue {
         const newWordCount = lineCount - duplicateCount;
 
         if (duplicateCount > 0) {
-            return `Found ${duplicateCount} duplicate${duplicateCount > 1
-                ? 's'
-                : ''}; ${newWordCount} new word${newWordCount > 1 ? 's' : ''}.`;
+            return `Found ${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''}; ${newWordCount} new word${
+                newWordCount > 1 ? 's' : ''
+            }.`;
         } else if (lineCount > 0) {
             return `${lineCount} new word${newWordCount > 1 ? 's' : ''}.`;
         }
 
         return '';
-    }
+    } */
 }
 </script>
 

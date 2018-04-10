@@ -2,9 +2,19 @@
 
     <section class="root uk-flex">
 
-        <collection-view></collection-view>
+        <collection-toolbar></collection-toolbar>
+
+        <span class="divider-right"></span>
+
+        <!-- hide/show `collection-view` and its separator -->
+        <!-- cannot use v-show in `template` as it rendered only once -->
+        <collection-view v-show="isCollectionViewOpen"></collection-view>
+
+        <span v-show="isCollectionViewOpen" class="divider"></span>
 
         <list-view></list-view>
+
+        <span class="divider"></span>
 
         <word-editor class="word-editor"></word-editor>
 
@@ -18,20 +28,24 @@
 <script lang='ts'>
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import { mixins } from 'vue-class-component';
 
+import collectionToolbarV from '@/components/collection/collection-toolbar.vue';
 import collectionView from './collection/collection-view.vue';
 import listView from './list/list-view.vue';
 import wordEditor from './editor/word-editor.vue';
-import settings from './dialogs/settings.vue';
-import bulkimport from './dialogs/bulk-import.vue';
+// import settings from './dialogs/settings.vue';
+// import bulkimport from './dialogs/bulk-import.vue';
 
-import { rIsImportOpen, rIsSettingsOpen, cOpenSettings } from './../store/modules/app';
+import AppStateMixin from '@/mixins/app-state-mixin';
 
-import { dFetchWods } from './../store/modules/words';
+// import { rIsImportOpen, rIsSettingsOpen, cOpenSettings } from './../store/modules/app';
+
+// import { dFetchWods } from './../store/modules/words';
 
 // import { dInitCollection } from './../store/modules/collection';
 
-import { areSettingsValid } from './../settings';
+// import { areSettingsValid } from './../settings';
 import {
     CollectionState,
     CollectionIndex,
@@ -45,15 +59,16 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
+        'collection-toolbar': collectionToolbarV,
         collectionView,
         listView,
-        wordEditor,
+        wordEditor
 
-        settings,
-        'bulk-import': bulkimport
+        // settings,
+        // 'bulk-import': bulkimport
     }
 })
-export default class App extends Vue {
+export default class App extends mixins(AppStateMixin) {
     /* @ModuleGetter('items') wordItems: any[];
     @Mutation('selectWord') selectWord: (item: string | null) => void; */
 
@@ -79,13 +94,13 @@ export default class App extends Vue {
         }
     }
 
-    get isImportOpen(): boolean {
+    /* get isImportOpen(): boolean {
         return rIsImportOpen(this.$store);
     }
 
     get isSettingsOpen(): boolean {
         return rIsSettingsOpen(this.$store);
-    }
+    } */
 
     mounted(): void {
         // TODO: when should setting check happen
@@ -96,13 +111,13 @@ export default class App extends Vue {
     }
 
     init(): void {
-        if (areSettingsValid()) {
+        /* if (areSettingsValid()) {
             console.log('sdfsd');
             // dInitCollection(this.$store); //!!
             dFetchWods(this.$store);
         } else {
             cOpenSettings(this.$store, true);
-        }
+        } */
     }
 }
 </script>
@@ -115,7 +130,7 @@ export default class App extends Vue {
 
 <style lang="scss" scoped>
 .root {
-    // padding: 8px 0;
+    padding: 0.5rem 0;
 
     font-size: 16px;
     font-family: Segoe UI;
@@ -127,14 +142,21 @@ export default class App extends Vue {
     left: 0;
 }
 
-/* .word-list {
-    width: 15em;
-    flex-shrink: 0;
-    margin-right: 16px;
-} */
+// TODO: move to global classes?
+span[class^='divider'] {
+    background-color: rgba(0, 0, 0, 0.24);
 
-/* .word-editor {
-    margin-left: 16px;
-    flex: 1;
-} */
+    width: 1px;
+    margin: 0 0.5rem;
+
+    flex-shrink: 0;
+
+    &[class$='-left'] {
+        margin-right: 0;
+    }
+
+    &[class$='-right'] {
+        margin-left: 0;
+    }
+}
 </style>

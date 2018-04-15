@@ -1,5 +1,6 @@
 <template>
 
+    <!-- TODO: add a proper hightlight like in collection-item -->
     <div class="list-item uk-flex uk-flex-middle"
         tabindex="0"
         @click="select"
@@ -190,7 +191,9 @@ export default class WordItem extends mixins(RenameMixin) {
     }
 
     &.hover {
-        background-color: $secondary-colour;
+        // TODO: add proper higlight like in collection item
+        // !important should not be used here
+        background-color: $secondary-colour !important;
     }
 }
 

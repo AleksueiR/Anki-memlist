@@ -439,7 +439,10 @@ const actions = {
     // TODO: this is wrong, an action should not be used like this; move this somewhere else
     [Action.performLookup](context: CollectionContext, options?: { value: string }): void {
         const fuseOptions = {
+            includeScore: true,
+            threshold: 0.4,
             shouldSort: true,
+            findAllMatches: true,
             keys: ['text']
         };
 
@@ -461,13 +464,15 @@ const actions = {
             const mappedWords = list.index.map(wordId => list.words[wordId]);
 
             const fuse = new Fuse(mappedWords, fuseOptions);
-            const words = fuse.search<CollectionWord>(value);
+            const items = fuse
+                .search<{ score: number; item: CollectionWord }>(value)
+                .map(r => ({ score: r.score, word: r.item }));
 
-            if (words.length === 0) {
+            if (items.length === 0) {
                 return resultMap;
             }
 
-            resultMap.push({ list, words });
+            resultMap.push({ list, items });
 
             return resultMap;
         }, []);

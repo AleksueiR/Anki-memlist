@@ -20,6 +20,9 @@
 
         <div class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top" v-if="isLookupValid">
 
+            <!-- TODO: style nothing found label -->
+            <span v-if="lookupResults.length === 0">Nothing found</span>
+
             <div
                 v-for="(searchGroup, index) in lookupResults"
                 :key="index"
@@ -29,14 +32,16 @@
                 <div>
                     <span class="search-list-title"> {{ searchGroup.list.name }} </span>
                     <span
-                        class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.words.length }}</span>
+                        class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.items.length }}</span>
                 </div>
 
                 <div class="uk-margin-small-top">
                     <list-item
-                        v-for="item in searchGroup.words"
+                        v-for="item in searchGroup.items"
                         :key="item.id"
-                        :word="item"
+                        :word="item.word"
+
+                        :class="{ 'perfect-match': item.score === 0 }"
 
                         @select="selectWordSearchAll"
                         @favourite="setWordFavourite"
@@ -367,6 +372,12 @@ export default class WordList extends Vue {
             border-style: dashed;
         }
     }
+
+    .list-content /deep/ {
+        .perfect-match {
+            background-color: rgba($color: green, $alpha: 0.1);
+        }
+    }
 }
 
 // TODO: fake
@@ -380,12 +391,6 @@ export default class WordList extends Vue {
     text-align: right;
     padding-left: 0.5rem;
     // font-size: 0.8em;
-}
-
-.list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
 }
 
 .word-menu {

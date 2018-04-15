@@ -45,10 +45,10 @@ export interface LookupResult {
     /**
      * Word matches found during the word lookup.
      *
-     * @type {CollectionWord[]}
+     * @type {{score: number, word: CollectionWord}[]}
      * @memberof LookupResult
      */
-    words: CollectionWord[];
+    items: { score: number; word: CollectionWord }[];
 }
 
 export type CollectionListMap = { [name: string]: CollectionList };
@@ -59,13 +59,6 @@ export namespace CollectionState {
     export interface Untyped {
         index?: CollectionIndex;
         lists?: CollectionListMap;
-
-        // TODO: store/load selected words and list
-        /* selectedLists?: CollectionList[];
-        selectedWords?: CollectionWord[];
-
-        lookupValue: string;
-        lookupResults: LookupResult[]; */
     }
 }
 

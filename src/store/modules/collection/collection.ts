@@ -7,26 +7,35 @@ import {
     CollectionList,
     CollectionTree,
     CollectionWord,
-    CollectionListMap
+    CollectionListMap,
+    LookupResult
 } from './collection-state';
 import { RootState } from '@/store/state';
 import { isArray } from 'util';
+
+import Fuse from 'fuse-js-latest';
 
 type CollectionContext = ActionContext<CollectionState, RootState>;
 
 const state: CollectionState = new CollectionState();
 
-enum MutationType {
-    SetListName = 'SET_LIST_NAME',
-    DeleteList = 'DELETE_LIST',
-
-    SetWordText = 'SET_WORD_TEXT',
-    DeleteWord = 'DELETE_WORD',
-    SelectWord = 'SELECT_WORD',
-    DeselectAllWords = 'DESELECT_ALL_WORDS'
+enum Action {
+    performLookup = 'performLookup'
 }
 
-// getters
+enum Mutation {
+    SET_LIST_NAME = 'SET_LIST_NAME',
+    DELETE_LIST = 'DELETE_LIST',
+
+    SET_WORD_TEXT = 'SET_WORD_TEXT',
+    DELETE_WORD = 'DELETE_WORD',
+    SELECT_WORD = 'SELECT_WORD',
+    DESELECT_ALL_WORDS = 'DESELECT_ALL_WORDS',
+
+    SET_LOOKUP_VALUE = 'SET_LOOKUP_VALUE',
+    SET_LOOKUP_RESULTS = 'SET_LOOKUP_RESULTS'
+}
+
 const getters = {
     getPooledWords(state: CollectionState): CollectionWord[] {
         if (state.selectedLists.length === 0) {
@@ -57,7 +66,6 @@ const getters = {
     }
 };
 
-// actions
 const actions = {
     // #region EDIT INDEX
 
@@ -123,9 +131,13 @@ const actions = {
         }
     },
 
-    setIndexTree(context: CollectionContext, options: { tree: CollectionTree }): void {
-        const { tree } = options;
-
+    /**
+     * Updates the existing index tree with the supplied, new index tree.
+     *
+     * @param {CollectionContext} context
+     * @param {{ tree: CollectionTree }} { tree }
+     */
+    setIndexTree(context: CollectionContext, { tree }: { tree: CollectionTree }): void {
         context.commit('SET_INDEX_TREE', { tree });
         actions.writeIndex(context);
     },
@@ -160,7 +172,7 @@ const actions = {
         console.log('deleteList', list, parentTree);
 
         // remove the list from the index first
-        context.commit(MutationType.DeleteList, { list, tree: parentTree });
+        context.commit(Mutation.DELETE_LIST, { list, tree: parentTree });
         storage.deleteList(listId);
 
         // check if there are any orphaned lists left and remove them as well
@@ -240,6 +252,7 @@ const actions = {
         }
 
         context.commit('SELECT_LIST', { list, value });
+        context.dispatch(Action.performLookup);
     },
 
     deselectAllLists(context: CollectionContext): void {
@@ -256,7 +269,7 @@ const actions = {
             return;
         }
 
-        context.commit(MutationType.SetListName, { list, value });
+        context.commit(Mutation.SET_LIST_NAME, { list, value });
 
         actions.writeList(context, list.id);
     },
@@ -293,8 +306,8 @@ const actions = {
             return;
         }
 
-        context.commit(MutationType.SelectWord, { word, value: false });
-        context.commit(MutationType.DeleteWord, { list, word });
+        context.commit(Mutation.SELECT_WORD, { word, value: false });
+        context.commit(Mutation.DELETE_WORD, { list, word });
         actions.writeList(context, list!.id);
     },
 
@@ -324,8 +337,8 @@ const actions = {
 
         Object.values(lists).forEach(({ list, words }) => {
             words.forEach(word => {
-                context.commit(MutationType.SelectWord, { word, value: false });
-                context.commit(MutationType.DeleteWord, { list, word });
+                context.commit(Mutation.SELECT_WORD, { word, value: false });
+                context.commit(Mutation.DELETE_WORD, { list, word });
             });
             actions.writeList(context, list.id);
         });
@@ -351,7 +364,7 @@ const actions = {
             return;
         }
 
-        context.commit(MutationType.SetWordText, { word, value });
+        context.commit(Mutation.SET_WORD_TEXT, { word, value });
         actions.writeList(context, list!.id);
     },
 
@@ -386,34 +399,83 @@ const actions = {
      *
      *
      * @param {CollectionContext} context
-     * @param {{ wordId: string; append: boolean; value?: boolean }} { wordId, append = false, value }
+     * @param {{ wordId: string; append: boolean; value?: boolean; searchAll?: boolean }} { wordId, append = false, value, searchAll }
      * @returns {void}
      */
     selectWord(
         context: CollectionContext,
-        { wordId, append = false, value }: { wordId: string; append: boolean; value?: boolean }
+        {
+            wordId,
+            append = false,
+            value,
+            searchAll
+        }: { wordId: string; append: boolean; value?: boolean; searchAll?: boolean }
     ): void {
         if (!append) {
-            context.commit(MutationType.DeselectAllWords);
+            context.commit(Mutation.DESELECT_ALL_WORDS);
         }
 
-        const { word, list } = helpers.findWord(context, wordId);
+        const { word, list } = helpers.findWord(context, wordId, searchAll);
 
         if (!word) {
             return;
         }
 
-        context.commit(MutationType.SelectWord, { word, value });
+        context.commit(Mutation.SELECT_WORD, { word, value });
     },
 
     deselectAllWords(context: CollectionContext): void {
-        context.commit(MutationType.DeselectAllWords);
-    }
+        context.commit(Mutation.DESELECT_ALL_WORDS);
+    },
 
     // #endregion
+
+    /**
+     *
+     *
+     * @param {CollectionContext} context
+     * @param {{ value: string }} { value }
+     */
+    // TODO: this is wrong, an action should not be used like this; move this somewhere else
+    [Action.performLookup](context: CollectionContext, options?: { value: string }): void {
+        const fuseOptions = {
+            shouldSort: true,
+            keys: ['text']
+        };
+
+        if (!options || options.value === '') {
+            context.commit(Mutation.SET_LOOKUP_VALUE, { value: '' });
+            context.commit(Mutation.SET_LOOKUP_RESULTS, { results: [] });
+            return;
+        }
+
+        const { value } = options;
+
+        console.log('perform lookup', options);
+
+        context.commit(Mutation.SET_LOOKUP_VALUE, { value });
+
+        const results = state.index.flatTree.reduce<LookupResult[]>((resultMap, listId) => {
+            const list = state.lists[listId];
+
+            const mappedWords = list.index.map(wordId => list.words[wordId]);
+
+            const fuse = new Fuse(mappedWords, fuseOptions);
+            const words = fuse.search<CollectionWord>(value);
+
+            if (words.length === 0) {
+                return resultMap;
+            }
+
+            resultMap.push({ list, words });
+
+            return resultMap;
+        }, []);
+
+        context.commit(Mutation.SET_LOOKUP_RESULTS, { results });
+    }
 };
 
-// mutations
 const mutations = {
     // #region EDIT INDEX
 
@@ -462,7 +524,7 @@ const mutations = {
         state.selectedLists.splice(0);
     },
 
-    [MutationType.DeleteList](
+    [Mutation.DELETE_LIST](
         state: CollectionState,
         { list, tree }: { list: CollectionList; tree: CollectionTree }
     ): void {
@@ -473,7 +535,7 @@ const mutations = {
 
     // #region EDIT LIST
 
-    [MutationType.SetListName](state: CollectionState, { list, value }: { list: CollectionList; value: string }): void {
+    [Mutation.SET_LIST_NAME](state: CollectionState, { list, value }: { list: CollectionList; value: string }): void {
         list.name = value;
     },
 
@@ -491,7 +553,7 @@ const mutations = {
      * @param {CollectionState} state
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
-    [MutationType.DeleteWord](
+    [Mutation.DELETE_WORD](
         state: CollectionState,
         { list, word }: { list: CollectionList; word: CollectionWord }
     ): void {
@@ -502,7 +564,7 @@ const mutations = {
 
     // #region EDIT WORD
 
-    [MutationType.SetWordText](state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
+    [Mutation.SET_WORD_TEXT](state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
         word.text = value;
     },
 
@@ -518,10 +580,7 @@ const mutations = {
         word.notes = value;
     },
 
-    [MutationType.SelectWord](
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value?: boolean }
-    ): void {
+    [Mutation.SELECT_WORD](state: CollectionState, { word, value }: { word: CollectionWord; value?: boolean }): void {
         const index = state.selectedWords.findIndex(selectedWord => selectedWord.id === word.id);
 
         // if no value specified, toggle the state of the word
@@ -538,11 +597,18 @@ const mutations = {
         }
     },
 
-    [MutationType.DeselectAllWords](state: CollectionState): void {
+    [Mutation.DESELECT_ALL_WORDS](state: CollectionState): void {
         state.selectedWords.splice(0);
-    }
+    },
 
     // #endregion
+
+    [Mutation.SET_LOOKUP_VALUE](state: CollectionState, { value }: { value: string }): void {
+        state.lookupValue = value;
+    },
+    [Mutation.SET_LOOKUP_RESULTS](state: CollectionState, { results }: { results: LookupResult[] }): void {
+        state.lookupResults = results;
+    }
 };
 
 const helpers = {
@@ -552,7 +618,7 @@ const helpers = {
      *
      * @param {CollectionContext} context context to search in
      * @param {string} wordId word id
-     * @param {boolean} [searchAll=false] if true, search the whole collection; slower
+     * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {({ word: CollectionWord?; list?: CollectionList })}
      */
     findWord(

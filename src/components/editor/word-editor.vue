@@ -1,42 +1,10 @@
 <template>
     <div class="container">
 
-        <!-- {{ word.text }} -->
-
-        <!-- <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/list' }">word list</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ word.text }}</el-breadcrumb-item>
-        </el-breadcrumb> -->
-
-        <!-- editor is hidden for now -->
-        <el-row :gutter="20" v-if="false">
-            <el-col :span="12">
-                <!-- <el-tabs v-model="editableTabsValue" type="card" editable @edit="handleTabsEdit">
-                    <el-tab-pane
-                        v-for="(item, index) in editableTabs"
-                        :key="item.name"
-                        :label="item.title"
-                        :name="item.name"
-                    >
-                        {{item.content}}
-                    </el-tab-pane>
-                </el-tabs> -->
-
-                <quill-editor v-for="(modelField, index) in modelFields"
-                    :key="modelField"
-                    :initialHTML="noteFields[index]"
-                    :fieldName="modelField"></quill-editor>
-
-                <!-- <p v-for="(modelField, index) in modelFields" :key="modelField">{{ modelField }} - {{ noteFields[index] }}</p> -->
-
-                {{ notes }}
-            </el-col>
-
-            <el-col :span="12">
-                <va-source :word="word"></va-source>
-
-            </el-col>
-        </el-row>
+        <!-- <quill-editor v-for="(modelField, index) in modelFields"
+            :key="modelField"
+            :initialHTML="noteFields[index]"
+            :fieldName="modelField"></quill-editor> -->
 
         <header>
             <h1 class="title" v-if="word">{{ word.text }}</h1>

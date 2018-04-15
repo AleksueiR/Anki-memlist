@@ -8,6 +8,11 @@ if (process.env.NODE_ENV === 'development') {
 
 import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
+import VueRx from 'vue-rx';
+import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription'; // Disposable if using RxJS4
+import { Subject } from 'rxjs/Subject'; // required for domStreams option
+
 import ElementUI from 'element-ui';
 // import 'element-ui/lib/theme-default/index.css'
 import 'element-ui/lib/theme-chalk/index.css';
@@ -18,6 +23,13 @@ import { createStore } from './store';
 import { RootState } from './store/state';
 
 Vue.use(Vuex);
+Vue.use(VueRx, {
+    Observable,
+    Subscription,
+    Subject
+});
+
+// TODO: remove
 Vue.use(ElementUI);
 
 const store: Store<RootState> = createStore();

@@ -178,8 +178,11 @@ export default class WordItem extends mixins(RenameMixin) {
 
 .list-item {
     position: relative;
+
     height: 30px;
     font-size: 0.8rem;
+
+    outline: none;
 
     &.selected {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);

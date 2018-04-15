@@ -9,51 +9,50 @@
 
             <input
                 class="uk-input uk-form-blank uk-form-small"
+
                 type="text"
                 placeholder="lookup / add"
-                v-model.trim="lookup"
+                minlength="3"
+                :value="lookupValue"
+                v-stream:input="lookupStream"
                 @keyup.enter="addWordTemp">
         </div>
 
-        <!-- <div class="lookup">
+        <div class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top" v-if="isLookupValid">
 
-            <div class="uk-margin uk-inline">
-                <span class="uk-form-icon uk-form-icon-flip"><octo-icon  name="search"></octo-icon></span>
+            <div
+                v-for="(searchGroup, index) in lookupResults"
+                :key="index"
 
-                <input
-                    class="uk-input uk-form-blank_"
-                    type="text"
-                    placeholder="Input"
-                    v-model.trim="lookup"
-                    @keyup.enter="addWordTemp">
+                class="uk-margin-bottom">
+
+                <div>
+                    <span class="search-list-title"> {{ searchGroup.list.name }} </span>
+                    <span
+                        class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.words.length }}</span>
+                </div>
+
+                <div class="uk-margin-small-top">
+                    <list-item
+                        v-for="item in searchGroup.words"
+                        :key="item.id"
+                        :word="item"
+
+                        @select="selectWordSearchAll"
+                        @favourite="setWordFavourite"
+                        @archive="setWordArchived"
+                        @delete="deleteWords"
+
+                        @rename-start="onRenameStart"
+                        @rename-complete="onRenameComplete"
+                        @rename-cancel="onRenameComplete"></list-item>
+                </div>
+
             </div>
 
-        </div> -->
-            <!-- <el-input
-                @keyup.enter.native="addOrEditWord()"
-                @keyup.esc.native="clearLookup"
-                @input="blah"
-                v-model.trim="lookup"
-                label="Lookup"
-                placeholder="type a word"
-                suffix-icon="el-icon-edit"
-                autofocus
-                :hint="lookupHint"
-                :clearable="true">
-            </el-input> -->
+        </div>
 
-        <!-- <span class="text-smaller">{{ lookupHint }}</span> -->
-
-        <div class="uk-flex-1 uk-margin-small-top" ref="virtualListContainer">
-            <!-- <ul class="list">
-                <list-item
-                    v-for="word in getPooledWords"
-                    :key="word.id"
-                    @archive="archiveWord"
-                    @edit="editWord"
-                    v-on:remove="removeWord"
-                    :word="word"></list-item>
-            </ul> -->
+        <div class="list-content uk-flex-1 uk-margin-small-top" ref="virtualListContainer" v-else>
 
             <virtual-list
                 :size="30"
@@ -76,36 +75,6 @@
                     @rename-cancel="onRenameComplete"></list-item>
 
             </virtual-list>
-
-            <!-- <virtual-scroller class="scroller"
-                style="height: 300px; overflow: scroll;"
-                item-height="21"
-                :items="getPooledWords">
-                <template slot-scope="props">
-
-                    <div class="item">gelp {{ props.item.id }}</div>
-
-                </template>
-            </virtual-scroller> -->
-
-            <!-- <list-item
-                        @archive="archiveWord"
-                        @edit="editWord"
-                        @remove="removeWord"
-                        :key="props.itemKey"
-                        :word="props.item"></list-item> -->
-
-            <!-- <recycle-list
-                style="height: 300px; overflow: scroll;"
-                :items="getPooledWords"
-                :itemHeight="20">
-                <template slot-scope="props">
-                    <div style="height: 20px;" >word:</div>
-
-                </template>
-            </recycle-list> -->
-
-            <!--  -->
 
         </div>
 
@@ -135,21 +104,53 @@ import anki from './../../api/anki';
 import listItem from './list-item.vue';
 /* import wordMenu from './word-menu.vue'; */
 
-import { CollectionList, CollectionWord } from '../../store/modules/collection/index';
+import { CollectionList, CollectionWord, LookupResult } from '../../store/modules/collection/index';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
 
+import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription'; // Disposable if using RxJS4
+import { Subject } from 'rxjs/Subject'; // required for domStreams option
+
+import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/pluck';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/debounceTime';
+import 'rxjs/add/observable/from';
+import 'rxjs/add/observable/fromEvent';
+
+const messageObservable = Observable.from(['Example Message', 'Example Message Final']);
+
+enum Streams {
+    lookup = 'lookupStream'
+}
+
+// TODO: update when vetur extension is updated to use [Streams.lookup]: Observable<Event>;
+interface VueStream extends Vue {
+    lookupStream: Observable<Event>;
+}
+
 @Component({
     components: {
         'virtual-list': VirtualScrollList,
         listItem
+    },
+    domStreams: [Streams.lookup],
+    subscriptions() {
+        const vues: VueStream = this as VueStream;
+
+        return {
+            lookupObservable: vues.lookupStream.debounceTime(300).pluck<Event, string>('event', 'target', 'value')
+        };
     }
 })
 export default class WordList extends Vue {
     @StateCL selectedLists: CollectionList[];
     @StateCL selectedWords: CollectionWord[];
+    @StateCL lookupValue: string;
+    @StateCL lookupResults: LookupResult[];
 
     @GetterCL getPooledWords: CollectionWord[];
 
@@ -167,9 +168,13 @@ export default class WordList extends Vue {
 
     @ActionCL deleteSelectedWords: () => void;
 
+    @ActionCL performLookup: (options?: { value: string }) => void;
+
     // TODO: this doesn't seem to belong here
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
+        // deselect words which are no longer in the pool
+        // TODO: this doesn't seem to work properly
         this.selectedWords.slice().forEach(word => {
             if (!this.getPooledWords.includes(word)) {
                 console.log('deselecting', word);
@@ -179,10 +184,20 @@ export default class WordList extends Vue {
         });
     }
 
+    created() {
+        this.$observables.lookupObservable.subscribe(value => this.performLookup({ value }));
+    }
+
+    get isLookupValid(): boolean {
+        return this.lookupValue !== '';
+    }
+
     addWordTemp(): void {
         const listId = this.selectedLists[0].id;
-        const word = new CollectionWord({ text: this.lookup });
+        const word = new CollectionWord({ text: this.lookupValue });
         this.addWord({ listId, word });
+
+        this.performLookup();
     }
 
     deleteWords({ wordId }: { wordId: string }): void {
@@ -192,6 +207,13 @@ export default class WordList extends Vue {
         } else {
             this.deleteWord({ wordId });
         }
+    }
+
+    /**
+     * Selects the word even if it's not in the selected list.
+     */
+    selectWordSearchAll(event: any) {
+        this.selectWord({ ...event, searchAll: true });
     }
 
     /* get visibleHeight(): number {
@@ -207,7 +229,10 @@ export default class WordList extends Vue {
         this.visibleHeight = (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 30;
     }
 
-    lookup: string = '';
+    /* async performLookup(value: string) {
+        this.wordLookup = value;
+        // this.performLookup2(value);
+    } */
 
     /* async mounted(): Promise<void> {
         window.setInterval(async () => {
@@ -238,9 +263,9 @@ export default class WordList extends Vue {
         cSelectWord(this.$store, word);
     } */
 
-    get isLookupValid(): boolean {
+    /* get isLookupValid(): boolean {
         return this.lookup !== '' && this.lookup !== null;
-    }
+    } */
 
     /* get lookupHint(): string {
         if (!this.isLookupValid) {
@@ -298,24 +323,6 @@ export default class WordList extends Vue {
         return filteredItems;
     } */
 
-    addOrEditWord(): void {
-        const listId = this.selectedLists[0].id;
-        const word = new CollectionWord({ text: this.lookup });
-
-        this.addWord({ listId, word });
-        this.selectWord({ wordId: word.id });
-
-        /* if (this.isLookupNew) {
-            this.addNewWord();
-        } else {
-            this.editWord(this.items[0]);
-        } */
-    }
-
-    clearLookup(): void {
-        this.lookup = '';
-    }
-
     /* addNewWord(): void {
         cAddWord(this.$store, new Word({ text: this.lookup }));
         dSyncWords(this.$store);
@@ -325,21 +332,6 @@ export default class WordList extends Vue {
 
     archiveWord(word: Word): void {
         word.archived = true;
-        dSyncWords(this.$store);
-    } */
-
-    /* editWord(word: Word): void {
-        //cSelectWord(word);
-        //this.$router.push({ name: 'editor', params: { id: word.id } });
-        //EventBus.$emit(WORD_SELECTED, word);
-    } */
-
-    /* selectWord(word: Word): void {
-        cSelectWord(this.$store, word);
-    } */
-
-    /* removeWord(word: Word): void {
-        cRemoveWord(this.$store, word);
         dSyncWords(this.$store);
     } */
 
@@ -375,6 +367,19 @@ export default class WordList extends Vue {
             border-style: dashed;
         }
     }
+}
+
+// TODO: fake
+.search-list-title {
+    font-weight: 500;
+    padding-left: calc(0.5rem + 30px - 1px) !important;
+}
+
+.item-word-count {
+    // line-height: 30px;
+    text-align: right;
+    padding-left: 0.5rem;
+    // font-size: 0.8em;
 }
 
 .list {

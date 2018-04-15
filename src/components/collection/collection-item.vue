@@ -258,8 +258,10 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 
 .collection-item {
     position: relative;
+
     height: 30px;
     font-size: 0.8rem;
+
     outline: none;
 
     &.checked {
@@ -283,6 +285,10 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     .selected & {
         font-weight: 500;
     }
+}
+
+.item-word-count {
+    line-height: 30px;
 }
 
 .item-control {

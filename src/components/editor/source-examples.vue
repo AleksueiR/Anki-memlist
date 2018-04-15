@@ -3,13 +3,13 @@
 
             <!-- {{ from }} {{ to }} {{ limit }} {{ collection.length }} -->
             <div class="controls" v-if="total !== 1">
-                <el-button @click="back" :disabled="current === 1"><font-awesome-icon icon="angle-up" /></el-button>
+                <!-- <el-button @click="back" :disabled="current === 1"><font-awesome-icon icon="angle-up" /></el-button> -->
 
                 <span class="page current">{{ current }}</span>
                 <span class="divider"></span>
                 <span class="page total">{{ total }}</span>
 
-                <el-button @click="next" :disabled="current === total"><font-awesome-icon icon="angle-down" /></el-button>
+                <!-- <el-button @click="next" :disabled="current === total"><font-awesome-icon icon="angle-down" /></el-button> -->
             </div>
 
             <div class="example-list" v-if="collection.length > 0">
@@ -51,9 +51,7 @@ export default class SourceView extends Vue {
     }
 
     get total(): number {
-        return Math.ceil(
-            this.collection.length / (this.limit || this.collection.length)
-        );
+        return Math.ceil(this.collection.length / (this.limit || this.collection.length));
     }
 
     get to(): number {
@@ -69,10 +67,7 @@ export default class SourceView extends Vue {
         if (this.limit === null || this.to - this.from < this.limit) {
             return;
         }
-        this.from = Math.min(
-            this.collection.length - 1,
-            Math.max(this.from + this.limit, 0)
-        );
+        this.from = Math.min(this.collection.length - 1, Math.max(this.from + this.limit, 0));
     }
 
     back(): void {
@@ -80,16 +75,12 @@ export default class SourceView extends Vue {
         if (this.limit === null) {
             return;
         }
-        this.from = Math.min(
-            this.collection.length - 1,
-            Math.max(this.from - this.limit, 0)
-        );
+        this.from = Math.min(this.collection.length - 1, Math.max(this.from - this.limit, 0));
     }
 
     playSound(event: MouseEvent): void {
         console.log(event);
-        (<HTMLAudioElement>(<HTMLElement>event.currentTarget)
-            .firstElementChild).play();
+        (<HTMLAudioElement>(<HTMLElement>event.currentTarget).firstElementChild).play();
     }
 }
 </script>

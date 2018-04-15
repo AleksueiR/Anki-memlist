@@ -1,5 +1,6 @@
 import uniqid from 'uniqid';
 import moment from 'moment';
+import Fuse from 'fuse-js-latest';
 
 import electron from 'electron';
 import WordList from '@/components/editor/word-editor.vue';
@@ -26,35 +27,65 @@ window.onbeforeunload = e => {
 
 // overloading constructors https://stackoverflow.com/a/40976608
 
+/**
+ * A result of the word lookup in the entire collection.
+ *
+ * @export
+ * @interface ookupResult
+ */
+export interface LookupResult {
+    /**
+     * A list in which some of matches were found.
+     *
+     * @type {CollectionList}
+     * @memberof LookupResult
+     */
+    list: CollectionList;
+
+    /**
+     * Word matches found during the word lookup.
+     *
+     * @type {CollectionWord[]}
+     * @memberof LookupResult
+     */
+    words: CollectionWord[];
+}
+
 export type CollectionListMap = { [name: string]: CollectionList };
 
-export interface CollectionStateOptions {
-    index?: CollectionIndex;
-    //lists?: { [name: string]: CollectionList};
-    lists?: CollectionListMap;
+export interface CollectionStateOptions {}
 
-    selectedLists?: CollectionList[];
-    selectedWords?: CollectionWord[];
+export namespace CollectionState {
+    export interface Untyped {
+        index?: CollectionIndex;
+        lists?: CollectionListMap;
+
+        // TODO: store/load selected words and list
+        /* selectedLists?: CollectionList[];
+        selectedWords?: CollectionWord[];
+
+        lookupValue: string;
+        lookupResults: LookupResult[]; */
+    }
 }
 
 export class CollectionState {
     halp = { feck: false };
 
     index: CollectionIndex;
-
-    // lists: { [name: string]: CollectionList};
     lists: CollectionListMap;
 
-    readonly selectedLists: CollectionList[];
-    readonly selectedWords: CollectionWord[];
+    readonly selectedLists: CollectionList[] = [];
+    readonly selectedWords: CollectionWord[] = [];
 
-    constructor(options: CollectionStateOptions = {}) {
-        const { index = new CollectionIndex(), lists = {}, selectedLists = [], selectedWords = [] } = options;
+    lookupValue: string = '';
+    lookupResults: LookupResult[] = [];
+
+    constructor(options: CollectionState.Untyped = {}) {
+        const { index = new CollectionIndex(), lists = {} } = options;
 
         this.index = index;
         this.lists = lists;
-        this.selectedLists = selectedLists;
-        this.selectedWords = selectedWords;
     }
 
     addList(tree: CollectionTree, list: CollectionList): void {

@@ -105,7 +105,7 @@ export default class CollectionView extends Vue {
         return this.index.tree.safeJSON.items!;
     }
 
-    // ipdates the underlying tree structure after items in the Treee are reordered
+    // updates the underlying tree structure after items in the Treee are reordered
     set treeItems(items: CollectionTree[]) {
         console.log('set tree items', items);
 

@@ -45,14 +45,13 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import { mixins } from 'vue-class-component';
 
 import anki from './../../api/anki';
 
-// import QuillEditor from './editor/../quill-editor.vue';
-
 import sources from './../../sources';
 
-import { EventBus, WORD_SELECTED } from './../../event-bus';
+import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
 import { Word, dFetchWods, dSyncWords, rSelectedItem, rItems } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
@@ -72,9 +71,7 @@ const ActionCL = namespace('collection', Action);
         sources
     )
 })
-export default class WordList extends Vue {
-    @StateCL selectedWords: CollectionWord[];
-
+export default class WordList extends mixins(CollectionStateMixin) {
     @Prop() id: string;
 
     activeTab: string = 'first';
@@ -98,6 +95,10 @@ export default class WordList extends Vue {
 
     // _word: Word | null = null;
     get word(): CollectionWord | null {
+        if (this.lookupValue !== '') {
+            return new CollectionWord({ text: this.lookupValue });
+        }
+
         if (this.selectedWords.length === 0) {
             return null;
         }

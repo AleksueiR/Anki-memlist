@@ -96,9 +96,9 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
-import VirtualScrollList from 'vue-virtual-scroll-list';
+import { mixins } from 'vue-class-component';
 
-import debounce from 'lodash/debounce';
+import VirtualScrollList from 'vue-virtual-scroll-list';
 
 import loglevel from 'loglevel';
 loglevel.setDefaultLevel(loglevel.levels.TRACE);
@@ -110,6 +110,8 @@ import listItem from './list-item.vue';
 /* import wordMenu from './word-menu.vue'; */
 
 import { CollectionList, CollectionWord, LookupResult } from '../../store/modules/collection/index';
+
+import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
@@ -151,10 +153,9 @@ interface VueStream extends Vue {
         };
     }
 })
-export default class WordList extends Vue {
+export default class WordList extends mixins(CollectionStateMixin) {
     @StateCL selectedLists: CollectionList[];
     @StateCL selectedWords: CollectionWord[];
-    @StateCL lookupValue: string;
     @StateCL lookupResults: LookupResult[];
 
     @GetterCL getPooledWords: CollectionWord[];

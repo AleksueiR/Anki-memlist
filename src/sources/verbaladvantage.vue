@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-const vaWords = require('./../../assets/full-list.json');
+const vaWords: { [name: string]: VAWord } = {};
 
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';

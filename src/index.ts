@@ -80,6 +80,9 @@ Vue.config.keyCodes = {
     ctrl: 17
 };
 
+import amDrag from './am-drag.plugin';
+Vue.use(amDrag);
+
 const rootVue = new Vue({
     el: '#app',
     store,

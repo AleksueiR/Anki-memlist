@@ -41,7 +41,9 @@
                     uk-tooltip="delay: 1500; title: View menu"
                     @click.stop="vnull"
                     class="uk-icon item-control">
+
                     <octo-icon name="kebab-horizontal"></octo-icon></a>
+
                 <uk-dropdown
                     :pos="'right-center'"
                     :delay-hide="0"
@@ -172,7 +174,7 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     // passed in CollectionTree object
     @Prop() item: CollectionTree;
 
-    // id of the newly created, mind list; trigger auto-renaming
+    // id of the newly created, mint list; trigger auto-renaming
     @Prop() mintListId: string;
 
     // an array of selected lists

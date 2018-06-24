@@ -14,7 +14,7 @@
             </div>
         </header>
 
-        <div class="null-state" v-if="!word">
+        <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut }">
             <img src="https://image.flaticon.com/icons/svg/326/326804.svg" />
             <span class="message"><span class="code">undefined</span> is not a word</span>
         </div>
@@ -56,6 +56,7 @@ import CollectionStateMixin from '@/mixins/collection-state-mixin';
 import { Word, dFetchWods, dSyncWords, rSelectedItem, rItems } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
+import { DragObject } from '@/am-drag.plugin';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
@@ -156,12 +157,28 @@ export default class WordList extends mixins(CollectionStateMixin) {
     notes: number[] = [];
     modelFields: string[] = [];
     noteFields: string[] = [];
+
+    onOver(event: MouseEvent, dragObject: DragObject): boolean {
+        console.log('over', event, dragObject);
+        this.$el.classList.add('drag-over');
+
+        return true;
+    }
+
+    onOut(event: MouseEvent, dragObject: DragObject): void {
+        console.log('out', event, dragObject);
+        this.$el.classList.remove('drag-over');
+    }
 }
 </script>
 
 <style lang="scss" scoped>
 @import '~quill/dist/quill.core.css';
 @import './../../styles/variables';
+
+.drag-over {
+    border: 1px solid blue;
+}
 
 header {
     display: flex;

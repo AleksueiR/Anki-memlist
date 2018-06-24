@@ -187,6 +187,12 @@ export default class TreeeNode extends Vue {
         this.treee.$emit('node-click', this.item, event);
     }
 }
+
+/*
+
+
+
+*/
 </script>
 
 <style lang="scss" scoped>
@@ -266,12 +272,12 @@ export default class TreeeNode extends Vue {
     // divider `:after` elements are shifted to be drawn in the same place
     &.before {
         &:after {
-            margin-top: - $divider-action-height / 2;
+            margin-top: -$divider-action-height / 2;
         }
 
         &.double {
             height: $divider-trigger-height * 2;
-            margin-top: - $divider-trigger-height;
+            margin-top: -$divider-trigger-height;
 
             &:after {
                 margin-top: $divider-trigger-height - $divider-action-height / 2;

@@ -66,6 +66,8 @@
                 class="cm-scrollbar">
 
                 <list-item
+                    v-drag-object="{ payload: {a: 1}, tags: { container: 'tree' } }"
+
                     v-for="item in getPooledWords"
                     :key="item.id"
                     :word="item"

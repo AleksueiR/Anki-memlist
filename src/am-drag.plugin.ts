@@ -13,6 +13,7 @@ export interface DragObject {
 
 export interface DragTarget {
     node: HTMLElement;
+    payload: any;
     tags: DragTags;
 }
 
@@ -20,21 +21,22 @@ interface DragObjectBindingValue {
     node: HTMLElement | null;
     payload: object;
     onDown: (event: MouseEvent, object: DragObject) => boolean | null;
-    onLift: (event: MouseEvent, object: DragObject) => null;
+    onStart: (event: MouseEvent, object: DragObject) => null;
     onMove: (event: MouseEvent, object: DragObject) => null;
     onStop: (event: MouseEvent, object: DragObject) => null;
     tags: DragTags;
 }
 
 interface DragTargetBindingValue {
-    onOver: (event: MouseEvent, object: DragObject, target: DragTarget) => boolean | null;
+    payload: object;
+    onOver: (event: MouseEvent, object: DragObject, target: DragTarget) => boolean | void;
     onOut: (event: MouseEvent, object: DragObject, target: DragTarget) => null;
     onDrop: (event: MouseEvent, object: DragObject, target: DragTarget) => null;
     tags: { [name: string]: any } | null;
 }
 
 // only one item can be dragged at a time
-let dragObject: DragObject;
+let dragObject: DragObject | null = null;
 
 function isFunction(f: any): f is Function {
     return f instanceof Object;
@@ -44,9 +46,7 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
     Vue.directive('drag-object', {
         inserted(el: HTMLElement, binding: VNodeDirective, vnode: VNode, oldVnode: VNode): void {
             const options: DragObjectBindingValue = binding.value;
-
-            // offset from the left upper corner of the draggable element to the mouse cursor at the moment when the drag operation started
-            let dragObjectOffset: { left: number; top: number };
+            const dragParent: Node = el.parentNode!;
 
             el.addEventListener('mousedown', initDrag);
 
@@ -64,10 +64,6 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
                     options.node = el;
                 }
 
-                if (isFunction(options.onDown) && !options.onDown(event, dragObject)) {
-                    return;
-                }
-
                 // prevent text from being selected when dragging
                 event.preventDefault();
 
@@ -79,6 +75,10 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
                     payload: options.payload,
                     tags: options.tags
                 };
+
+                if (isFunction(options.onDown) && !options.onDown(event, dragObject)) {
+                    return;
+                }
 
                 document.addEventListener('mousemove', startDragDetection);
                 document.addEventListener('mouseup', stopDragDetection);
@@ -92,9 +92,9 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
             function startDragDetection(event: MouseEvent): void {
                 console.log('drag start detection');
 
-                /* if (!this.dragOrigin) {
+                if (!dragObject) {
                     return;
-                } */
+                }
 
                 const [x, y] = [dragObject.event.pageX - event.pageX, dragObject.event.pageY - event.pageY];
                 const c = Math.sqrt(x * x + y * y);
@@ -125,9 +125,16 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
             function startDrag(event: MouseEvent): void {
                 console.log('drag started');
 
-                const bbox = dragObject.node.getBoundingClientRect();
+                if (!dragObject) {
+                    return;
+                }
 
-                dragObjectOffset = { left: event.pageX - bbox.left, top: event.pageY - bbox.top };
+                const bbox = dragObject.node.getBoundingClientRect();
+                // offset from the left upper corner of the draggable element to the mouse cursor at the moment when the drag operation started
+                let dragObjectOffset: { left: number; top: number } = {
+                    left: event.pageX - bbox.left,
+                    top: event.pageY - bbox.top
+                };
 
                 document.addEventListener('mousemove', moveDrag);
                 document.addEventListener('mouseup', stopDrag);
@@ -141,10 +148,10 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
                 dragObject.clone.style.zIndex = `${Number.MAX_SAFE_INTEGER}`; // set the maximum z-index possible
                 dragObject.clone.classList.add('drag-object-active');
 
-                el.parentNode!.appendChild(dragObject.clone);
+                dragParent.appendChild(dragObject.clone);
 
-                if (isFunction(options.onLift)) {
-                    options.onLift(event, dragObject);
+                if (isFunction(options.onStart)) {
+                    options.onStart(event, dragObject);
                 }
 
                 moveDrag(event);
@@ -157,6 +164,11 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
              */
             function stopDrag(event: MouseEvent) {
                 console.log('drag stopped');
+
+                if (!dragObject) {
+                    return;
+                }
+
                 document.removeEventListener('mouseup', stopDrag);
                 document.removeEventListener('mousemove', moveDrag);
 
@@ -166,7 +178,11 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
                     options.onStop(event, dragObject);
                 }
 
-                // el.parentNode!.removeChild(dragObject.clone);
+                // remove the clone from the DOM
+                // el itself might be removed from the dom by this point
+                dragParent.removeChild(dragObject.clone);
+
+                dragObject = null;
             }
 
             /**
@@ -176,6 +192,10 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
              */
             function moveDrag(event: MouseEvent) {
                 console.log('drag moves');
+
+                if (!dragObject) {
+                    return;
+                }
 
                 dragObject.clone.style.transform = `translate(${event.pageX}px, ${event.pageY}px)`;
 
@@ -189,12 +209,26 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
     Vue.directive('drag-target', {
         inserted(el: HTMLElement, binding: VNodeDirective, vnode: VNode, oldVnode: VNode): void {
             const options: DragTargetBindingValue = binding.value;
-            const dragTarget: DragTarget = { node: el, tags: options.tags };
+            const dragTarget: DragTarget = { node: el, tags: options.tags, payload: options.payload };
 
+            // TODO: [performance] register drop targets and only active then when a drag detected
             el.addEventListener('mouseover', startDropDetection);
+            el.addEventListener('mouseup', dropObject);
             el.addEventListener('mouseout', stopDropDetection);
 
-            function startDropDetection(event: MouseEvent) {
+            /**
+             * Activate the drop detection when the drag object is moved over a target. Call `onOver` target callback.
+             *
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            function startDropDetection(event: MouseEvent): void {
+                if (!dragObject) {
+                    return;
+                }
+
+                console.log('target over');
+
                 dragTarget.node.classList.add('drag-target-active');
 
                 if (isFunction(options.onOver)) {
@@ -202,7 +236,39 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue, options: null) => {
                 }
             }
 
-            function stopDropDetection(event: MouseEvent) {
+            /**
+             * Perform the drop - call `onDrop` target callback - and stop drop detection.
+             *
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            function dropObject(event: MouseEvent): void {
+                if (!dragObject) {
+                    return;
+                }
+
+                console.log('target drop');
+
+                if (isFunction(options.onDrop)) {
+                    options.onDrop(event, dragObject, dragTarget);
+                }
+
+                stopDropDetection(event);
+            }
+
+            /**
+             * Deactivate the drop target when the drag object is moved out of it. Call `onOut` target callback.
+             *
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            function stopDropDetection(event: MouseEvent): void {
+                if (!dragObject) {
+                    return;
+                }
+
+                console.log('target out');
+
                 dragTarget.node.classList.remove('drag-target-active');
 
                 if (isFunction(options.onOut)) {

@@ -66,6 +66,13 @@ export class CollectionState {
     halp = { feck: false };
 
     index: CollectionIndex;
+
+    /**
+     * A map of all the lists in the collection in the form of `{ [name: string]: CollectionList }`.
+     *
+     * @type {CollectionListMap}
+     * @memberof CollectionState
+     */
     lists: CollectionListMap;
 
     readonly selectedLists: CollectionList[] = [];

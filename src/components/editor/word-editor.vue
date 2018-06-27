@@ -14,7 +14,7 @@
             </div>
         </header>
 
-        <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut }">
+        <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut, onDrop: onDrop }">
             <img src="https://image.flaticon.com/icons/svg/326/326804.svg" />
             <span class="message"><span class="code">undefined</span> is not a word</span>
         </div>
@@ -56,7 +56,7 @@ import CollectionStateMixin from '@/mixins/collection-state-mixin';
 import { Word, dFetchWods, dSyncWords, rSelectedItem, rItems } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
-import { DragObject } from '@/am-drag.plugin';
+import { DragObject, DragTarget } from '@/am-drag.plugin';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
@@ -165,9 +165,15 @@ export default class WordList extends mixins(CollectionStateMixin) {
         return true;
     }
 
-    onOut(event: MouseEvent, dragObject: DragObject): void {
+    onOut(event: MouseEvent, dragObject: DragObject, dragTarget: DragTarget): void {
         console.log('out', event, dragObject);
         this.$el.classList.remove('drag-over');
+    }
+
+    onDrop(event: MouseEvent, dragObject: DragObject, dragTarget: DragTarget): void {
+        console.log('drop', event, dragObject, dragTarget);
+
+        dragTarget.node.appendChild(dragObject.clone);
     }
 }
 </script>
@@ -176,7 +182,8 @@ export default class WordList extends mixins(CollectionStateMixin) {
 @import '~quill/dist/quill.core.css';
 @import './../../styles/variables';
 
-.drag-over {
+.drag-target-active {
+    //.drag-over {
     border: 1px solid blue;
 }
 

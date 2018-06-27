@@ -20,4 +20,6 @@ export default class CollectionStateMixin extends Vue {
     @StateCL lookupValue: string;
 
     @StateCL selectedWords: CollectionWord[];
+
+    @ActionCL moveWord: (payload: { wordId: string; listId: string }) => void;
 }

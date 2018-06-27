@@ -20,7 +20,11 @@ type CollectionContext = ActionContext<CollectionState, RootState>;
 const state: CollectionState = new CollectionState();
 
 enum Action {
-    performLookup = 'performLookup'
+    performLookup = 'performLookup',
+
+    addWord = 'addWord',
+    deleteWord = 'deleteWord',
+    moveWord = 'moveWord'
 }
 
 enum Mutation {
@@ -276,7 +280,7 @@ const actions = {
 
     setListPinned(context: CollectionContext, { listId, value }: { listId: string; value: boolean }): void {
         const list = state.lists[listId];
-        if (list == undefined) {
+        if (list === undefined) {
             return;
         }
 
@@ -285,10 +289,9 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    addWord(context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord }): void {
-        //const list = state.lists.get(listId);
+    [Action.addWord](context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord }): void {
         const list = state.lists[listId];
-        if (list == undefined) {
+        if (list === undefined) {
             return;
         }
 
@@ -299,7 +302,7 @@ const actions = {
 
     // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
 
-    deleteWord(context: CollectionContext, { wordId }: { wordId: string }): void {
+    [Action.deleteWord](context: CollectionContext, { wordId }: { wordId: string }): void {
         const { word, list } = helpers.findWord(context, wordId, true);
 
         if (!word) {
@@ -309,6 +312,25 @@ const actions = {
         context.commit(Mutation.SELECT_WORD, { word, value: false });
         context.commit(Mutation.DELETE_WORD, { list, word });
         actions.writeList(context, list!.id);
+    },
+
+    /**
+     * Move a word from one list to the other give a word id and the target list id.
+     *
+     * @param {CollectionContext} context
+     * @param {{ wordId: string; listId: string }} { wordId, listId } id of the word to move and id of the list to move the word to
+     * @returns {void}
+     */
+    [Action.moveWord](context: CollectionContext, { wordId, listId }: { wordId: string; listId: string }): void {
+        const { word } = helpers.findWord(context, wordId, true);
+        const toList = context.state.lists[listId];
+
+        if (!toList || !word) {
+            return;
+        }
+
+        context.dispatch(Action.deleteWord, { wordId });
+        context.dispatch(Action.addWord, { word, listId: toList.id });
     },
 
     /**
@@ -647,20 +669,31 @@ const helpers = {
         return { word, list };
     },
 
+    /**
+     * Finds and returns the CollectionTree given its id; also returns it direct parent CollectionTree if exists.
+     *
+     * @param {CollectionContext} context context to search in
+     * @param {string} listId list id
+     * @returns {{ parentTree?: CollectionTree; listTree?: CollectionTree }}
+     */
     findTree(context: CollectionContext, listId: string): { parentTree?: CollectionTree; listTree?: CollectionTree } {
+        // create a stack to search through recursively
         const stack: { parent: CollectionTree; list: CollectionTree }[] = [];
         let root: CollectionTree = context.state.index.tree;
 
+        // push to the stack itemo from the top level of the root tree
         stack.push.apply(stack, root.items.map(item => ({ parent: root, list: item })));
 
         // check if the list in the stack has matching id and return it and its parent
         while (stack.length !== 0) {
             const { list, parent } = stack.pop()!;
 
+            // match found - return
             if (list.listId === listId) {
                 return { parentTree: parent, listTree: list };
             }
 
+            // if the tree has children, add them to the stack as well
             if (list.items.length !== 0) {
                 stack.push.apply(stack, list.items.map(item => ({ parent: list, list: item })).reverse());
             }

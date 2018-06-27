@@ -25,6 +25,8 @@
                         :item="item"
                         :mint-list-id="mintListId"
 
+                        v-drag-target="{ payload: item.listId, onDrop: onListItemDrop }"
+
                         @default="setIndexDefaultList"
                         @pinned="setListPinned"
                         @expanded="setIndexExpandedTree"
@@ -47,9 +49,11 @@
  */
 import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import { mixins } from 'vue-class-component';
 
 import CollectionItemV from './collection-item.vue';
 import Treee from './../treee/treee.vue';
+import { DragObject, DragTarget } from '@/am-drag.plugin';
 
 import {
     CollectionState,
@@ -59,6 +63,7 @@ import {
     CollectionWord,
     CollectionListMap
 } from '../../store/modules/collection';
+import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
@@ -70,7 +75,7 @@ const ActionCL = namespace('collection', Action);
         'collection-item': CollectionItemV
     }
 })
-export default class CollectionView extends Vue {
+export default class CollectionView extends mixins(CollectionStateMixin) {
     // #region vuex
 
     @StateCL index: CollectionIndex;
@@ -164,6 +169,15 @@ export default class CollectionView extends Vue {
         this.mintListId = list.id;
         this.addList(list);
     }
+
+    /**
+     * Moves the word from its present list to a new list given the word and list ids.
+     */
+    onListItemDrop(event: MouseEvent, { payload: wordId }: DragObject, { payload: listId }: DragTarget): void {
+        console.log('move item', wordId, 'to', listId);
+
+        this.moveWord({ wordId: wordId as string, listId: listId as string });
+    }
 }
 </script>
 
@@ -197,6 +211,10 @@ export default class CollectionView extends Vue {
         .divider {
             margin-left: calc(0.5rem + 30px);
         }
+    }
+
+    .drag-target-active {
+        border: 1px solid blue;
     }
 }
 </style>

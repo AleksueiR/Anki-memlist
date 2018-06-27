@@ -66,11 +66,11 @@
                 class="cm-scrollbar">
 
                 <list-item
-                    v-drag-object="{ payload: {a: 1}, tags: { container: 'tree' } }"
-
                     v-for="item in getPooledWords"
                     :key="item.id"
                     :word="item"
+
+                    v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
 
                     @select="selectWord"
                     @favourite="setWordFavourite"

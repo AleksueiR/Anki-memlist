@@ -53,7 +53,7 @@ import sources from './../../sources';
 
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
-import { Word, dFetchWods, dSyncWords, rSelectedItem, rItems } from './../../store/modules/words';
+import { Word } from './../../store/modules/words';
 import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
 import { DragObject, DragTarget } from '@/am-drag.plugin';

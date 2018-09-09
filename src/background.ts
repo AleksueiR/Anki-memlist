@@ -15,8 +15,13 @@ let mainWindow: any;
 
 // Standard scheme must be registered before the app is ready
 protocol.registerStandardSchemes(['app'], { secure: true });
+
 function createMainWindow() {
-    const window = new BrowserWindow();
+    const window = new BrowserWindow({
+        width: 1440,
+        height: 820,
+        webPreferences: { webSecurity: false }
+    });
 
     if (isDevelopment) {
         // Load the url of the dev server if in development mode
@@ -35,6 +40,9 @@ function createMainWindow() {
     }
 
     window.on('closed', () => {
+        // Dereference the window object, usually you would store windows
+        // in an array if your app supports multi windows, this is the time
+        // when you should delete the corresponding element.
         mainWindow = null;
     });
 
@@ -63,6 +71,9 @@ app.on('activate', () => {
     }
 });
 
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
 // create main BrowserWindow when electron is ready
 app.on('ready', async () => {
     if (isDevelopment && !process.env.IS_TEST) {

@@ -1,5 +1,10 @@
 {
     "compilerOptions": {
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "removeComments": true,
+        "strictPropertyInitialization": false,
         "target": "esnext",
         "module": "esnext",
         "strict": true,

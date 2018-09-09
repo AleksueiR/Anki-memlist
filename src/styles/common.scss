@@ -1,0 +1,29 @@
+@import './variables.scss';
+
+body {
+    color: $text-colour;
+}
+
+// adds modified scroll-bar to the section
+.cm-scrollbar {
+    overflow: auto;
+
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: lighten(black, 90%);
+        transition: all 0.3s ease;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background-color: lighten(black, 70%);
+    }
+}
+
+.uk-icon {
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}

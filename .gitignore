@@ -27,3 +27,5 @@ yarn-error.log*
 
 /assets
 .token.ts
+#Electron-builder output
+/dist_electron

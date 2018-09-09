@@ -62,8 +62,6 @@ export namespace CollectionState {
 }
 
 export class CollectionState {
-    halp = { feck: false };
-
     index: CollectionIndex;
 
     /**

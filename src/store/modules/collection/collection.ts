@@ -1,4 +1,4 @@
-import { ActionContext, Store } from 'vuex';
+import { ActionContext } from 'vuex';
 
 import storage from '@/api/storage';
 import {
@@ -19,7 +19,7 @@ type CollectionContext = ActionContext<CollectionState, RootState>;
 
 const state: CollectionState = new CollectionState();
 
-enum Action {
+export enum Action {
     performLookup = 'performLookup',
 
     addWord = 'addWord',
@@ -27,7 +27,7 @@ enum Action {
     moveWord = 'moveWord'
 }
 
-enum Mutation {
+export enum Mutation {
     SET_LIST_NAME = 'SET_LIST_NAME',
     DELETE_LIST = 'DELETE_LIST',
 

@@ -1,6 +1,6 @@
 {
-    "name": "poi-test",
-    "version": "0.1.0",
+    "name": "word-pouch",
+    "version": "0.0.1",
     "private": true,
     "scripts": {
         "serve": "vue-cli-service serve",
@@ -9,14 +9,17 @@
         "test:unit": "vue-cli-service test:unit",
         "build:electron": "vue-cli-service build:electron",
         "serve:electron": "vue-cli-service serve:electron",
-        "postinstall": "electron-builder install-app-deps"
+        "postinstall": "electron-builder install-app-deps",
+        "release": "build"
     },
     "dependencies": {
         "artoo-js": "^0.4.0",
         "axios": "^0.18.0",
         "deepmerge": "^2.1.1",
         "electron-json-storage": "^4.1.2",
+        "electron-log": "^2.2.17",
         "electron-settings": "^3.2.0",
+        "electron-updater": "^3.1.2",
         "element-ui": "^2.4.6",
         "fuse-js-latest": "^3.1.0",
         "moment": "^2.22.2",
@@ -32,7 +35,9 @@
         "vue-rx": "^6.0.1",
         "vue-virtual-scroll-list": "^1.2.8",
         "vuex": "^3.0.1",
-        "vuex-class": "^0.3.1"
+        "vuex-class": "^0.3.1",
+        "cheerio": "^1.0.0-rc.2",
+        "loglevel": "^1.6.1"
     },
     "devDependencies": {
         "@types/cheerio": "^0.22.9",
@@ -51,9 +56,7 @@
         "@vue/eslint-config-typescript": "^3.0.1",
         "@vue/test-utils": "^1.0.0-beta.20",
         "babel-core": "7.0.0-bridge.0",
-        "cheerio": "^1.0.0-rc.2",
         "electron": "^2.0.2",
-        "loglevel": "^1.6.1",
         "node-sass": "^4.9.0",
         "sass-loader": "^7.0.1",
         "ts-jest": "^23.0.0",

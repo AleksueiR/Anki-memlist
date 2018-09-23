@@ -6,6 +6,8 @@ import jsonStorage from 'electron-json-storage';
 import { collection } from '@/store/modules/collection/collection';
 import storage from '@/api/storage';
 
+// https://vuex.vuejs.org/guide/testing.html
+
 /* describe('HelloWorld.vue', () => {
     it('renders props.msg when passed', () => {
         const msg = 'new message';

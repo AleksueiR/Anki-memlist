@@ -1,4 +1,4 @@
-# poi-test
+# word-pouch
 
 ## Project setup
 ```

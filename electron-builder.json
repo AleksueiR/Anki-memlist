@@ -1,0 +1,10 @@
+{
+    "appId": "com.github.arex.word-pouch",
+    "publish": [
+        {
+            "provider": "github",
+            "owner": "AleksueiR",
+            "repo": "word-pouch"
+        }
+    ]
+}

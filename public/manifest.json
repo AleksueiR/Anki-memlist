@@ -1,6 +1,6 @@
 {
-    "name": "poi-test",
-    "short_name": "poi-test",
+    "name": "word-pouch",
+    "short_name": "word-pouch",
     "icons": [
         {
             "src": "/img/icons/android-chrome-192x192.png",

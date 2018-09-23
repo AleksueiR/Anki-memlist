@@ -3,12 +3,51 @@ import * as path from 'path';
 import { format as formatUrl } from 'url';
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 
+import log from 'electron-log';
+import { autoUpdater } from 'electron-updater';
+
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 if (isDevelopment) {
     // Don't load any native (external) modules until the following line is run:
     require('module').globalPaths.push(process.env.NODE_MODULES_PATH);
 }
+
+// #region auto-updater1
+
+log.transports.file.level = 'info';
+autoUpdater.logger = log;
+
+log.info('App starting...');
+
+autoUpdater.on('checking-for-update', () => {
+    log.info('Checking for update...');
+});
+
+autoUpdater.on('update-available', (info: any) => {
+    log.info('Update available.', info);
+});
+
+autoUpdater.on('update-not-available', (info: any) => {
+    log.info('Update not available.', info);
+});
+
+autoUpdater.on('error', (err: any) => {
+    log.info('Error in auto-updater. ' + err);
+});
+
+autoUpdater.on('download-progress', (progressObj: any) => {
+    let log_message = 'Download speed: ' + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')';
+    log.info(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info: any) => {
+    log.info('Update downloaded', info);
+});
+
+// #endregion auto-updater
 
 // global reference to mainWindow (necessary to prevent window from being garbage collected)
 let mainWindow: any;
@@ -81,4 +120,6 @@ app.on('ready', async () => {
         await installVueDevtools();
     }
     mainWindow = createMainWindow();
+
+    autoUpdater.checkForUpdatesAndNotify();
 });

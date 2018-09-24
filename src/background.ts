@@ -62,10 +62,18 @@ function createMainWindow() {
         webPreferences: { webSecurity: false }
     });
 
+    // https://discuss.atom.io/t/how-to-get-startup-arguments-from-electron-app/35353/6
+    // https://stackoverflow.com/questions/45485262/how-to-debug-electron-production-binaries
+    // use `--debug` argument to open devtools in production
+    // window.webContents.openDevTools();
+
     if (isDevelopment) {
         // Load the url of the dev server if in development mode
         window.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string);
-        if (!process.env.IS_TEST) window.webContents.openDevTools();
+
+        if (!process.env.IS_TEST) {
+            window.webContents.openDevTools();
+        }
     } else {
         createProtocol('app');
         //   Load the index.html when not in development

@@ -24,8 +24,10 @@ export default class UkDropdownV extends Vue {
 
     @Prop({ default: 'click' })
     mode: string;
+
     @Prop({ default: 'bottom-left' })
     pos: string;
+
     @Prop({ default: 800 })
     delayHide: string;
 
@@ -70,7 +72,6 @@ export default class UkDropdownV extends Vue {
 
 
 <style lang="scss" scoped>
-
 </style>
 
 

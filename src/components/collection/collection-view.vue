@@ -3,13 +3,12 @@
 
         <div class="collection-header uk-flex">
             <span class="title uk-flex-1">Collections</span>
-            <a
-                href="#"
+            <button
                 @click="createNewList"
                 uk-tooltip="delay: 500; title: New"
-                class="uk-icon item-control favourite">
+                class="uk-button uk-button-none">
                 <octo-icon name="plus"></octo-icon>
-            </a>
+            </button>
         </div>
 
         <div class="collection-tree cm-scrollbar uk-margin-small-top uk-flex-1">

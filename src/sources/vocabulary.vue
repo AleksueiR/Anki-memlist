@@ -143,9 +143,7 @@ const scrapeConfig = {
                 audio: {
                     sel: '',
                     method: function($: any) {
-                        return `https://audio.vocab.com/1.0/us/${$(this).attr(
-                            'data-audio'
-                        )}.mp3`;
+                        return `https://audio.vocab.com/1.0/us/${$(this).attr('data-audio')}.mp3`;
                     }
                 }
             }
@@ -153,8 +151,7 @@ const scrapeConfig = {
     },
     wordForms: {
         scrape: {
-            iterator:
-                '.wordforms .definitionNavigator > tbody > tr:nth-child(odd)',
+            iterator: '.wordforms .definitionNavigator > tbody > tr:nth-child(odd)',
             data: function($: any) {
                 return {
                     part: $(this)
@@ -249,11 +246,7 @@ export default class VocabularySource extends Source {
         }
 
         this.definition = await axios
-            .get(
-                `https://www.vocabulary.com/dictionary/definition.ajax?search=${
-                    val.text
-                }&lang=en`
-            )
+            .get(`https://www.vocabulary.com/dictionary/definition.ajax?search=${val.text}&lang=en`)
             .then(this.normalizeDefinition);
     }
 
@@ -290,9 +283,7 @@ export default class VocabularySource extends Source {
         // group senses by part
         scrape.groups.forEach((group: any, index: number) => {
             // map short part names to their full names
-            group.senses.forEach(
-                (sense: any) => (sense.part = partMap[sense.part])
-            );
+            group.senses.forEach((sense: any) => (sense.part = partMap[sense.part]));
 
             const scrapedGroup: DefinitionGroup = new DefinitionGroup(
                 this.groupSensesByPart(group.senses),
@@ -310,10 +301,7 @@ export default class VocabularySource extends Source {
      * Matches pronunciations to corresponding groups if possible; if not, adds all pronunciations or a single pronunciation to all the groups.
      * @returns DefinitionPronunciation[]
      */
-    organizePronunciations(
-        scrape: any,
-        groupIndex: number
-    ): DefinitionPronunciation[] {
+    organizePronunciations(scrape: any, groupIndex: number): DefinitionPronunciation[] {
         const scrapedPronunciations: DefinitionPronunciation[] = [];
 
         // If the number of word forms matches the number of groups, assume each word form belongs to a single group
@@ -321,27 +309,17 @@ export default class VocabularySource extends Source {
             const pronunciation = scrape.wordForms[groupIndex];
             // each word form can reference several parts
             pronunciation.part.split('').forEach((part: string) => {
-                scrapedPronunciations.push(
-                    new DefinitionPronunciation(part, [], [pronunciation.audio])
-                );
+                scrapedPronunciations.push(new DefinitionPronunciation(part, [], [pronunciation.audio]));
             });
         } else if (scrape.wordForms.length > 0) {
             scrape.wordForms.forEach((pronunciation: any) => {
                 pronunciation.part.split('').forEach((part: string) => {
-                    scrapedPronunciations.push(
-                        new DefinitionPronunciation(
-                            part,
-                            [],
-                            [pronunciation.audio]
-                        )
-                    );
+                    scrapedPronunciations.push(new DefinitionPronunciation(part, [], [pronunciation.audio]));
                 });
             });
         } else {
             const pronunciation = scrape.pronunciations[0];
-            scrapedPronunciations.push(
-                new DefinitionPronunciation('', [], [pronunciation.audio])
-            );
+            scrapedPronunciations.push(new DefinitionPronunciation('', [], [pronunciation.audio]));
         }
 
         return scrapedPronunciations;
@@ -352,9 +330,7 @@ export default class VocabularySource extends Source {
             // vocabulary.com stores `part` name on `sense` object; need to move it to `part`
             const partName: string = sense.part;
 
-            let scrapedPart: DefinitionPart | undefined = parts.find(
-                (part: DefinitionPart) => part.name === partName
-            );
+            let scrapedPart: DefinitionPart | undefined = parts.find((part: DefinitionPart) => part.name === partName);
 
             if (!scrapedPart) {
                 scrapedPart = new DefinitionPart(partName);

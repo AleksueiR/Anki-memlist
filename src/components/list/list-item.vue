@@ -11,7 +11,7 @@
         <template v-if="!isRenaming">
             <a
                 href="#"
-                @click.stop="toggleFavourite"
+                @click.stop.prevent="toggleFavourite"
                 uk-tooltip="delay: 500; title: Favourite"
                 class="uk-icon uk-position-center-left item-control favourite"
                 v-if="isTargeted || word.favourite"
@@ -26,7 +26,7 @@
                 <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
-                    @click.stop="vnull"
+                    @click.stop.prevent="vnull"
                     class="uk-icon item-control">
                     <octo-icon name="kebab-horizontal"></octo-icon>
                 </a>
@@ -40,7 +40,7 @@
 
                         <li :class="{ 'uk-active': word.favourite }">
                             <a href="#" class="uk-flex uk-flex-middle"
-                                @click.stop="toggleFavourite">
+                                @click.stop.prevent="toggleFavourite">
 
                                 <span class="uk-flex-1">Favourite</span>
                                 <octo-icon name="check" v-if="word.favourite"></octo-icon>
@@ -49,7 +49,7 @@
 
                         <li :class="{ 'uk-active': word.archived }">
                             <a href="#" class="uk-flex uk-flex-middle"
-                                @click.stop="toggleArchived">
+                                @click.stop.prevent="toggleArchived">
 
                                 <span class="uk-flex-1">Archived</span>
                                 <octo-icon name="check" v-if="word.archived"></octo-icon>
@@ -58,9 +58,9 @@
 
                         <li class="uk-nav-divider"></li>
 
-                        <li><a href="#">Edit</a></li>
-                        <li><a href="#" @click.stop="deleteWord">Delete</a></li>
-                        <li><a href="#">Move</a></li>
+                        <li><a href="#" @click.stop.prevent="vnull">Edit</a></li>
+                        <li><a href="#" @click.stop.prevent="deleteWord">Delete</a></li>
+                        <li><a href="#" @click.stop.prevent="vnull">Move</a></li>
 
                     </ul>
 
@@ -69,6 +69,7 @@
                 <a
                     href="#"
                     uk-tooltip="delay: 500; title: Archive"
+                    @click.stop.prevent="vnull"
                     class=" uk-icon item-control">
                     <octo-icon name="check"></octo-icon>
                 </a>

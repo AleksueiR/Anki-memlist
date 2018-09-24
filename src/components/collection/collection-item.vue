@@ -22,7 +22,7 @@
             <a
                 href="#"
                 uk-tooltip="delay: 1500; title: Pin"
-                @click.stop="togglePinned"
+                @click.stop.prevent="togglePinned"
                 :class="{ active: list.pinned }"
                 class="uk-icon item-control default"
                 v-if="(isTargeted || list.pinned) && !isDefault">
@@ -39,7 +39,7 @@
                 <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
-                    @click.stop="vnull"
+                    @click.stop.prevent="vnull"
                     class="uk-icon item-control">
 
                     <octo-icon name="kebab-horizontal"></octo-icon></a>
@@ -54,7 +54,7 @@
 
                         <li :class="{ 'uk-active': list.pinned }">
                             <a href="#" class="uk-flex uk-flex-middle"
-                                @click.stop="togglePinned">
+                                @click.stop.prevent="togglePinned">
 
                                 <span class="uk-flex-1">Pinned</span>
                                 <octo-icon name="check" v-if="list.pinned"></octo-icon>
@@ -63,7 +63,7 @@
 
                         <li :class="{ 'uk-active': list.hidden }">
                             <a href="#" class="uk-flex uk-flex-middle"
-                                @click.stop="toggleHidden">
+                                @click.stop.prevent="toggleHidden">
 
                                 <span class="uk-flex-1">Hidden</span>
                                 <octo-icon name="check" v-if="list.hidden"></octo-icon>
@@ -72,7 +72,7 @@
 
                         <li :class="{ 'uk-active': isDefault }">
                             <a href="#" class="uk-flex uk-flex-middle"
-                                @click.stop="setDefault">
+                                @click.stop.prevent="setDefault">
 
                                 <span class="uk-flex-1">Default</span>
                                 <octo-icon name="check" v-if="isDefault"></octo-icon>
@@ -81,8 +81,8 @@
 
                         <li class="uk-nav-divider"></li>
 
-                        <li><a href="#">Edit</a></li>
-                        <li><a href="#" @click.stop="deleteList">Delete</a></li>
+                        <li><a href="#" @click.stop.prevent="vnull">Edit</a></li>
+                        <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
 
                     </ul>
 

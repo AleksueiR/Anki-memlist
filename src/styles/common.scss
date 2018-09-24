@@ -27,3 +27,25 @@ body {
     justify-content: center;
     display: flex;
 }
+
+// buttons without border and usually with an icon
+.uk-button-none {
+    align-items: center;
+    justify-content: center;
+    display: flex;
+
+    padding: 0;
+    line-height: 1.5;
+    background: 0 0;
+
+    // change color of the svg icon inside the button
+    &:hover {
+        fill: $accent-colour;
+    }
+}
+
+/* .uk-button {
+    align-items: center;
+    justify-content: center;
+    display: flex;
+} */

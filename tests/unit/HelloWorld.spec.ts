@@ -26,12 +26,16 @@ jest.mock('@/api/storage');
 jest.mock('@/api/storage'); */
 
 describe('HelloWorld.vue', () => {
-    it('renders props.msg when passed', () => {
+    it('renders props.msg when passed', async () => {
         /* (storage.hasCollection as any).get.mockResolvedValue(Promise.resolve(false)); */
 
-        console.log(storage.hasCollection());
+        const hasCollection = await storage.hasCollection();
 
-        collection.actions.fetchIndex({} as any);
+        expect(hasCollection).toBe(false);
+
+        /* console.log(storage.hasCollection());
+
+        collection.actions.fetchIndex({} as any); */
 
         /* const msg = 'new message';
         const wrapper = shallowMount(HelloWorld, {

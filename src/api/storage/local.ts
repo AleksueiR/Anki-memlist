@@ -49,11 +49,8 @@ const local: Storage = {
             map[list.id] = list;
             return map;
         }, {});
-        /* const lists = new Map(
-            listArray.map<[string, CollectionList]>(list => [list.id, list])
-        ); */
 
-        return Promise.resolve(new CollectionState({ index, lists }));
+        return new CollectionState({ index, lists });
     },
 
     saveCollection(state: CollectionState): Promise<void> {
@@ -95,12 +92,17 @@ const local: Storage = {
         return promise;
     },
 
+    /**
+     * Loads the collection index file.
+     *
+     * @returns {Promise<CollectionIndex>} collection index
+     */
     loadIndex(): Promise<CollectionIndex> {
+        // TODO: handle errors
         const promise = new Promise<CollectionIndex>((resolve, reject) => {
-            jsonStorage.get(indexFileName(), (error, data: CollectionIndexOptions) => {
-                // TODO: handle errors
-                resolve(new CollectionIndex(data));
-            });
+            jsonStorage.get(indexFileName(), (error, data: CollectionIndexOptions) =>
+                resolve(new CollectionIndex(data))
+            );
         });
 
         return promise;
@@ -110,19 +112,8 @@ const local: Storage = {
         const promise = new Promise<CollectionList>((resolve, reject) => {
             jsonStorage.get(listFileName(listId), (error, data: CollectionListOptions) => {
                 // convert word dictionary into a proper Map of CollectionWord object
-                /* data.words = new Map(
-                        Array.from(Object.values(data.words)).map<
-                            [string, CollectionWord]
-                        >(word => [word.id, new CollectionWord(word)])
-                    ); */
-
-                /* data.words = new Map(
-                        Array.from(Object.values(data.words)).map<
-                            [string, CollectionWord]
-                        >(word => [word.id, new CollectionWord(word)])
-                    ); */
-
                 // type words in the dictionary
+
                 data.words = Object.values(data.words!).reduce(
                     (map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
                         const word = new CollectionWord(wordOptions);

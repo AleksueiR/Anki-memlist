@@ -73,7 +73,8 @@ const ActionCL = namespace('collection', Action);
     )
 })
 export default class WordList extends mixins(CollectionStateMixin) {
-    @Prop() id: string;
+    @Prop()
+    id: string;
 
     activeTab: string = 'first';
 
@@ -265,7 +266,7 @@ header {
 
                 .divider {
                     flex: 1;
-                    border-bottom: 1px solid $even-darker-secondary-colour;
+                    border-bottom: 1px solid $very-dark-secondary-colour;
                     height: 0.4em;
                     margin: 0 1.5rem 0 1em;
                 }

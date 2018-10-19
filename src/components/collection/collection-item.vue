@@ -2,24 +2,42 @@
 
     <!-- TODO: use https://github.com/DominikSerafin/vuebar for scrollbar  -->
 
-    <div class="collection-item uk-flex uk-flex-middle"
-        :class="{ selected: isSelected }"
+    <div class="list-item"
+        :class="{ hover: isHovered || isTargeted, selected: isSelected }"
         tabindex="0"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false">
 
         <span class="highlight"></span>
 
-        <template v-if="!isRenaming">
+        <template v-if="isRenaming">
+
+             <rename-input
+                v-model="newName"
+                @blur.native="cancelRename(false)">
+            </rename-input>
+
+        </template>
+
+        <template v-else>
 
             <span
+                class="uk-icon list-item-control first active"
                 uk-tooltip="delay: 1500; title: Default list"
-                class="uk-icon uk-position-center-left item-control default active"
                 v-if="isDefault">
                 <octo-icon name="bookmark"></octo-icon>
             </span>
 
-            <a
+            <button
+                @click="togglePinned"
+                uk-tooltip="delay: 500; title: Pin"
+                class="uk-button uk-button-none list-item-control first"
+                v-if="(isTargeted || list.pinned) && !isDefault"
+                :class="{ active: list.pinned }">
+                <octo-icon name="pin"></octo-icon>
+            </button>
+
+            <!-- <a
                 href="#"
                 uk-tooltip="delay: 1500; title: Pin"
                 @click.stop.prevent="togglePinned"
@@ -27,23 +45,35 @@
                 class="uk-icon item-control default"
                 v-if="(isTargeted || list.pinned) && !isDefault">
                 <octo-icon name="pin"></octo-icon>
-            </a>
+            </a> -->
 
             <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
-            <span class="item-text">{{ list.name }}</span>
-            <span
-                class="item-control item-word-count uk-flex-1 uk-text-muted"
-                :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
+            <span class="list-item-text">
+                {{ list.name }}
+
+                <span
+                    class="list-item-control item-word-count uk-text-muted"
+                    :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
+            </span>
+
+
 
             <template v-if="isTargeted">
-                <a
+                <!-- <a
                     href="#"
                     uk-tooltip="delay: 1500; title: View menu"
                     @click.stop.prevent="vnull"
                     class="uk-icon item-control">
 
-                    <octo-icon name="kebab-horizontal"></octo-icon></a>
+                    <octo-icon name="kebab-horizontal"></octo-icon></a> -->
 
+                <button
+                    @click="vnull"
+                    uk-tooltip="delay: 500; title: View menu"
+                    class="uk-button uk-button-none list-item-control"
+                    v-if="isTargeted">
+                    <octo-icon name="kebab-horizontal"></octo-icon>
+                </button>
                 <uk-dropdown
                     :pos="'right-center'"
                     :delay-hide="0"
@@ -53,28 +83,28 @@
                     <ul class="uk-nav uk-dropdown-nav">
 
                         <li :class="{ 'uk-active': list.pinned }">
-                            <a href="#" class="uk-flex uk-flex-middle"
+                            <a href="#" class="uk-nav-check"
                                 @click.stop.prevent="togglePinned">
 
-                                <span class="uk-flex-1">Pinned</span>
+                                <span>Pinned</span>
                                 <octo-icon name="check" v-if="list.pinned"></octo-icon>
                             </a>
                         </li>
 
                         <li :class="{ 'uk-active': list.hidden }">
-                            <a href="#" class="uk-flex uk-flex-middle"
+                            <a href="#" class="uk-nav-check"
                                 @click.stop.prevent="toggleHidden">
 
-                                <span class="uk-flex-1">Hidden</span>
+                                <span>Hidden</span>
                                 <octo-icon name="check" v-if="list.hidden"></octo-icon>
                             </a>
                         </li>
 
                         <li :class="{ 'uk-active': isDefault }">
-                            <a href="#" class="uk-flex uk-flex-middle"
+                            <a href="#" class="uk-nav-check"
                                 @click.stop.prevent="setDefault">
 
-                                <span class="uk-flex-1">Default</span>
+                                <span>Default</span>
                                 <octo-icon name="check" v-if="isDefault"></octo-icon>
                             </a>
                         </li>
@@ -90,22 +120,22 @@
 
             </template>
 
-            <a
+
+            <button
+                @click.stop="toggleExpand"
+                uk-tooltip="delay: 500; title: Expand"
+                class="uk-button uk-button-none list-item-control"
+                :class="{ 'uk-invisible': item.items.length === 0}">
+
+                <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
+            </button>
+
+            <!-- <a
                 href="#"
                 class="uk-icon item-control"
                 :class="{ 'uk-invisible': item.items.length === 0}"
-                @click.stop="toggleExpand">
-                <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
-            </a>
-
-        </template>
-
-        <template v-else>
-
-             <rename-input
-                v-model="newName"
-                @blur.native="cancelRename(false)">
-            </rename-input>
+                @click.stop.prevent="toggleExpand">
+            </a> -->
 
         </template>
 
@@ -135,7 +165,6 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        // FontAwesomeIcon,
         'uk-dropdown': UkDropdownV,
         'rename-input': RenameInputV
     },
@@ -172,16 +201,20 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     emDelete(payload: { listId: string }) {}
 
     // passed in CollectionTree object
-    @Prop() item: CollectionTree;
+    @Prop()
+    item: CollectionTree;
 
     // id of the newly created, mint list; trigger auto-renaming
-    @Prop() mintListId: string;
+    @Prop()
+    mintListId: string;
 
     // an array of selected lists
-    @StateCL selectedLists: CollectionList[];
+    @StateCL
+    selectedLists: CollectionList[];
 
     // a object map of all lists available
-    @StateCL lists: CollectionListMap;
+    @StateCL
+    lists: CollectionListMap;
 
     // the id of the default list
     @StateCL((state: CollectionState) => state.index.defaultListId)
@@ -257,8 +290,9 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
+@import './../../styles/collection-pool';
 
-.collection-item {
+/* .collection-item {
     position: relative;
 
     height: 30px;
@@ -287,13 +321,13 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     .selected & {
         font-weight: 500;
     }
-}
+} */
 
-.item-word-count {
+/* .item-word-count {
     line-height: 30px;
-}
+} */
 
-.item-control {
+/* .item-control {
     padding: 0 0.5rem;
 
     &.default {
@@ -308,12 +342,12 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 
 .uk-nav a.uk-flex {
     display: flex !important;
-}
+} */
 
 $base-indent: 1rem;
 
 @for $i from 0 through 10 {
-    .item-text {
+    .list-item-text {
         .level-#{$i} & {
             padding-left: $i * $base-indent;
         }
@@ -326,7 +360,7 @@ $base-indent: 1rem;
     }
 }
 
-.collection-item {
+._list-item {
     &.selected .highlight {
         background-color: rgba($color: $accent-colour, $alpha: 0.1);
         // border-left: 2px solid $accent-colour;

@@ -12,7 +12,7 @@
 
         <span v-show="isCollectionViewOpen" class="divider"></span>
 
-        <list-view></list-view>
+        <pool-view></pool-view>
 
         <span class="divider"></span>
 
@@ -32,7 +32,7 @@ import { mixins } from 'vue-class-component';
 
 import collectionToolbarV from '@/components/collection/collection-toolbar.vue';
 import collectionView from './collection/collection-view.vue';
-import listView from './list/list-view.vue';
+import poolViewV from './pool/pool-view.vue';
 import wordEditor from './editor/word-editor.vue';
 // import settings from './dialogs/settings.vue';
 // import bulkimport from './dialogs/bulk-import.vue';
@@ -61,7 +61,7 @@ const ActionCL = namespace('collection', Action);
     components: {
         'collection-toolbar': collectionToolbarV,
         collectionView,
-        listView,
+        'pool-view': poolViewV,
         wordEditor
 
         // settings,
@@ -72,19 +72,25 @@ export default class App extends mixins(AppStateMixin) {
     /* @ModuleGetter('items') wordItems: any[];
     @Mutation('selectWord') selectWord: (item: string | null) => void; */
 
-    @StateCL('index') index: CollectionIndex;
-    @StateCL('lists') lists: CollectionListMap;
+    @StateCL('index')
+    index: CollectionIndex;
+    @StateCL('lists')
+    lists: CollectionListMap;
 
     /* @StateCL((state: CollectionState) =>
         Array.from(state.lists.values())
     )
     lists: CollectionList[]; */
 
-    @StateCL('selectedLists') selectedLists: CollectionList[];
+    @StateCL('selectedLists')
+    selectedLists: CollectionList[];
 
-    @ActionCL('fetchIndex') fetchIndex: () => void;
-    @ActionCL('addList') addList: (list: CollectionList) => void;
-    @ActionCL('selectList') selectList: (options: { listId: string }) => void;
+    @ActionCL('fetchIndex')
+    fetchIndex: () => void;
+    @ActionCL('addList')
+    addList: (list: CollectionList) => void;
+    @ActionCL('selectList')
+    selectList: (options: { listId: string }) => void;
 
     @Watch('isSettingsOpen')
     onIsSettingsOpenChange(value: boolean): void {
@@ -123,7 +129,7 @@ export default class App extends mixins(AppStateMixin) {
 </script>
 
 <style lang="scss">
-@import './../styles/common.scss';
+@import './../styles/common';
 @import './../../node_modules/uikit/dist/css/uikit.min.css';
 </style>
 

@@ -37,7 +37,20 @@ export enum Mutation {
     DESELECT_ALL_WORDS = 'DESELECT_ALL_WORDS',
 
     SET_LOOKUP_VALUE = 'SET_LOOKUP_VALUE',
-    SET_LOOKUP_RESULTS = 'SET_LOOKUP_RESULTS'
+    SET_LOOKUP_RESULTS = 'SET_LOOKUP_RESULTS',
+    SET_INDEX = 'SET_INDEX',
+    SET_LISTS = 'SET_LISTS',
+    SET_INDEX_DEFAULT_LIST = 'SET_INDEX_DEFAULT_LIST',
+    SET_INDEX_EXPANDED_TREE = 'SET_INDEX_EXPANDED_TREE',
+    SET_INDEX_TREE = 'SET_INDEX_TREE',
+    ADD_LIST = 'ADD_LIST',
+    SELECT_LIST = 'SELECT_LIST',
+    DESELECT_ALL_LISTS = 'DESELECT_ALL_LISTS',
+    SET_LIST_PINNED = 'SET_LIST_PINNED',
+    ADD_WORD = 'ADD_WORD',
+    SET_WORD_FAVOURITE = 'SET_WORD_FAVOURITE',
+    SET_WORD_ARCHIVED = 'SET_WORD_ARCHIVED',
+    SET_WORD_NOTES = 'SET_WORD_NOTES'
 }
 
 const getters = {
@@ -413,7 +426,7 @@ const actions = {
             return;
         }
 
-        context.commit('SET_WORD_ARCHIVED', { word, value });
+        context.commit(Mutation.SET_WORD_ARCHIVED, { word, value });
         actions.writeList(context, list.id);
     },
 
@@ -506,31 +519,34 @@ const actions = {
 const mutations = {
     // #region EDIT INDEX
 
-    SET_INDEX(state: CollectionState, index: CollectionIndex): void {
+    [Mutation.SET_INDEX](state: CollectionState, index: CollectionIndex): void {
         state.index = index;
     },
 
-    SET_LISTS(state: CollectionState, lists: CollectionListMap): void {
+    [Mutation.SET_LISTS](state: CollectionState, lists: CollectionListMap): void {
         state.lists = lists;
     },
 
-    SET_INDEX_DEFAULT_LIST(state: CollectionState, { list }: { list: CollectionList }): void {
+    [Mutation.SET_INDEX_DEFAULT_LIST](state: CollectionState, { list }: { list: CollectionList }): void {
         state.index.defaultListId = list.id;
     },
 
-    SET_INDEX_EXPANDED_TREE(state: CollectionState, { tree, value }: { tree: CollectionTree; value: boolean }): void {
+    [Mutation.SET_INDEX_EXPANDED_TREE](
+        state: CollectionState,
+        { tree, value }: { tree: CollectionTree; value: boolean }
+    ): void {
         tree.expanded = value;
     },
 
-    SET_INDEX_TREE(state: CollectionState, { tree }: { tree: CollectionTree }) {
+    [Mutation.SET_INDEX_TREE](state: CollectionState, { tree }: { tree: CollectionTree }) {
         state.index.tree = tree;
     },
 
-    ADD_LIST(state: CollectionState, { tree, list }: { tree: CollectionTree; list: CollectionList }): void {
+    [Mutation.ADD_LIST](state: CollectionState, { tree, list }: { tree: CollectionTree; list: CollectionList }): void {
         state.addList(tree, list);
     },
 
-    SELECT_LIST(state: CollectionState, { list, value }: { list: CollectionList; value?: boolean }): void {
+    [Mutation.SELECT_LIST](state: CollectionState, { list, value }: { list: CollectionList; value?: boolean }): void {
         const index = state.selectedLists.findIndex(selectedList => selectedList.id === list.id);
 
         // if no value specified, toggle the state of the list
@@ -547,7 +563,7 @@ const mutations = {
         }
     },
 
-    DESELECT_ALL_LISTS(state: CollectionState): void {
+    [Mutation.DESELECT_ALL_LISTS](state: CollectionState): void {
         state.selectedLists.splice(0);
     },
 
@@ -566,11 +582,14 @@ const mutations = {
         list.name = value;
     },
 
-    SET_LIST_PINNED(state: CollectionState, { list, value }: { list: CollectionList; value: boolean }): void {
+    [Mutation.SET_LIST_PINNED](
+        state: CollectionState,
+        { list, value }: { list: CollectionList; value: boolean }
+    ): void {
         list.pinned = value;
     },
 
-    ADD_WORD(state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
+    [Mutation.ADD_WORD](state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
         list.addWord(word);
     },
 
@@ -595,15 +614,21 @@ const mutations = {
         word.text = value;
     },
 
-    SET_WORD_FAVOURITE(state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
+    [Mutation.SET_WORD_FAVOURITE](
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
         word.favourite = value;
     },
 
-    SET_WORD_ARCHIVED(state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
+    [Mutation.SET_WORD_ARCHIVED](
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
         word.archived = value;
     },
 
-    SET_WORD_NOTES(state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
+    [Mutation.SET_WORD_NOTES](state: CollectionState, { word, value }: { word: CollectionWord; value: string }): void {
         word.notes = value;
     },
 

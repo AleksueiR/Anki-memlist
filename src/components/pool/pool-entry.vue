@@ -1,35 +1,50 @@
 <template>
 
     <!-- TODO: add a proper hightlight like in collection-item -->
-    <div class="list-item uk-flex uk-flex-middle"
-        tabindex="0"
+    <div class="list-item"
         @click="select"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false"
-        :class="{ hover: isHovered || isTargeted, selected: isSelected }">
+        :class="{ hover: isHovered || isTargeted, selected: isSelected, focused: isFocused }">
 
-        <template v-if="!isRenaming">
-            <a
-                href="#"
-                @click.stop.prevent="toggleFavourite"
+        <template v-if="isRenaming">
+
+            <rename-input
+                v-model="newName"
+                @blur.native="cancelRename(false)">
+            </rename-input>
+
+        </template>
+
+        <template v-else>
+            <button
+                @click="toggleFavourite"
                 uk-tooltip="delay: 500; title: Favourite"
-                class="uk-icon uk-position-center-left item-control favourite"
+                class="uk-button uk-button-none list-item-control first"
                 v-if="isTargeted || word.favourite"
                 :class="{ active: word.favourite }">
                 <octo-icon name="star"></octo-icon>
-            </a>
+            </button>
 
-            <span class="item-text uk-flex-1">{{ word.text }}</span>
+            <span class="list-item-text">{{ word.text }}</span>
+
+            <span
+                class="uk-icon list-item-control"
+                uk-tooltip="delay: 1500; title: Has notes"
+                v-show="!isTargeted"
+                v-if="word.hasNotes">
+                <octo-icon name="comment"></octo-icon>
+            </span>
 
             <template v-if="isTargeted">
 
-                <a
-                    href="#"
-                    uk-tooltip="delay: 1500; title: View menu"
-                    @click.stop.prevent="vnull"
-                    class="uk-icon item-control">
+                <button
+                    @click="vnull"
+                    uk-tooltip="delay: 500; title: View menu"
+                    class="uk-button uk-button-none list-item-control"
+                    v-if="isTargeted">
                     <octo-icon name="kebab-horizontal"></octo-icon>
-                </a>
+                </button>
                 <uk-dropdown
                     :pos="'right-center'"
                     :delay-hide="0"
@@ -39,19 +54,19 @@
                     <ul class="uk-nav uk-dropdown-nav">
 
                         <li :class="{ 'uk-active': word.favourite }">
-                            <a href="#" class="uk-flex uk-flex-middle"
+                            <a href="#" class="uk-nav-check"
                                 @click.stop.prevent="toggleFavourite">
 
-                                <span class="uk-flex-1">Favourite</span>
+                                <span>Favourite</span>
                                 <octo-icon name="check" v-if="word.favourite"></octo-icon>
                             </a>
                         </li>
 
                         <li :class="{ 'uk-active': word.archived }">
-                            <a href="#" class="uk-flex uk-flex-middle"
+                            <a href="#" class="uk-nav-check"
                                 @click.stop.prevent="toggleArchived">
 
-                                <span class="uk-flex-1">Archived</span>
+                                <span>Archived</span>
                                 <octo-icon name="check" v-if="word.archived"></octo-icon>
                             </a>
                         </li>
@@ -66,30 +81,16 @@
 
                 </uk-dropdown>
 
-                <a
-                    href="#"
-                    uk-tooltip="delay: 500; title: Archive"
-                    @click.stop.prevent="vnull"
-                    class=" uk-icon item-control">
-                    <octo-icon name="check"></octo-icon>
-                </a>
             </template>
 
-            <span
-                class="uk-icon item-control"
-                v-show="!isTargeted"
-                v-if="word.hasNotes">
-                <octo-icon name="comment"></octo-icon>
-            </span>
-        </template>
-
-        <template v-else>
-
-            <rename-input
-                v-model="newName"
-                @blur.native="cancelRename(false)">
-            </rename-input>
-
+            <button
+                @click="toggleArchived"
+                uk-tooltip="delay: 500; title: Archive"
+                class="uk-button uk-button-none list-item-control"
+                v-if="isTargeted || word.archived"
+                :class="{ active: word.archived }">
+                <octo-icon name="check"></octo-icon>
+            </button>
         </template>
 
     </div>
@@ -114,7 +115,7 @@ const GetterCL = namespace('collection', Getter);
         'rename-input': RenameInputV
     }
 })
-export default class WordItem extends mixins(RenameMixin) {
+export default class ListEntryV extends mixins(RenameMixin) {
     @Emit('select')
     emSelect(payload: { wordId: string; append: boolean }) {}
 
@@ -127,9 +128,14 @@ export default class WordItem extends mixins(RenameMixin) {
     @Emit('delete')
     emDelete(payload: { wordId: string }) {}
 
-    @StateCL selectedWords: CollectionWord[];
+    @StateCL
+    selectedWords: CollectionWord[];
 
-    @Prop() word: CollectionWord;
+    @Prop()
+    isFocused: boolean;
+
+    @Prop()
+    word: CollectionWord;
 
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
@@ -145,7 +151,7 @@ export default class WordItem extends mixins(RenameMixin) {
     }
 
     /**
-     * Indicates that this item is enhaged: either is hovered or over its menu is opened.
+     * Indicates that this item is engaged: either is hovered or over its menu is opened.
      */
     get isTargeted(): boolean {
         return this.isHovered || this.isMenuOpened;
@@ -176,54 +182,9 @@ export default class WordItem extends mixins(RenameMixin) {
 </script>
 
 <style lang="scss" scoped>
-@import './../../styles/variables';
+@import './../../styles/collection-pool';
 
-.list-item {
-    position: relative;
-
-    height: 30px;
-    font-size: 0.8rem;
-
-    outline: none;
-
-    &.selected {
-        background-color: rgba($color: $accent-colour, $alpha: 0.1);
-        // border-right: 4px solid $accent-colour;
-    }
-
-    &.hover {
-        // TODO: add proper higlight like in collection item
-        // !important should not be used here
-        background-color: $secondary-colour !important;
-    }
-}
-
-.item-text {
-    line-height: 30px;
-    margin-left: calc(0.5rem + 30px);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    user-select: none;
-    pointer-events: none;
-
-    .selected & {
-        font-weight: 500;
-    }
-}
-
-.item-control {
-    padding: 0 0.5rem;
-
-    &.favourite {
-        left: 0.25rem;
-    }
-
-    &.active {
-        color: $accent-colour;
-    }
-}
-
+// needed for the menu?
 .uk-nav a.uk-flex {
     display: flex !important;
 }

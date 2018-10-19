@@ -1,0 +1,74 @@
+@import './../../styles/variables';
+
+.list-item {
+    display: flex;
+    align-items: center;
+
+    position: relative;
+
+    height: 2rem;
+    font-size: 0.8rem;
+
+    outline: none;
+
+    &.selected {
+        background-color: $secondary-colour !important;
+        // background-color: rgba($color: $accent-colour, $alpha: 0.1);
+        // border-right: 4px solid $accent-colour;
+
+        &.focused {
+            background-color: rgba($color: $accent-colour, $alpha: 0.2);
+        }
+    }
+
+    &.hover:not(.selected):not(.focused) {
+        // TODO: add proper higlight like in collection item
+        // !important should not be used here
+        background-color: $light-secondary-colour !important;
+    }
+
+    &.focused:not(.selected) {
+        background-color: rgba($color: $accent-colour, $alpha: 0.2);
+    }
+
+    &:focus {
+        border: 1px red solid;
+    }
+}
+
+.list-item-text {
+    color: $text-colour;
+
+    flex: 1;
+
+    line-height: 2rem;
+    margin-left: calc(0.5rem + 2rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    user-select: none;
+    pointer-events: none;
+
+    .selected & {
+        color: $very-dark-text-colour;
+    }
+}
+
+.list-item-control {
+    fill: $very-dark-secondary-colour;
+
+    padding: 0 0.5rem;
+
+    &.active {
+        fill: $text-colour;
+    }
+
+    &.first {
+        position: absolute;
+        padding: 0 0.75rem;
+
+        &.active {
+            fill: $accent-colour;
+        }
+    }
+}

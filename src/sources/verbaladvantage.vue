@@ -12,10 +12,13 @@
 </template>
 
 <script lang="ts">
-const vaWords: { [name: string]: VAWord } = {};
-
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+
+import vaWords from '@/../assets/full-list.json';
+
+type VAList = { [name: string]: VAWord };
+// const vaWords: { [name: string]: VAWord } = {};
 
 import loglevel from 'loglevel';
 const log: loglevel.Logger = loglevel.getLogger(`source`);
@@ -84,7 +87,7 @@ export default class VerbalAdvantageSource extends Source {
     }
 
     get vaWord(): VAWord | null {
-        return vaWords[this.normalizedWord] || null;
+        return (<VAList>vaWords)[this.normalizedWord] || null;
     }
 }
 </script>

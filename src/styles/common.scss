@@ -40,7 +40,19 @@ body {
 
     // change color of the svg icon inside the button
     &:hover {
-        fill: $accent-colour;
+        fill: $accent-colour !important;
+    }
+}
+
+.uk-dropdown-nav {
+    // styles checkobx items in the dropdown menus
+    .uk-nav-check {
+        display: flex;
+        align-items: center;
+
+        span {
+            flex: 1;
+        }
     }
 }
 

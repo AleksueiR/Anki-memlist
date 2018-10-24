@@ -2,9 +2,9 @@
     <div class="treee-root" role="tree"
         :class="{ dragging: dragItem }">
 
+            <!-- :renderer="renderer" -->
         <treee-node
             v-for="(item, index) in items"
-            :renderer="renderer"
             :item="item"
             :level="0"
             :index="index"
@@ -60,7 +60,8 @@ export default class Treee extends Vue {
 
     items: object[] = [];
 
-    @Prop() value: object[];
+    @Prop()
+    value: object[];
 
     @Watch('value')
     onValueChanged() {
@@ -70,9 +71,11 @@ export default class Treee extends Vue {
         this.stopDrag();
     }
 
-    @Prop() renderer: Vue;
+    /* @Prop()
+    renderer: Vue; */
 
-    @Prop() draggable: boolean;
+    @Prop()
+    draggable: boolean;
 
     dragOrigin: TreeDragItem | null = null;
     dragItem: TreeDragItem | null = null;

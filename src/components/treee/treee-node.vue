@@ -40,9 +40,11 @@
 
         <div class="children" role="group"
             v-if="item.expanded">
+
+            <!-- :renderer="renderer" -->
             <treee-node
                 v-for="(subItem, index) in item.items"
-                :renderer="renderer"
+
                 :item="subItem"
                 :level="level + 1"
                 :index="index"
@@ -68,13 +70,20 @@ import { Vue, Component, Inject, Model, Prop, Watch } from 'vue-property-decorat
 import { CollectionTree } from './../../store/modules/collection/index';
 import Treee, { TreeDragItem, TreeDropTarget, TreeeDropPosition } from './treee.vue';
 
-@Component
+// NOTE: without an explicit name here, packaged electron app would not render recursively nested components (treee-node)
+@Component({
+    name: 'treee-node'
+})
 export default class TreeeNode extends Vue {
-    @Prop() renderer: Vue;
-    @Prop() item: CollectionTree;
-    @Prop() level: number;
-    @Prop() index: number;
-    @Prop() isLast: boolean;
+    // @Prop() renderer: Vue;
+    @Prop()
+    item: CollectionTree;
+    @Prop()
+    level: number;
+    @Prop()
+    index: number;
+    @Prop()
+    isLast: boolean;
 
     treee: Treee;
 

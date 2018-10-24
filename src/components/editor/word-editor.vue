@@ -9,9 +9,9 @@
         <header>
             <h1 class="title" v-if="word">{{ word.text }}</h1>
 
-            <div class="controls">
+            <!-- <div class="controls">
                 <word-menu></word-menu>
-            </div>
+            </div> -->
         </header>
 
         <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut, onDrop: onDrop }">
@@ -54,7 +54,7 @@ import sources from './../../sources';
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
 import { Word } from './../../store/modules/words';
-import wordMenu from './../list/word-menu.vue';
+// import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
 
@@ -66,7 +66,7 @@ const ActionCL = namespace('collection', Action);
     components: Object.assign(
         {},
         {
-            wordMenu: wordMenu
+            // wordMenu: wordMenu
             // 'quill-editor': QuillEditor
         },
         sources

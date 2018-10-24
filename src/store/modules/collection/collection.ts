@@ -418,7 +418,7 @@ const actions = {
 
     setWordArchived(
         context: CollectionContext,
-        { wordId, value, searchAll }: { wordId: string; value: boolean; searchAll?: boolean }
+        { wordId, value, searchAll }: { wordId: string; value?: boolean; searchAll?: boolean }
     ): void {
         const { word, list } = helpers.findWord(context, wordId, searchAll);
 
@@ -471,11 +471,12 @@ const actions = {
      * @param {CollectionContext} context
      * @param {{ value: string }} { value }
      */
-    // TODO: this is wrong, an action should not be used like this; move this somewhere else
+    // TODO: this is wrong, an action should not be used like this; move this somewhere else; why?
+    // Fuse options: http://fusejs.io
     [Action.performLookup](context: CollectionContext, options?: { value: string }): void {
         const fuseOptions = {
             includeScore: true,
-            threshold: 0.4,
+            threshold: 0.3,
             shouldSort: true,
             findAllMatches: true,
             keys: ['text']
@@ -623,8 +624,13 @@ const mutations = {
 
     [Mutation.SET_WORD_ARCHIVED](
         state: CollectionState,
-        { word, value }: { word: CollectionWord; value: boolean }
+        { word, value }: { word: CollectionWord; value?: boolean }
     ): void {
+        // if no value specified, toggle the state of the archived flag
+        if (value === undefined) {
+            value = !word.archived;
+        }
+
         word.archived = value;
     },
 

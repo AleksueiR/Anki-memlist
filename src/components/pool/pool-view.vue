@@ -60,41 +60,40 @@
         </div>
 
         <!-- displays pooled words from the selected lists -->
-        <div
+
+        <focusable-list
             tabindex="0"
             class="list-content uk-flex-1 uk-margin-small-top cm-scrollbar"
-            ref="virtualListContainer"
-            @focus="onFocus"
-            @blur="onBlur"
+
+            :entry="focusedEntry"
+            :allEntries="getPooledWords"
+            @change="value => focusedEntry = value"
+
+            @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
+            @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
+
             v-else>
 
-            <!-- TODO: why did I need a virtual scrolling list; I don't think here would be thousands and thousands of words -->
-            <!-- <virtual-list
-                :size="30"
-                :remain="visibleHeight"
-                :bench="20"
-                class="cm-scrollbar"> -->
+            <pool-entry
+                v-for="item in getPooledWords"
+                :key="item.id"
+                :word="item"
+                :isFocused="item === focusedEntry"
 
-                <pool-entry
-                    v-for="item in getPooledWords"
-                    :key="item.id"
-                    :word="item"
-                    :isFocused="item.id === focusedEntryId"
+                v-stay-in-view="item === focusedEntry"
+                v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
 
-                    v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
+                @select="onWordSelected"
+                @favourite="setWordFavourite"
+                @archive="setWordArchived"
+                @delete="deleteWords"
 
-                    @select="onWordSelected"
-                    @favourite="setWordFavourite"
-                    @archive="setWordArchived"
-                    @delete="deleteWords"
+                @rename-start="onRenameStart"
+                @rename-complete="onRenameComplete"
+                @rename-cancel="onRenameComplete">
+            </pool-entry>
 
-                    @rename-start="onRenameStart"
-                    @rename-complete="onRenameComplete"
-                    @rename-cancel="onRenameComplete"></pool-entry>
-
-            <!-- </virtual-list> -->
-
-        </div>
+        </focusable-list>
 
         <div>
             <span>{{ getPooledWords.length }} words</span>
@@ -106,18 +105,20 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import Vue, { VNodeDirective } from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
 
-import VirtualScrollList from 'vue-virtual-scroll-list';
+import { StayInView } from '@/directives/stay-in-view';
+import FocusableListV from '@/components/bits/focusable-list.vue';
+// import VirtualScrollList from 'vue-virtual-scroll-list';
 
 import loglevel from 'loglevel';
 loglevel.setDefaultLevel(loglevel.levels.TRACE);
 const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
-import anki from './../../api/anki';
+// import anki from './../../api/anki';
 
 import poolEntryV from './pool-entry.vue';
 /* import wordMenu from './word-menu.vue'; */
@@ -132,13 +133,6 @@ const ActionCL = namespace('collection', Action);
 
 import { Observable, Subscription, Subject } from 'rxjs';
 import { debounceTime, pluck } from 'rxjs/operators';
-/* import 'rxjs/add/operator/do';
-import 'rxjs/add/operator/pluck';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/debounceTime';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/observable/fromEvent';
- */
 // const messageObservable = Observable.from(['Example Message', 'Example Message Final']);
 
 enum Streams {
@@ -152,7 +146,7 @@ interface VueStream extends Vue {
 
 @Component({
     components: {
-        'virtual-list': VirtualScrollList,
+        'focusable-list': FocusableListV,
         'pool-entry': poolEntryV
     },
     domStreams: [Streams.lookup],
@@ -165,6 +159,9 @@ interface VueStream extends Vue {
                 pluck<Event, string>('event', 'target', 'value')
             )
         };
+    },
+    directives: {
+        StayInView
     }
 })
 export default class PoolViewV extends mixins(CollectionStateMixin) {
@@ -216,66 +213,6 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         });
     }
 
-    focusedEntryId: string | null = null;
-
-    onFocus(): void {
-        if (this.getPooledWords.length === 0) {
-            this.focusedEntryId = null;
-            return;
-        }
-
-        if (this.focusedEntryId === null) {
-            this.focusedEntryId = this.getPooledWords[0].id;
-        }
-
-        this.$el.addEventListener('keydown', this.keyDownHandler);
-    }
-
-    onBlur(): void {
-        this.$el.removeEventListener('keydown', this.keyDownHandler);
-    }
-
-    keyDownHandler(event: KeyboardEvent): void {
-        switch (event.keyCode) {
-            case Vue.config.keyCodes.down:
-                this.next();
-
-                break;
-
-            case Vue.config.keyCodes.up:
-                this.back();
-
-                break;
-
-            case Vue.config.keyCodes.enter:
-                this.selectWord({ wordId: this.focusedEntryId! });
-
-                break;
-        }
-    }
-
-    next(): void {
-        const focusedEntryIndex = this.getPooledWords.findIndex(
-            collectionWord => collectionWord.id === this.focusedEntryId
-        );
-        if (focusedEntryIndex + 1 === this.getPooledWords.length) {
-            return;
-        }
-
-        this.focusedEntryId = this.getPooledWords[focusedEntryIndex + 1].id;
-    }
-
-    back(): void {
-        const focusedEntryIndex = this.getPooledWords.findIndex(
-            collectionWord => collectionWord.id === this.focusedEntryId
-        );
-        if (focusedEntryIndex === 0) {
-            return;
-        }
-
-        this.focusedEntryId = this.getPooledWords[focusedEntryIndex - 1].id;
-    }
-
     created() {
         this.$observables.lookupObservable.subscribe(value => this.performLookup({ value }));
     }
@@ -308,130 +245,12 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         this.selectWord({ ...event, searchAll: true });
     }
 
-    /* get visibleHeight(): number {
-        console.log('visible heigh');
-
-        return this.$el ? this.$el.clientHeight / 36 : 0;
-    } */
-
-    // TODO: recompute the height when the window heighs is changing
-    visibleHeight: number = -1;
-
-    mounted(): void {
-        this.visibleHeight = (<HTMLElement>this.$refs.virtualListContainer).clientHeight / 30;
-    }
-
     onWordSelected(payload: { wordId: string; append: boolean }): void {
-        this.focusedEntryId = payload.wordId;
+        const word = this.getPooledWords.find(word => word.id === payload.wordId);
+        this.focusedEntry = word!;
+
         this.selectWord(payload);
-        (<HTMLElement>this.$refs.virtualListContainer).focus();
     }
-
-    /* async performLookup(value: string) {
-        this.wordLookup = value;
-        // this.performLookup2(value);
-    } */
-
-    /* async mounted(): Promise<void> {
-        window.setInterval(async () => {
-            const card: any = await anki.guiCurrentCard();
-            if (card !== null) {
-                this.lookup = card.fields.Word.value;
-
-                const word = new Word({ text: this.lookup });
-
-                cSelectWord(this.$store, word);
-            }
-        }, 2000);
-    } */
-
-    //blah = debounce(this.foobar, 500);
-
-    /* foobar(a: any): void {
-        console.log('!!!', a, this.lookup);
-        if (!this.isLookupValid) {
-            log.info(`[word-list] not a word`);
-
-            cSelectWord(this.$store, null);
-            return;
-        }
-
-        const word = new Word({ text: this.lookup });
-
-        cSelectWord(this.$store, word);
-    } */
-
-    /* get isLookupValid(): boolean {
-        return this.lookup !== '' && this.lookup !== null;
-    } */
-
-    /* get lookupHint(): string {
-        if (!this.isLookupValid) {
-            return '';
-        }
-
-        return this.isLookupNew
-            ? `Nothing found. Press 'Enter' to add to the list.`
-            : `Already exists. Press 'Enter' to edit.`;
-    } */
-
-    /**
-     * Checks if the lookup is a new word - it's not new if it has an exact duplicate.
-     */
-    /* get isLookupNew() {
-        if (!this.isLookupValid) {
-            return false;
-        }
-
-        const isNew = !this.items.some(result => result.text === this.lookup);
-
-        return isNew;
-    } */
-
-    /* get items(): Word[] {
-        console.log('get items');
-
-        const filteredItems = rItems(this.$store)
-            .filter((word: Word) => {
-                if (!this.isLookupValid) {
-                    return word;
-                }
-
-                return word.text
-                    .toLowerCase()
-                    .startsWith(this.lookup.toLowerCase());
-            })
-            .sort((wordA: Word, wordB: Word) => {
-                if (wordA.dateAdded > wordB.dateAdded) {
-                    return -1;
-                }
-                if (wordA.dateAdded < wordB.dateAdded) {
-                    return 1;
-                }
-                if (wordA.text > wordB.text) {
-                    return 1;
-                }
-                if (wordA.text < wordB.text) {
-                    return -1;
-                }
-                return 0;
-            });
-
-
-        return filteredItems;
-    } */
-
-    /* addNewWord(): void {
-        cAddWord(this.$store, new Word({ text: this.lookup }));
-        dSyncWords(this.$store);
-
-        this.lookup = '';
-    }
-
-    archiveWord(word: Word): void {
-        word.archived = true;
-        dSyncWords(this.$store);
-    } */
 
     onRenameStart({ id }: { id: string }) {
         // TODO: grey out the rest of the list
@@ -444,6 +263,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
         this.setWordText({ wordId: id, value: name });
     }
+
+    /**
+     * The currently focused entry.
+     */
+    focusedEntry: CollectionWord | null = null;
 }
 </script>
 
@@ -464,6 +288,10 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         .uk-input {
             padding-left: calc(0.5rem + 30px - 1px) !important;
         }
+    }
+
+    .list-content:focus {
+        // outline: none;
     }
 
     .list-content /deep/ {

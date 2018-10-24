@@ -84,7 +84,7 @@
             </template>
 
             <button
-                @click="toggleArchived"
+                @click.stop="toggleArchived"
                 uk-tooltip="delay: 500; title: Archive"
                 class="uk-button uk-button-none list-item-control"
                 v-if="isTargeted || word.archived"

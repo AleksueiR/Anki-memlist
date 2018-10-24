@@ -15,10 +15,10 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import vaWords from '@/../assets/full-list.json';
+// import vaWords from '@/../assets/full-list.json';
 
 type VAList = { [name: string]: VAWord };
-// const vaWords: { [name: string]: VAWord } = {};
+const vaWords: { [name: string]: VAWord } = {};
 
 import loglevel from 'loglevel';
 const log: loglevel.Logger = loglevel.getLogger(`source`);

@@ -38,6 +38,8 @@ export default class FocusableListV extends Vue {
 
         // set focus to the list if the entry is not null
         // this is needed when the user mouse-clicks on a list item to transfer focus to the list
+        console.log('sdflsdj');
+
         if (newValue !== null) {
             this.$el.focus();
         }

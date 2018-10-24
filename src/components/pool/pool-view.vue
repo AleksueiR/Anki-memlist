@@ -71,27 +71,37 @@
 
             @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
             @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
+            @keydown.native.prevent.f2="renamingEntry = focusedEntry"
 
             v-else>
 
-            <pool-entry
-                v-for="item in getPooledWords"
-                :key="item.id"
-                :word="item"
-                :isFocused="item === focusedEntry"
+            <template
+                v-for="item in getPooledWords">
 
-                v-stay-in-view="item === focusedEntry"
-                v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
+                <rename-input
+                    v-if="renamingEntry && item.id === renamingEntry.id"
+                    :key="item.id"
 
-                @select="onWordSelected"
-                @favourite="setWordFavourite"
-                @archive="setWordArchived"
-                @delete="deleteWords"
+                    :value="renamingEntry.text"
+                    @complete="completeRename">
+                </rename-input>
 
-                @rename-start="onRenameStart"
-                @rename-complete="onRenameComplete"
-                @rename-cancel="onRenameComplete">
-            </pool-entry>
+                <pool-entry v-else
+                    :key="item.id"
+
+                    :word="item"
+                    :isFocused="item === focusedEntry"
+
+                    v-stay-in-view="item === focusedEntry"
+                    v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
+
+                    @select="onWordSelected"
+                    @favourite="setWordFavourite"
+                    @archive="setWordArchived"
+                    @delete="deleteWords">
+                </pool-entry>
+
+            </template>
 
         </focusable-list>
 
@@ -111,7 +121,10 @@ import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
 
 import { StayInView } from '@/directives/stay-in-view';
+
 import FocusableListV from '@/components/bits/focusable-list.vue';
+import RenameInputV from '@/components/bits/rename-input.vue';
+import PoolEntryV from './pool-entry.vue';
 // import VirtualScrollList from 'vue-virtual-scroll-list';
 
 import loglevel from 'loglevel';
@@ -120,7 +133,6 @@ const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
 // import anki from './../../api/anki';
 
-import poolEntryV from './pool-entry.vue';
 /* import wordMenu from './word-menu.vue'; */
 
 import { CollectionList, CollectionWord, LookupResult } from '../../store/modules/collection/index';
@@ -147,7 +159,8 @@ interface VueStream extends Vue {
 @Component({
     components: {
         'focusable-list': FocusableListV,
-        'pool-entry': poolEntryV
+        'pool-entry': PoolEntryV,
+        'rename-input': RenameInputV
     },
     domStreams: [Streams.lookup],
     subscriptions() {
@@ -252,10 +265,6 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         this.selectWord(payload);
     }
 
-    onRenameStart({ id }: { id: string }) {
-        // TODO: grey out the rest of the list
-    }
-
     onRenameComplete({ id, name }: { id: string; name?: string }) {
         if (!name) {
             return;
@@ -264,16 +273,36 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         this.setWordText({ wordId: id, value: name });
     }
 
+    completeRename(name?: string): void {
+        // TODO: grey out the rest of the list on rename start
+
+        if (!this.renamingEntry) {
+            return;
+        }
+
+        if (name !== undefined && name !== '') {
+            this.setWordText({ wordId: this.renamingEntry.id, value: name });
+        }
+
+        const entry = this.renamingEntry;
+        this.renamingEntry = null;
+        this.focusedEntry = entry;
+    }
+
     /**
      * The currently focused entry.
      */
+    // TODO: check how I can use @Model with this
     focusedEntry: CollectionWord | null = null;
+
+    renamingEntry: CollectionWord | null = null;
 }
 </script>
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
+// TODO: move into a shared collection-pool container file
 .list-view:focus {
     border: 1px solid red;
 }

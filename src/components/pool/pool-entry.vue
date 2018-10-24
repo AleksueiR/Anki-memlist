@@ -7,7 +7,7 @@
         @mouseleave="isHovered = false"
         :class="{ hover: isHovered || isTargeted, selected: isSelected, focused: isFocused }">
 
-        <template v-if="isRenaming">
+        <!-- <template v-if="isRenaming">
 
             <rename-input
                 v-model="newName"
@@ -16,7 +16,7 @@
 
         </template>
 
-        <template v-else>
+        <template v-else> -->
             <button
                 @click="toggleFavourite"
                 uk-tooltip="delay: 500; title: Favourite"
@@ -91,7 +91,7 @@
                 :class="{ active: word.archived }">
                 <octo-icon name="check"></octo-icon>
             </button>
-        </template>
+        <!-- </template> -->
 
     </div>
 </template>
@@ -103,19 +103,19 @@ import { mixins } from 'vue-class-component';
 
 import { CollectionWord } from '../../store/modules/collection/index';
 import UkDropdownV from './../bits/uk-dropdown.vue';
-import RenameInputV from './../bits/rename-input.vue';
-import RenameMixin from './../../mixins/rename-mixin';
+//import RenameInputV from './../bits/rename-input.vue';
+//import RenameMixin from './../../mixins/rename-mixin';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 
 @Component({
     components: {
-        'uk-dropdown': UkDropdownV,
-        'rename-input': RenameInputV
+        'uk-dropdown': UkDropdownV
+        // 'rename-input': RenameInputV
     }
 })
-export default class ListEntryV extends mixins(RenameMixin) {
+export default class ListEntryV extends mixins(/* RenameMixin */) {
     @Emit('select')
     emSelect(payload: { wordId: string; append: boolean }) {}
 
@@ -140,7 +140,7 @@ export default class ListEntryV extends mixins(RenameMixin) {
     isHovered: boolean = false;
     isMenuOpened: boolean = false;
 
-    // used by the rename mixin
+    /* // used by the rename mixin
     get id(): string {
         return this.word.id;
     }
@@ -148,7 +148,7 @@ export default class ListEntryV extends mixins(RenameMixin) {
     // used by the rename mixin
     getCurrentName(): string {
         return this.word.text;
-    }
+    } */
 
     /**
      * Indicates that this item is engaged: either is hovered or over its menu is opened.
@@ -187,11 +187,5 @@ export default class ListEntryV extends mixins(RenameMixin) {
 // needed for the menu?
 .uk-nav a.uk-flex {
     display: flex !important;
-}
-
-.rename-input {
-    font-size: 0.8rem;
-    height: 1.5rem;
-    margin-left: calc(0.5rem + 30px - 10px);
 }
 </style>

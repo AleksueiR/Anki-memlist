@@ -1,17 +1,22 @@
 <template>
 
-    <input
-        class="uk-input rename-input"
-        type="text"
+    <div class="rename-container">
+        <input
+            class="uk-input rename-input"
+            type="text"
 
-        :value="value"
-        @input="input($event.target.value)"
+            :value="value"
 
-        v-input-focus
-        @focus.once="onFocus"
+            @keydown.stop.enter="complete($event.target.value)"
+            @keydown.stop.escape="complete()"
 
-        @mousedown.stop="vnull"
-        @click.stop="vnull">
+            v-input-focus
+            @focus.once="onFocus"
+            @blur="complete()"
+
+            @mousedown.stop="vnull"
+            @click.stop="vnull" />
+    </div>
 
 </template>
 
@@ -39,16 +44,19 @@ import { Component, Prop, Emit } from 'vue-property-decorator';
     }
 })
 export default class RenameInputV extends Vue {
-    @Emit()
-    input(value: string) {}
+    //@input="input($event.target.value)"
 
-    @Prop() value: string;
+    @Emit()
+    complete(value: string) {}
+
+    @Prop()
+    value: string;
 
     /**
      * Preselect the current list name on focus.
      */
     onFocus(event: FocusEvent): void {
-        (<HTMLInputElement>event.target).select();
+        (event.target as HTMLInputElement).select();
     }
 
     vnull(): void {}
@@ -56,8 +64,17 @@ export default class RenameInputV extends Vue {
 </script>
 
 <style lang="scss" scoped>
+.rename-container {
+    display: flex;
+    position: relative;
+    height: 2rem;
+}
+
 .rename-input {
     border-radius: 0;
+    font-size: 0.8rem;
+    height: 1.5rem;
+    margin-left: calc(0.5rem + 30px - 10px);
 }
 </style>
 

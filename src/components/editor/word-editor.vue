@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="container  uk-flex-1">
 
         <!-- <quill-editor v-for="(modelField, index) in modelFields"
             :key="modelField"
@@ -22,16 +22,33 @@
         <section class="container main" v-if="word">
 
             <section class="content cm-scrollbar">
-                    <div v-for="source in sourceOrder" :key="source.id" :id="source.id" class="source-view">
-                        <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
-                        <component :is="source.id" :word="word" ></component>
-                    </div>
+                <div
+                    v-for="source in sourceOrder"
+                    :key="source.id"
+
+                    :id="source.id"
+                    v-show="source.hasContent"
+
+                    class="source-view">
+                    <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
+                    <component
+                        :is="source.id"
+                        :word="word"
+
+                        @has-content="source.hasContent = $event"></component>
+                </div>
             </section>
 
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
-                    <li v-for="source in sourceOrder" :key="source.id" class="heading">
-                        <a :href="`#${source.id}`" class="anchor">{{ source.name }}</a>
+                    <li
+                        v-for="source in sourceOrder"
+                        :key="source.id"
+
+                        class="heading">
+
+                        <a :href="`#${source.id}`" class="anchor" v-if="source.hasContent">{{ source.name }}</a>
+                        <span v-else class="anchor uk-text-muted">{{ source.name }}</span>
                     </li>
                 </ul>
 
@@ -58,9 +75,16 @@ import { Word } from './../../store/modules/words';
 import { CollectionWord } from '../../store/modules/collection/index';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
 
-const StateCL = namespace('collection', State);
+/* const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
+ */
+
+interface SourceEntry {
+    name: string;
+    id: string;
+    hasContent: boolean;
+}
 
 @Component({
     components: Object.assign(
@@ -80,18 +104,21 @@ export default class WordList extends mixins(CollectionStateMixin) {
 
     raw: string = '';
 
-    sourceOrder = [
+    sourceOrder: SourceEntry[] = [
         {
             name: 'Vocabulary.com',
-            id: 'vocabulary-source'
+            id: 'vocabulary-source',
+            hasContent: false
         },
         {
             name: 'Oxford Dictonaries',
-            id: 'oxforddictionaries-source'
+            id: 'oxforddictionaries-source',
+            hasContent: false
         },
         {
             name: 'Verbal Advantage',
-            id: 'verbaladvantage-source'
+            id: 'verbaladvantage-source',
+            hasContent: false
         }
     ];
 
@@ -300,6 +327,10 @@ header {
                 &:active,
                 &:hover {
                     color: $accent-colour;
+                }
+
+                &.uk-text-muted {
+                    font-weight: normal;
                 }
             }
         }

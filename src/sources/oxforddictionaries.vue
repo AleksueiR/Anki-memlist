@@ -251,8 +251,7 @@ const scrapeConfig = {
 
                 const notesConfig = {
                     title: {
-                        sel:
-                            'h3:not([class$="phrases-title"]), h2:not([class$="phrases-title"])'
+                        sel: 'h3:not([class$="phrases-title"]), h2:not([class$="phrases-title"])'
                     },
                     lines: {
                         scrape: {
@@ -323,9 +322,7 @@ const scrapeConfig = {
                     phrases: artoo.scrape(
                         $(this)
                             .nextUntil('.entryHead')
-                            .find(
-                                '.phrases-title ~ .senseInnerWrapper > .semb.gramb > li'
-                            ),
+                            .find('.phrases-title ~ .senseInnerWrapper > .semb.gramb > li'),
                         phrasesConfig
                     )
                 };
@@ -351,29 +348,27 @@ export default class OxfordDictionariesSource extends Source {
             return '';
         }
 
-        this.definition = await axios
-            .get(`https://en.oxforddictionaries.com/definition/${val.text}`)
-            .then(response => {
-                const a = cheerio.load(response.data);
+        this.definition = await axios.get(`https://en.oxforddictionaries.com/definition/${val.text}`).then(response => {
+            const a = cheerio.load(response.data);
 
-                artoo.setContext(cheerio.load(response.data));
+            artoo.setContext(cheerio.load(response.data));
 
-                const scrape = artoo.scrape('.entryWrapper', scrapeConfig);
+            const scrape = artoo.scrape('.entryWrapper', scrapeConfig);
 
-                console.log(scrape[0]);
+            console.log(scrape[0]);
 
-                if (scrape.length > 0) {
-                    /* scrape[0].groups.forEach((group: any) => {
+            if (scrape.length > 0 && scrape[0].groups.length > 0) {
+                /* scrape[0].groups.forEach((group: any) => {
                         group.senses.forEach((sense: any) => {
                             sense.examples.forEach((example: string) =>  example.rep)
                         })
                     } */
 
-                    return scrape[0];
-                }
+                return scrape[0];
+            }
 
-                return null;
-            });
+            return null;
+        });
     }
 
     mounted(): void {
@@ -387,5 +382,4 @@ export default class OxfordDictionariesSource extends Source {
 </script>
 
 <style lang="scss" scoped>
-
 </style>

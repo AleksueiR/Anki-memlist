@@ -7,7 +7,6 @@
             </section>
 
         </source-view>
-
     </div>
 </template>
 
@@ -15,10 +14,10 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-// import vaWords from '@/../assets/full-list.json';
+import vaWords from '@/../assets/full-list.json';
 
 type VAList = { [name: string]: VAWord };
-const vaWords: { [name: string]: VAWord } = {};
+// const vaWords: { [name: string]: VAWord } = {};
 
 import loglevel from 'loglevel';
 const log: loglevel.Logger = loglevel.getLogger(`source`);
@@ -87,7 +86,7 @@ export default class VerbalAdvantageSource extends Source {
     }
 
     get vaWord(): VAWord | null {
-        return (<VAList>vaWords)[this.normalizedWord] || null;
+        return (vaWords as VAList)[this.normalizedWord] || null;
     }
 }
 </script>

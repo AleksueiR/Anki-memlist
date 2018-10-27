@@ -1,23 +1,32 @@
-import {
-    Vue,
-    Component,
-    Inject,
-    Model,
-    Prop,
-    Watch
-} from 'vue-property-decorator';
+import { Vue, Prop, Emit, Watch } from 'vue-property-decorator';
 import { Word } from './../store/modules/words';
 
+// TODO: turn this into a mixin
 export class Source extends Vue {
-    @Prop() word: Word;
+    @Emit()
+    hasContent(value: boolean) {}
+
+    @Prop()
+    word: Word;
 
     definition: Definition | null = null;
 
-    playSound(event: MouseEvent): void {
-        console.log(event);
-        (<HTMLAudioElement>(<HTMLElement>event.currentTarget)
-            .firstElementChild).play();
+    /**
+     * Watch `definition` change and fire `hasContent` event depending on the value of the `definition`.
+     * TODO: add a `loading` state; this can be fired every time when the `word` is changing
+     *
+     * @param {(Definition | null)} value
+     * @memberof Source
+     */
+    @Watch('definition')
+    onDefinitionChange(value: Definition | null): void {
+        this.hasContent(value !== null);
     }
+
+    /* playSound(event: MouseEvent): void {
+        console.log(event);
+        (<HTMLAudioElement>(<HTMLElement>event.currentTarget).firstElementChild).play();
+    } */
 }
 
 export class Definition {
@@ -34,18 +43,11 @@ export class DefinitionGroup {
 }
 
 export class DefinitionPart {
-    constructor(
-        public name: string = '',
-        public senses: DefinitionSense[] = []
-    ) {}
+    constructor(public name: string = '', public senses: DefinitionSense[] = []) {}
 }
 
 export class DefinitionPronunciation {
-    constructor(
-        public part: string = '',
-        public spellings: string[] = [],
-        public audios: string[] = []
-    ) {}
+    constructor(public part: string = '', public spellings: string[] = [], public audios: string[] = []) {}
 }
 
 export class DefinitionNote {

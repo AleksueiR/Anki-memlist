@@ -1,24 +1,24 @@
 <template>
     <div class="container" v-if="collection.length > 0">
 
-            <!-- {{ from }} {{ to }} {{ limit }} {{ collection.length }} -->
-            <div class="controls" v-if="total !== 1">
-                <!-- <el-button @click="back" :disabled="current === 1"><font-awesome-icon icon="angle-up" /></el-button> -->
+        <!-- {{ from }} {{ to }} {{ limit }} {{ collection.length }} -->
+        <div class="controls" v-if="total !== 1">
+            <!-- <el-button @click="back" :disabled="current === 1"><font-awesome-icon icon="angle-up" /></el-button> -->
 
-                <span class="page current">{{ current }}</span>
-                <span class="divider"></span>
-                <span class="page total">{{ total }}</span>
+            <span class="page current">{{ current }}</span>
+            <span class="divider"></span>
+            <span class="page total">{{ total }}</span>
 
-                <!-- <el-button @click="next" :disabled="current === total"><font-awesome-icon icon="angle-down" /></el-button> -->
-            </div>
-
-            <div class="example-list" v-if="collection.length > 0">
-                <li v-for="(example, index) in collection.slice(from, to)" :key="`example-${index}`" class="example-item">
-                    <p v-html="example"></p>
-                </li>
-            </div>
-
+            <!-- <el-button @click="next" :disabled="current === total"><font-awesome-icon icon="angle-down" /></el-button> -->
         </div>
+
+        <div class="example-list" v-if="collection.length > 0">
+            <li v-for="(example, index) in collection.slice(from, to)" :key="`example-${index}`" class="example-item">
+                <p v-html="example"></p>
+            </li>
+        </div>
+
+    </div>
 </template>
 
 <script lang="ts">
@@ -35,7 +35,9 @@ import { Word } from './../../store/modules/words'; */
     }
 })
 export default class SourceView extends Vue {
-    @Prop() collection: string[];
+    @Prop()
+    collection: string[];
+
     @Prop({ default: 3 })
     limit: number | null;
     from: number = 0;
@@ -76,11 +78,6 @@ export default class SourceView extends Vue {
             return;
         }
         this.from = Math.min(this.collection.length - 1, Math.max(this.from - this.limit, 0));
-    }
-
-    playSound(event: MouseEvent): void {
-        console.log(event);
-        (<HTMLAudioElement>(<HTMLElement>event.currentTarget).firstElementChild).play();
     }
 }
 </script>

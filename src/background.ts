@@ -64,7 +64,7 @@ function createMainWindow() {
 
     // https://discuss.atom.io/t/how-to-get-startup-arguments-from-electron-app/35353/6
     // https://stackoverflow.com/questions/45485262/how-to-debug-electron-production-binaries
-    // use `--debug` argument to open devtools in production
+    // TODO: use `--debug` argument to open devtools in production
     // window.webContents.openDevTools();
 
     if (isDevelopment) {

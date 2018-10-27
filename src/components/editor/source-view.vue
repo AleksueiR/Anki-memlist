@@ -118,7 +118,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import { Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 
 import { Definition } from './../../sources/source.class';
 import { Word } from './../../store/modules/words';
@@ -129,18 +129,21 @@ import SourceExamples from './source-examples.vue';
     components: { 'source-examples': SourceExamples }
 })
 export default class SourceView extends Vue {
-    @Prop() definition: Definition;
-    @Prop() word: Word;
+    @Prop()
+    definition: Definition;
+
+    @Prop()
+    word: Word;
 
     playSound(event: MouseEvent): void {
         console.log(event);
-        (<HTMLAudioElement>(<HTMLElement>event.currentTarget)
-            .firstElementChild).play();
+        ((event.currentTarget as HTMLElement).firstElementChild as HTMLAudioElement).play();
     }
 
-    hasSlot(name: string): boolean {
+    // TODO: what is this for?
+    /* hasSlot(name: string): boolean {
         return typeof this.$slots[name] !== 'undefined';
-    }
+    } */
 }
 </script>
 

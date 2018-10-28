@@ -2,18 +2,27 @@
     <div class="container" v-if="collection.length > 0">
 
         <!-- {{ from }} {{ to }} {{ limit }} {{ collection.length }} -->
-        <div class="controls" v-if="total !== 1">
-            <!-- <el-button @click="back" :disabled="current === 1"><font-awesome-icon icon="angle-up" /></el-button> -->
+        <div
+            class="controls"
+            v-if="total !== 1"
 
-            <span class="page current">{{ current }}</span>
-            <span class="divider"></span>
-            <span class="page total">{{ total }}</span>
+            @mousedown="engage">
 
-            <!-- <el-button @click="next" :disabled="current === total"><font-awesome-icon icon="angle-down" /></el-button> -->
+            <button
+                v-for="(page, index) in (total)"
+                :key="index"
+
+                class="page-button"
+                :class="{ selected: index === current }"
+                @click="current = index"
+                @mouseover="onMouseOverHandler(index)">
+            </button>
+
         </div>
 
         <div class="example-list" v-if="collection.length > 0">
-            <li v-for="(example, index) in collection.slice(from, to)" :key="`example-${index}`" class="example-item">
+            <li v-for="(example, index) in sortedCollection.slice(from, to)" :key="`example-${index}`"
+                class="example-item">
                 <p v-html="example"></p>
             </li>
         </div>
@@ -24,36 +33,38 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
-// import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
-/* import { Definition } from './../../sources/source.class';
-import { Word } from './../../store/modules/words'; */
-
-@Component({
-    components: {
-        // FontAwesomeIcon
-    }
-})
+@Component
 export default class SourceView extends Vue {
     @Prop()
     collection: string[];
 
     @Prop({ default: 3 })
     limit: number | null;
-    from: number = 0;
+
+    isEngaged: boolean = false;
 
     @Watch('collection')
     onCollectionChange(): void {
         // reset to start when the example collection changes
-        this.from = 0;
+        this.current = 0;
     }
 
-    get current(): number {
-        return Math.ceil(this.to / (this.limit || this.to));
+    /**
+     * A sample collection sorted by sample length, from shortest to longest.
+     */
+    get sortedCollection(): string[] {
+        return this.collection.slice().sort((a, b) => (a.length < b.length ? -1 : 1));
     }
+
+    current: number = 0;
 
     get total(): number {
         return Math.ceil(this.collection.length / (this.limit || this.collection.length));
+    }
+
+    get from(): number {
+        return this.limit ? this.current * this.limit : 0;
     }
 
     get to(): number {
@@ -64,20 +75,30 @@ export default class SourceView extends Vue {
         return Math.min(this.from + this.limit, this.collection.length);
     }
 
-    next(): void {
-        console.log('dsf up');
-        if (this.limit === null || this.to - this.from < this.limit) {
-            return;
-        }
-        this.from = Math.min(this.collection.length - 1, Math.max(this.from + this.limit, 0));
+    /**
+     * Engages the sample navigation controls. Mouse movements over the control elements will automatically update the currently visible samples.
+     */
+    engage(): void {
+        this.isEngaged = true;
+
+        document.addEventListener('mouseup', this.disengage);
     }
 
-    back(): void {
-        console.log('dsf down up');
-        if (this.limit === null) {
+    /**
+     * Stops tracking mouse movements when the mouse button is released. This can happen outside of the component, so a global listener is needed.
+     */
+    disengage(): void {
+        this.isEngaged = false;
+
+        document.removeEventListener('mouseup', this.disengage);
+    }
+
+    onMouseOverHandler(index: number): void {
+        if (!this.isEngaged) {
             return;
         }
-        this.from = Math.min(this.collection.length - 1, Math.max(this.from - this.limit, 0));
+
+        this.current = index;
     }
 }
 </script>
@@ -85,65 +106,64 @@ export default class SourceView extends Vue {
 <style lang="scss" scoped>
 @import './../../styles/variables';
 
+$default-colour: $secondary-colour;
+$hover-colour: rgba(
+    $color: $accent-colour,
+    $alpha: 0.4
+);
+$select-colour: rgba(
+    $color: $accent-colour,
+    $alpha: 0.7
+);
 .container {
     display: flex;
 }
-
 .controls {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     margin: 0;
     align-items: center;
-
-    button {
-        // hide border and backgroud to only show the icon on the button
-        border-color: transparent;
-        background-color: transparent;
+    .page-button {
+        width: 1.8em;
+        height: 8px;
+        position: relative;
+        border: none;
+        background: transparent;
         padding: 0;
-        width: 1em;
-        font-size: 1.2em;
-
-        &:first-child {
-            padding-bottom: 0.5em;
-        }
-
+        cursor: pointer;
         &:last-child {
-            padding-top: 0.5em;
+            margin-bottom: 0;
         }
-    }
-
-    .page {
-        color: $light-text-colour;
-        line-height: 1rem;
-
-        &.current {
-            font-weight: bold;
-            font-size: 0.8em;
+        &:last-child {
+            margin-bottom: 0;
         }
-
-        &.total {
-            font-size: 0.6em;
+        &:after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            bottom: 2px;
+            left: 0;
+            right: 0;
+            background: $default-colour;
         }
-    }
-
-    .divider {
-        height: 1px;
-        border-top: solid $dark-secondary-colour 1px;
-        width: 1em;
-        display: block;
-        margin: 0.3em 0;
+        &:hover:after {
+            background: $hover-colour;
+        }
+        &.selected:after {
+            background: $select-colour;
+        }
+        &:focus {
+            outline: none;
+        }
     }
 }
-
 .example-list {
     flex: 1;
     margin: 0 0 0 1em;
-    font-family: Courier New, Courier, monospace;
-
+    font-family: Consolas;
     .example-item {
         margin: 0 0 0.5em 0;
-
         p {
             margin: 0;
         }

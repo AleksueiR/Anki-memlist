@@ -44,8 +44,6 @@ import { Component, Prop, Emit } from 'vue-property-decorator';
     }
 })
 export default class RenameInputV extends Vue {
-    //@input="input($event.target.value)"
-
     @Emit()
     complete(value: string) {}
 

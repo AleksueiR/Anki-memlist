@@ -20,7 +20,10 @@
         </div>
 
         <!-- displays the lookup results from collections -->
-        <div class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top" v-if="isLookupValid">
+        <div
+            v-if="isLookupValid"
+
+            class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top" >
 
             <!-- TODO: style nothing found label -->
             <span v-if="lookupResults.length === 0">Nothing found</span>
@@ -62,6 +65,8 @@
         <!-- displays pooled words from the selected lists -->
 
         <focusable-list
+            v-else
+
             tabindex="0"
             class="list-content uk-flex-1 uk-margin-small-top cm-scrollbar"
 
@@ -71,9 +76,7 @@
 
             @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
             @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
-            @keydown.native.prevent.f2="renamingEntry = focusedEntry"
-
-            v-else>
+            @keydown.native.prevent.f2="startRename(focusedEntry)">
 
             <template
                 v-for="item in getPooledWords">
@@ -86,7 +89,9 @@
                     @complete="completeRename">
                 </rename-input>
 
-                <pool-entry v-else
+                <pool-entry
+                    v-else
+
                     :key="item.id"
 
                     :word="item"
@@ -98,6 +103,7 @@
                     @select="onWordSelected"
                     @favourite="setWordFavourite"
                     @archive="setWordArchived"
+                    @rename="startRename"
                     @delete="deleteWords">
                 </pool-entry>
 
@@ -212,6 +218,14 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     @ActionCL
     performLookup: (options?: { value: string }) => void;
 
+    /**
+     * The currently focused entry.
+     */
+    // TODO: check how I can use @Model with this
+    focusedEntry: CollectionWord | null = null;
+
+    renamingEntry: CollectionWord | null = null;
+
     // TODO: this doesn't seem to belong here
     @Watch('getPooledWords')
     onGetPooledWordsChanged(value: CollectionWord[]): void {
@@ -253,6 +267,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     /**
      * Selects the word even if it's not in the selected list.
+     * // TODO: why???
      */
     selectWordSearchAll(event: any) {
         this.selectWord({ ...event, searchAll: true });
@@ -265,12 +280,18 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         this.selectWord(payload);
     }
 
-    onRenameComplete({ id, name }: { id: string; name?: string }) {
+    /* onRenameComplete({ id, name }: { id: string; name?: string }) {
         if (!name) {
             return;
         }
 
         this.setWordText({ wordId: id, value: name });
+    } */
+
+    startRename(entry: CollectionWord): void {
+        console.log(entry);
+
+        this.focusedEntry = this.renamingEntry = entry;
     }
 
     completeRename(name?: string): void {
@@ -288,25 +309,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         this.renamingEntry = null;
         this.focusedEntry = entry;
     }
-
-    /**
-     * The currently focused entry.
-     */
-    // TODO: check how I can use @Model with this
-    focusedEntry: CollectionWord | null = null;
-
-    renamingEntry: CollectionWord | null = null;
 }
 </script>
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
-
-// TODO: move into a shared collection-pool container file
-.list-view:focus {
-    border: 1px solid red;
-}
-
 .list-view {
     width: 15em;
 
@@ -320,7 +327,8 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     }
 
     .list-content:focus {
-        // outline: none;
+        // TODO: outline line in VSCOde search?
+        outline: none;
     }
 
     .list-content /deep/ {

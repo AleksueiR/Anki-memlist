@@ -12,10 +12,10 @@
 
         <template v-if="isRenaming">
 
-             <rename-input
+             <!-- <rename-input
                 v-model="newName"
                 @blur.native="cancelRename(false)">
-            </rename-input>
+            </rename-input> -->
 
         </template>
 
@@ -111,7 +111,7 @@
 
                         <li class="uk-nav-divider"></li>
 
-                        <li><a href="#" @click.stop.prevent="vnull">Edit</a></li>
+                        <li><a href="#" @click.stop.prevent="rename(list)">Edit</a></li>
                         <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
 
                     </ul>
@@ -199,6 +199,12 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 
     @Emit('delete')
     emDelete(payload: { listId: string }) {}
+
+    /**
+     * Rename event is used the pool view, so it doesn't need the full store payload signature.
+     */
+    @Emit()
+    rename(item: CollectionList) {}
 
     // passed in CollectionTree object
     @Prop()

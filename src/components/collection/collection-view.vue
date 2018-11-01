@@ -19,7 +19,17 @@
                 @node-click="nodeClick">
 
                 <template slot-scope="{ item, level }">
+                    <rename-input
+                        v-if="renamingEntry && item.listId === renamingEntry.id"
+                        :key="item.id"
+
+                        :value="renamingEntry.name"
+                        @complete="completeRename">
+                    </rename-input>
+
                     <collection-item
+                        v-else
+
                         :class="`level-${level}`"
                         :item="item"
                         :mint-list-id="mintListId"
@@ -29,6 +39,7 @@
                         @default="setIndexDefaultList"
                         @pinned="setListPinned"
                         @expanded="setIndexExpandedTree"
+                        @rename="startRename"
                         @delete="deleteLists"
 
                         @rename-start="onRenameStart"
@@ -53,6 +64,7 @@ import { mixins } from 'vue-class-component';
 import CollectionItemV from './collection-item.vue';
 import Treee from './../treee/treee.vue';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
+import RenameInputV from '@/components/bits/rename-input.vue';
 
 import {
     CollectionState,
@@ -71,37 +83,50 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         Treee,
-        'collection-item': CollectionItemV
+        'collection-item': CollectionItemV,
+        'rename-input': RenameInputV
     }
 })
 export default class CollectionView extends mixins(CollectionStateMixin) {
     // #region vuex
 
-    @StateCL index: CollectionIndex;
+    @StateCL
+    index: CollectionIndex;
 
-    @StateCL selectedLists: CollectionList[];
+    @StateCL
+    selectedLists: CollectionList[];
 
-    @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
+    @ActionCL
+    setIndexDefaultList: (payload: { listId: string }) => void;
 
-    @ActionCL setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL
+    setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
 
-    @ActionCL setListPinned: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL
+    setListPinned: (payload: { listId: string; value: boolean }) => void;
 
     // replaces the existing tree index with the new one
-    @ActionCL setIndexTree: (payload: { tree: CollectionTree }) => void;
+    @ActionCL
+    setIndexTree: (payload: { tree: CollectionTree }) => void;
 
     // adds a new list to the bottom of the top level of the list tree
-    @ActionCL addList: (list: CollectionList) => void;
+    @ActionCL
+    addList: (list: CollectionList) => void;
 
-    @ActionCL deleteList: (payload: { listId: string }) => void;
+    @ActionCL
+    deleteList: (payload: { listId: string }) => void;
 
     // sets a new list name
-    @ActionCL setListName: (payload: { listId: string; value: string }) => void;
+    @ActionCL
+    setListName: (payload: { listId: string; value: string }) => void;
 
     // select the list
-    @ActionCL selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
+    @ActionCL
+    selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
 
     // #endregion vuex
+
+    renamingEntry: CollectionList | null = null;
 
     // Treee needs a sturcture without circular dependencies
     // returns a safe list
@@ -176,6 +201,28 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         console.log('move item', wordId, 'to', listId);
 
         this.moveWord({ wordId: wordId as string, listId: listId as string });
+    }
+
+    startRename(entry: CollectionList): void {
+        console.log(entry);
+
+        /* this.focusedEntry =  */ this.renamingEntry = entry;
+    }
+
+    completeRename(name?: string): void {
+        // TODO: grey out the rest of the list on rename start
+
+        if (!this.renamingEntry) {
+            return;
+        }
+
+        if (name !== undefined && name !== '') {
+            this.setListName({ listId: this.renamingEntry.id, value: name });
+        }
+
+        const entry = this.renamingEntry;
+        this.renamingEntry = null;
+        // this.focusedEntry = entry;
     }
 }
 </script>

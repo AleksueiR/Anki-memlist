@@ -73,7 +73,7 @@
 
                         <li class="uk-nav-divider"></li>
 
-                        <li><a href="#" @click.stop.prevent="vnull">Edit</a></li>
+                        <li><a href="#" @click.stop.prevent="rename(word)">Edit</a></li>
                         <li><a href="#" @click.stop.prevent="deleteWord">Delete</a></li>
                         <li><a href="#" @click.stop.prevent="vnull">Move</a></li>
 
@@ -127,6 +127,12 @@ export default class ListEntryV extends mixins(/* RenameMixin */) {
 
     @Emit('delete')
     emDelete(payload: { wordId: string }) {}
+
+    /**
+     * Rename event is used the pool view, so it doesn't need the full store payload signature.
+     */
+    @Emit()
+    rename(entry: CollectionWord) {}
 
     @StateCL
     selectedWords: CollectionWord[];

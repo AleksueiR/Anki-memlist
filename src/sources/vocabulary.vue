@@ -227,6 +227,8 @@ const scrapeConfig = {
     }
 };
 
+// samples endpoint: https://corpus.vocabulary.com/api/1.0/examples.json?query=bag&maxResults=30&startOffset=0&filter=0
+
 @Component({
     components: {
         'source-view': SourceView

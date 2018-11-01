@@ -25,7 +25,7 @@ const log: loglevel.Logger = loglevel.getLogger(`source`);
 import { Word } from './../store/modules/words';
 
 import SourceView from './../components/editor/source-view.vue';
-import { Source } from './source.class';
+import { Source, Definition } from './source.class';
 
 interface VAWord {
     id: number;
@@ -41,8 +41,11 @@ interface VAWord {
 export default class VerbalAdvantageSource extends Source {
     @Watch('word')
     onWordChanged(val: Word | null) {
+        // TODO: word changes are not picked up correctly and `hasContent` sometimes is not updated correctly
+
         log.info('word changes');
         if (!val) {
+            this.definition = null;
             log.info('word is not set');
             return;
         }

@@ -199,7 +199,9 @@ const scrapeConfig = {
                                 examples: {
                                     scrape: {
                                         iterator: '> .exg .ex, > .examples .ex',
-                                        data: 'text'
+                                        data: function($: any) {
+                                            return formatExample($(this).text());
+                                        }
                                     }
                                 },
                                 subsenses: {
@@ -218,7 +220,9 @@ const scrapeConfig = {
                                             examples: {
                                                 scrape: {
                                                     iterator: '.ex',
-                                                    data: 'text'
+                                                    data: function($: any) {
+                                                        return formatExample($(this).text());
+                                                    }
                                                 }
                                             }
                                         }
@@ -292,7 +296,9 @@ const scrapeConfig = {
                             return artoo.scrape($(this).next(), {
                                 scrape: {
                                     iterator: '.phrase_sense .ex',
-                                    data: 'text'
+                                    data: function($: any) {
+                                        return formatExample($(this).text());
+                                    }
                                 }
                             })[0];
                         }
@@ -331,7 +337,13 @@ const scrapeConfig = {
     }
 };
 
-// handle cross-references as definitions: see cordial / another term for liqueur
+function formatExample(line: string): string {
+    line = line.trim().replace(/[\u2018\u2019\u201C\u201D]/g, '');
+    // TODO: add a period at the end of the example if there is none.
+    return line.charAt(0).toUpperCase() + line.slice(1);
+}
+
+// TODO: handle cross-references as definitions: see cordial / another term for liqueur
 
 @Component({
     components: {

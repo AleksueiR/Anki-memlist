@@ -3,141 +3,119 @@
     <!-- TODO: use https://github.com/DominikSerafin/vuebar for scrollbar  -->
 
     <div class="list-item"
-        :class="{ hover: isHovered || isTargeted, selected: isSelected }"
-        tabindex="0"
+        :class="{ hover: isHovered || isTargeted, selected: isSelected, focused: isFocused }"
         @mouseover="isHovered = true"
         @mouseleave="isHovered = false">
 
         <span class="highlight"></span>
 
-        <template v-if="isRenaming">
+        <span
+            class="uk-icon list-item-control first active"
+            uk-tooltip="delay: 1500; title: Default list"
+            v-if="isDefault">
+            <octo-icon name="bookmark"></octo-icon>
+        </span>
 
-             <!-- <rename-input
-                v-model="newName"
-                @blur.native="cancelRename(false)">
-            </rename-input> -->
+        <button
+            @click="togglePinned"
+            uk-tooltip="delay: 500; title: Pin"
+            class="uk-button uk-button-none list-item-control first"
+            v-if="(isTargeted || list.pinned) && !isDefault"
+            :class="{ active: list.pinned }">
+            <octo-icon name="pin"></octo-icon>
+        </button>
 
-        </template>
+        <!-- <a
+            href="#"
+            uk-tooltip="delay: 1500; title: Pin"
+            @click.stop.prevent="togglePinned"
+            :class="{ active: list.pinned }"
+            class="uk-icon item-control default"
+            v-if="(isTargeted || list.pinned) && !isDefault">
+            <octo-icon name="pin"></octo-icon>
+        </a> -->
 
-        <template v-else>
+        <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
+        <span class="list-item-text">
+            {{ list.name }}
 
             <span
-                class="uk-icon list-item-control first active"
-                uk-tooltip="delay: 1500; title: Default list"
-                v-if="isDefault">
-                <octo-icon name="bookmark"></octo-icon>
-            </span>
+                class="list-item-control item-word-count uk-text-muted"
+                :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
+        </span>
 
-            <button
-                @click="togglePinned"
-                uk-tooltip="delay: 500; title: Pin"
-                class="uk-button uk-button-none list-item-control first"
-                v-if="(isTargeted || list.pinned) && !isDefault"
-                :class="{ active: list.pinned }">
-                <octo-icon name="pin"></octo-icon>
-            </button>
 
+
+        <template v-if="isTargeted">
             <!-- <a
                 href="#"
-                uk-tooltip="delay: 1500; title: Pin"
-                @click.stop.prevent="togglePinned"
-                :class="{ active: list.pinned }"
-                class="uk-icon item-control default"
-                v-if="(isTargeted || list.pinned) && !isDefault">
-                <octo-icon name="pin"></octo-icon>
-            </a> -->
+                uk-tooltip="delay: 1500; title: View menu"
+                @click.stop.prevent="vnull"
+                class="uk-icon item-control">
 
-            <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
-            <span class="list-item-text">
-                {{ list.name }}
-
-                <span
-                    class="list-item-control item-word-count uk-text-muted"
-                    :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
-            </span>
-
-
-
-            <template v-if="isTargeted">
-                <!-- <a
-                    href="#"
-                    uk-tooltip="delay: 1500; title: View menu"
-                    @click.stop.prevent="vnull"
-                    class="uk-icon item-control">
-
-                    <octo-icon name="kebab-horizontal"></octo-icon></a> -->
-
-                <button
-                    @click="vnull"
-                    uk-tooltip="delay: 500; title: View menu"
-                    class="uk-button uk-button-none list-item-control"
-                    v-if="isTargeted">
-                    <octo-icon name="kebab-horizontal"></octo-icon>
-                </button>
-                <uk-dropdown
-                    :pos="'right-center'"
-                    :delay-hide="0"
-                    @show="isMenuOpened = true"
-                    @hide="isMenuOpened = false">
-
-                    <ul class="uk-nav uk-dropdown-nav">
-
-                        <li :class="{ 'uk-active': list.pinned }">
-                            <a href="#" class="uk-nav-check"
-                                @click.stop.prevent="togglePinned">
-
-                                <span>Pinned</span>
-                                <octo-icon name="check" v-if="list.pinned"></octo-icon>
-                            </a>
-                        </li>
-
-                        <li :class="{ 'uk-active': list.hidden }">
-                            <a href="#" class="uk-nav-check"
-                                @click.stop.prevent="toggleHidden">
-
-                                <span>Hidden</span>
-                                <octo-icon name="check" v-if="list.hidden"></octo-icon>
-                            </a>
-                        </li>
-
-                        <li :class="{ 'uk-active': isDefault }">
-                            <a href="#" class="uk-nav-check"
-                                @click.stop.prevent="setDefault">
-
-                                <span>Default</span>
-                                <octo-icon name="check" v-if="isDefault"></octo-icon>
-                            </a>
-                        </li>
-
-                        <li class="uk-nav-divider"></li>
-
-                        <li><a href="#" @click.stop.prevent="rename(list)">Edit</a></li>
-                        <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
-
-                    </ul>
-
-                </uk-dropdown>
-
-            </template>
-
+                <octo-icon name="kebab-horizontal"></octo-icon></a> -->
 
             <button
-                @click.stop="toggleExpand"
-                uk-tooltip="delay: 500; title: Expand"
+                @click="vnull"
+                uk-tooltip="delay: 500; title: View menu"
                 class="uk-button uk-button-none list-item-control"
-                :class="{ 'uk-invisible': item.items.length === 0}">
-
-                <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
+                v-if="isTargeted">
+                <octo-icon name="kebab-horizontal"></octo-icon>
             </button>
+            <uk-dropdown
+                :pos="'right-center'"
+                :delay-hide="0"
+                @show="isMenuOpened = true"
+                @hide="isMenuOpened = false">
 
-            <!-- <a
-                href="#"
-                class="uk-icon item-control"
-                :class="{ 'uk-invisible': item.items.length === 0}"
-                @click.stop.prevent="toggleExpand">
-            </a> -->
+                <ul class="uk-nav uk-dropdown-nav">
+
+                    <li :class="{ 'uk-active': list.pinned }">
+                        <a href="#" class="uk-nav-check"
+                            @click.stop.prevent="togglePinned">
+
+                            <span>Pinned</span>
+                            <octo-icon name="check" v-if="list.pinned"></octo-icon>
+                        </a>
+                    </li>
+
+                    <li :class="{ 'uk-active': list.hidden }">
+                        <a href="#" class="uk-nav-check"
+                            @click.stop.prevent="toggleHidden">
+
+                            <span>Hidden</span>
+                            <octo-icon name="check" v-if="list.hidden"></octo-icon>
+                        </a>
+                    </li>
+
+                    <li :class="{ 'uk-active': isDefault }">
+                        <a href="#" class="uk-nav-check"
+                            @click.stop.prevent="setDefault">
+
+                            <span>Default</span>
+                            <octo-icon name="check" v-if="isDefault"></octo-icon>
+                        </a>
+                    </li>
+
+                    <li class="uk-nav-divider"></li>
+
+                    <li><a href="#" @click.stop.prevent="rename(item)">Edit</a></li>
+                    <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
+
+                </ul>
+
+            </uk-dropdown>
 
         </template>
+
+        <button
+            @click.stop="toggleExpand"
+            uk-tooltip="delay: 500; title: Expand"
+            class="uk-button uk-button-none list-item-control"
+            :class="{ 'uk-invisible': item.items.length === 0}">
+
+            <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
+        </button>
 
     </div>
 </template>
@@ -146,12 +124,9 @@
 import { Vue, Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
-// import FontAwesomeIcon from '@fortawesome/vue-fontawesome';
 
 import { CollectionList, CollectionListMap, CollectionTree, CollectionState } from '@/store/modules/collection/index';
 import UkDropdownV from './../bits/uk-dropdown.vue';
-import RenameInputV from './../bits/rename-input.vue';
-import RenameMixin from '@/mixins/rename-mixin';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -165,8 +140,7 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        'uk-dropdown': UkDropdownV,
-        'rename-input': RenameInputV
+        'uk-dropdown': UkDropdownV
     },
     directives: {
         // Register a local custom directive called `v-input-focus`
@@ -184,7 +158,7 @@ const ActionCL = namespace('collection', Action);
         }
     }
 })
-export default class CollectionItemV extends mixins(RenameMixin) {
+export default class CollectionItemV extends Vue {
     @Emit('default')
     emDefault(payload: { listId: string }) {}
 
@@ -204,7 +178,7 @@ export default class CollectionItemV extends mixins(RenameMixin) {
      * Rename event is used the pool view, so it doesn't need the full store payload signature.
      */
     @Emit()
-    rename(item: CollectionList) {}
+    rename(item: CollectionTree) {}
 
     // passed in CollectionTree object
     @Prop()
@@ -213,6 +187,10 @@ export default class CollectionItemV extends mixins(RenameMixin) {
     // id of the newly created, mint list; trigger auto-renaming
     @Prop()
     mintListId: string;
+
+    // boolean flag specifying if the collection list is currently selected
+    @Prop()
+    isFocused: boolean;
 
     // an array of selected lists
     @StateCL
@@ -265,8 +243,9 @@ export default class CollectionItemV extends mixins(RenameMixin) {
 
     mounted(): void {
         // start the rename process for a newly created list
+        // TODO: I think this could be handled on the parent element
         if (this.list.id === this.mintListId) {
-            this.startRename();
+            this.rename(this.item);
         }
     }
 

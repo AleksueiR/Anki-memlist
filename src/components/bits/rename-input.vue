@@ -10,6 +10,10 @@
             @keydown.stop.enter="complete($event.target.value)"
             @keydown.stop.escape="complete()"
 
+            @keydown.stop.space="vnull"
+            @keydown.stop.right="vnull"
+            @keydown.stop.left="vnull"
+
             v-input-focus
             @focus.once="onFocus"
             @blur="complete()"

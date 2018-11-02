@@ -143,13 +143,20 @@ export class CollectionIndex {
         return this._defaultListId;
     }
 
+    /**
+     * Returns a flattened collection tree.
+     *
+     * @readonly
+     * @type {string[]}
+     * @memberof CollectionIndex
+     */
     get flatTree(): string[] {
         /* Pre-order tree traversal visits each node using stack.
         Checks if leaf node based on children === null otherwise
         pushes all children into stack and continues traversal. */
 
         const stack: CollectionTree[] = [];
-        const array: string[] = [];
+        const array: string[] = []; // output
 
         stack.push.apply(stack, this.tree.items);
 

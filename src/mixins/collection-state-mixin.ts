@@ -1,14 +1,15 @@
-import { Vue, Component, Emit } from 'vue-property-decorator';
+import { Vue, Component } from 'vue-property-decorator';
+import { namespace } from 'vuex-class';
+import {
+    CollectionWord,
+    CollectionIndex,
+    CollectionList,
+    CollectionListMap,
+    LookupResult
+} from '@/store/modules/collection';
 
-import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
-
-import { CollectionWord } from '@/store/modules/collection';
-
-const STORE = 'collection';
-
-const StateCL = namespace(STORE, State);
-const GetterCL = namespace(STORE, Getter);
-const ActionCL = namespace(STORE, Action);
+const STORE_MODULE_NAME = 'collection';
+const collection = namespace(STORE_MODULE_NAME);
 
 /**
  * to use:
@@ -17,9 +18,36 @@ const ActionCL = namespace(STORE, Action);
  */
 @Component
 export default class CollectionStateMixin extends Vue {
-    @StateCL lookupValue: string;
+    // #region State
 
-    @StateCL selectedWords: CollectionWord[];
+    @collection.State
+    index: CollectionIndex;
 
-    @ActionCL moveWord: (payload: { wordId: string; listId: string }) => void;
+    @collection.State
+    lists: CollectionListMap;
+
+    @collection.State
+    selectedLists: CollectionList[];
+
+    @collection.State
+    selectedWords: CollectionWord[];
+
+    @collection.State
+    lookupValue: string;
+
+    @collection.State
+    lookupResults: LookupResult[];
+
+    // #endregion State
+
+    // #region Getter
+
+    // #endregion Getter
+
+    // #region Action
+
+    @collection.Action
+    moveWord: (payload: { wordId: string; listId: string }) => void;
+
+    // #endregion Action
 }

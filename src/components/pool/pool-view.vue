@@ -67,12 +67,10 @@
         <focusable-list
             v-else
 
-            tabindex="0"
             class="list-content uk-flex-1 uk-margin-small-top cm-scrollbar"
 
-            :entry="focusedEntry"
+            v-model="focusedEntry"
             :allEntries="getPooledWords"
-            @change="value => focusedEntry = value"
 
             @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
             @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
@@ -221,9 +219,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     /**
      * The currently focused entry.
      */
-    // TODO: check how I can use @Model with this
     focusedEntry: CollectionWord | null = null;
 
+    /**
+     * The entry being renamed.
+     */
     renamingEntry: CollectionWord | null = null;
 
     // TODO: this doesn't seem to belong here

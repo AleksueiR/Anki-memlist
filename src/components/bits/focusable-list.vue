@@ -1,5 +1,7 @@
 <template>
     <div
+        tabindex="0"
+
         @focus="listOnFocus"
         @blur="listOnBlur"
 
@@ -16,20 +18,20 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { Component, Prop, Emit, Watch } from 'vue-property-decorator';
+import { Component, Prop, Emit, Watch, Model } from 'vue-property-decorator';
 
 @Component
 export default class FocusableListV extends Vue {
-    @Emit()
-    change(value: any) {}
-
     /**
      * The currently focused entry.
      *
      * @type {any}
      */
-    @Prop()
+    @Model('change', { type: Object })
     entry: any;
+
+    @Emit()
+    change(value: any) {}
 
     @Watch('entry')
     onEntryChange(newValue: any | null, oldValue: any | null): void {
@@ -52,6 +54,11 @@ export default class FocusableListV extends Vue {
      */
     @Prop()
     allEntries: any[];
+
+    @Watch('allEntries')
+    onAllEntriesCHange(): void {
+        this.onEntryChange(this.entry, this.previousEntry);
+    }
 
     previousEntry: any = null;
     entryIndex: number = -1;

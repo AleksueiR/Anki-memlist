@@ -27,6 +27,8 @@ import deepmerge from 'deepmerge';
 import { CollectionTree } from './../../store/modules/collection/index';
 import TreeeNode from './treee-node.vue';
 
+// TODO: switch to drag plugin
+
 export enum TreeeDropPosition {
     before = 'before',
     after = 'after',

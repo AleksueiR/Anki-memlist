@@ -20,16 +20,35 @@ export interface DragObject {
      * @memberof DragObject
      */
     clone: HTMLElement;
-    payload: any;
-    tags: DragTags;
+
+    /**
+     * The data item being dragged.
+     *
+     * @type {*}
+     * @memberof DragObject
+     */
+    payload?: any;
+    tags?: DragTags;
 }
 
 export interface DragTarget {
     node: HTMLElement;
-    payload: any;
-    tags: DragTags;
+
+    /**
+     * The data target item.
+     *
+     * @type {*}
+     * @memberof DragTarget
+     */
+    payload?: any;
+    tags?: DragTags;
 }
 
+/**
+ * `drag-object` direction properties.
+ *
+ * @interface DragObjectBindingValue
+ */
 interface DragObjectBindingValue {
     /**
      * HTMLElement to be cloned and used as the drag element. If not supplied, the node of the `drag-object` direction will be used.
@@ -38,20 +57,33 @@ interface DragObjectBindingValue {
      * @memberof DragTarget
      */
     node: HTMLElement | null;
-    payload: object;
-    onDown: (event: MouseEvent, object: DragObject) => boolean | null;
-    onStart: (event: MouseEvent, object: DragObject) => null;
-    onMove: (event: MouseEvent, object: DragObject) => null;
-    onStop: (event: MouseEvent, object: DragObject) => null;
-    tags: DragTags;
+
+    /**
+     * The data item being dragged. It's passed to the plugin and will not respond to binding changes after the drag has started.
+     *
+     * @type {object}
+     * @memberof DragObjectBindingValue
+     */
+    payload?: object;
+    onDown?: (event: MouseEvent, object: DragObject) => boolean | null;
+    onStart?: (event: MouseEvent, object: DragObject) => null;
+    onMove?: (event: MouseEvent, object: DragObject) => null;
+    onStop?: (event: MouseEvent, object: DragObject) => null;
+    tags?: DragTags;
 }
 
 interface DragTargetBindingValue {
-    payload: object;
-    onOver: (event: MouseEvent, object: DragObject, target: DragTarget) => boolean | void;
-    onOut: (event: MouseEvent, object: DragObject, target: DragTarget) => null;
+    /**
+     * The data item provided to the `drag-target` directive. It is passed as part of the `DragTarget` argument to the `onOver/onOut/onDrop` callbacks
+     *
+     * @type {object}
+     * @memberof DragTargetBindingValue
+     */
+    payload?: object;
+    onOver?: (event: MouseEvent, object: DragObject, target: DragTarget) => boolean | void;
+    onOut?: (event: MouseEvent, object: DragObject, target: DragTarget) => null;
     onDrop: (event: MouseEvent, object: DragObject, target: DragTarget) => null;
-    tags: { [name: string]: any } | null;
+    tags?: { [name: string]: any } | null;
 }
 
 // only one item can be dragged at a time
@@ -228,7 +260,7 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue) => {
 
                 dragObject.clone.style.transform = `translate(${event.pageX}px, ${event.pageY}px)`;
 
-                if (isFunction(options.onStop)) {
+                if (isFunction(options.onMove)) {
                     options.onMove(event, dragObject);
                 }
             }
@@ -240,7 +272,7 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue) => {
             const options: DragTargetBindingValue = binding.value;
             const dragTarget: DragTarget = { node: el, tags: options.tags, payload: options.payload };
 
-            // TODO: [performance] register drop targets and only active then when a drag detected
+            // TODO: [performance] register drag targets and only activate them then when a drag detected
             el.addEventListener('mouseover', startDropDetection);
             el.addEventListener('mouseup', dropObject);
             el.addEventListener('mouseout', stopDropDetection);
@@ -278,9 +310,10 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue) => {
 
                 console.log('target drop');
 
-                if (isFunction(options.onDrop)) {
-                    options.onDrop(event, dragObject, dragTarget);
-                }
+                // if (isFunction(options.onDrop)) {
+                // NOTE: `onDrop` is requered, otherwise what is the point?
+                options.onDrop(event, dragObject, dragTarget);
+                // }
 
                 stopDropDetection(event);
             }

@@ -11,19 +11,31 @@
             </button>
         </div>
 
-        <div class="collection-tree cm-scrollbar uk-margin-small-top uk-flex-1">
+        <focusable-list
+            class="collection-tree cm-scrollbar uk-margin-small-top uk-flex-1"
+
+            v-model="focusedEntry"
+            :allEntries="flattenedTreeItems"
+
+            @keydown.native.prevent.f2="startRename(focusedEntry)"
+            @keydown.native.prevent.enter="nodeClick(focusedEntry, $event)"
+            @keydown.native.prevent.space="setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })"
+            @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true })"
+            @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false })">
+
             <treee
                 class="treee"
+
                 v-model="treeItems"
                 :draggable="isTreeDraggable"
                 @node-click="nodeClick">
 
                 <template slot-scope="{ item, level }">
                     <rename-input
-                        v-if="renamingEntry && item.listId === renamingEntry.id"
+                        v-if="renamingEntry && item.listId === renamingEntry.listId"
                         :key="item.id"
 
-                        :value="renamingEntry.name"
+                        :value="lists[renamingEntry.listId].name"
                         @complete="completeRename">
                     </rename-input>
 
@@ -34,21 +46,19 @@
                         :item="item"
                         :mint-list-id="mintListId"
 
+                        :isFocused="focusedEntry && item.listId === focusedEntry.listId"
+
                         v-drag-target="{ payload: item.listId, onDrop: onListItemDrop }"
 
                         @default="setIndexDefaultList"
                         @pinned="setListPinned"
                         @expanded="setIndexExpandedTree"
                         @rename="startRename"
-                        @delete="deleteLists"
-
-                        @rename-start="onRenameStart"
-                        @rename-complete="onRenameComplete"
-                        @rename-cancel="onRenameComplete">
+                        @delete="deleteLists">
                     </collection-item>
                 </template>
             </treee>
-        </div>
+        </focusable-list>
 
     </section>
 </template>
@@ -61,10 +71,12 @@ import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
 
-import CollectionItemV from './collection-item.vue';
-import Treee from './../treee/treee.vue';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
+
+import Treee from './../treee/treee.vue';
+import CollectionItemV from './collection-item.vue';
 import RenameInputV from '@/components/bits/rename-input.vue';
+import FocusableListV from '@/components/bits/focusable-list.vue';
 
 import {
     CollectionState,
@@ -83,15 +95,13 @@ const ActionCL = namespace('collection', Action);
 @Component({
     components: {
         Treee,
+        'focusable-list': FocusableListV,
         'collection-item': CollectionItemV,
         'rename-input': RenameInputV
     }
 })
 export default class CollectionView extends mixins(CollectionStateMixin) {
     // #region vuex
-
-    @StateCL
-    index: CollectionIndex;
 
     @StateCL
     selectedLists: CollectionList[];
@@ -126,7 +136,15 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 
     // #endregion vuex
 
-    renamingEntry: CollectionList | null = null;
+    /**
+     * The currently focused tree item.
+     */
+    focusedEntry: CollectionTree | null = null;
+
+    /**
+     * The `CollectionList` being renamed.
+     */
+    renamingEntry: CollectionTree | null = null;
 
     // Treee needs a sturcture without circular dependencies
     // returns a safe list
@@ -140,6 +158,31 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 
         const newIndexTree = new CollectionTree({ items }, this.index);
         this.setIndexTree({ tree: newIndexTree });
+    }
+
+    /**
+     * Returns a flattened list of `CollectionTree` items excluding children of collapsed sections.
+     */
+    get flattenedTreeItems(): CollectionTree[] {
+        const stack: CollectionTree[] = [];
+        const array: CollectionTree[] = []; // output
+
+        stack.push.apply(stack, this.index.tree.items);
+
+        while (stack.length !== 0) {
+            const node = stack.shift()!;
+
+            array.push(node);
+
+            if (!node.expanded) {
+                continue;
+            }
+            if (node.items.length !== 0) {
+                stack.unshift.apply(stack, node.items.slice());
+            }
+        }
+
+        return array;
     }
 
     mintListId: string | null = null;
@@ -159,7 +202,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         this.selectList({ listId: node.listId, append: event.ctrlKey });
     }
 
-    onRenameStart({ id }: { id: string }) {
+    /* onRenameStart({ id }: { id: string }) {
         // TODO: maybe don't block dragging on rename
         this.isTreeDraggable = false;
     }
@@ -173,7 +216,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         }
 
         this.setListName({ listId: id, value: name });
-    }
+    } */
 
     deleteLists({ listId }: { listId: string }): void {
         const list = this.selectedLists.find(list => list.id === listId);
@@ -203,10 +246,10 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         this.moveWord({ wordId: wordId as string, listId: listId as string });
     }
 
-    startRename(entry: CollectionList): void {
+    startRename(entry: CollectionTree): void {
         console.log(entry);
 
-        /* this.focusedEntry =  */ this.renamingEntry = entry;
+        this.focusedEntry = this.renamingEntry = entry;
     }
 
     completeRename(name?: string): void {
@@ -217,12 +260,12 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         }
 
         if (name !== undefined && name !== '') {
-            this.setListName({ listId: this.renamingEntry.id, value: name });
+            this.setListName({ listId: this.renamingEntry.listId, value: name });
         }
 
         const entry = this.renamingEntry;
         this.renamingEntry = null;
-        // this.focusedEntry = entry;
+        this.focusedEntry = entry;
     }
 }
 </script>

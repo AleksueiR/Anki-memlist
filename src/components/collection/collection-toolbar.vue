@@ -7,7 +7,7 @@
                 class="toolbar-item uk-icon"
                 :class="{ selected: isCollectionViewOpen }"
                 @click.prevent="openCollectionView({ value: !isCollectionViewOpen })">
-                <octo-icon name="repo" scale="1.5"></octo-icon>
+                <octo-icon name="repo" scale="2"></octo-icon>
             </a>
 
         </nav>

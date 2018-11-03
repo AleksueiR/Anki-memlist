@@ -13,7 +13,7 @@
             class="uk-icon list-item-control first active"
             uk-tooltip="delay: 1500; title: Default list"
             v-if="isDefault">
-            <octo-icon name="bookmark"></octo-icon>
+            <octo-icon name="bookmark-plain"></octo-icon>
         </span>
 
         <button

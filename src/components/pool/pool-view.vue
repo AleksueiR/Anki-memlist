@@ -51,11 +51,7 @@
                         @select="selectWordSearchAll"
                         @favourite="setWordFavourite"
                         @archive="setWordArchived"
-                        @delete="deleteWords"
-
-                        @rename-start="onRenameStart"
-                        @rename-complete="onRenameComplete"
-                        @rename-cancel="onRenameComplete"></pool-entry>
+                        @delete="deleteWords"></pool-entry>
                 </div>
 
             </div>

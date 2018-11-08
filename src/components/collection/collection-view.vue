@@ -18,7 +18,7 @@
             :allEntries="flattenedTreeItems"
 
             @keydown.native.prevent.f2="startRename(focusedEntry)"
-            @keydown.native.prevent.enter="nodeClick(focusedEntry, $event)"
+            @keydown.native.prevent.enter="selectList({ listId: focusedEntry.listId, append: $event.ctrlKey })"
             @keydown.native.prevent.space="setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })"
             @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true })"
             @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false })">
@@ -185,6 +185,10 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         return array;
     }
 
+    /**
+     * The id of the newly created list. It's used to immediatelly start the renaming process.
+     *
+     */
     mintListId: string | null = null;
 
     /**
@@ -198,8 +202,13 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
      * If the clicked list is not yet selected, adds to the selection array. (holding Ctrl key appends it to already selected lists)
      * If the clicked list is already selected, removes from the selection array. (not holding Ctrl key will deselected everything except the one clicked)
      */
+    // TODO: replace CollectionTree with CollectionTree.Untyped here
     nodeClick(node: CollectionTree, event: MouseEvent): void {
         this.selectList({ listId: node.listId, append: event.ctrlKey });
+
+        // original Collection Tree elements contains circular links to the root and cannot be passed directly to the tree
+        // a safeJSON extract is passed instead - need to find the original CollectionTree item before setting it to the focused entry
+        this.focusedEntry = this.flattenedTreeItems.find(ti => ti.listId === node.listId)!;
     }
 
     /* onRenameStart({ id }: { id: string }) {
@@ -222,6 +231,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         const list = this.selectedLists.find(list => list.id === listId);
         if (list) {
             // this.deleteSelectedLists();
+            this.deleteList({ listId });
         } else {
             this.deleteList({ listId });
         }
@@ -249,7 +259,12 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
     startRename(entry: CollectionTree): void {
         console.log(entry);
 
-        this.focusedEntry = this.renamingEntry = entry;
+        // TODO: replace CollectionTree with CollectionTree.Untyped here ???
+        // original Collection Tree elements contains circular links to the root and cannot be passed directly to the tree
+        // a safeJSON extract is passed instead - need to find the original CollectionTree item before setting it to the focused entry
+        const trueEntry = this.flattenedTreeItems.find(ti => ti.listId === entry.listId)!;
+
+        this.focusedEntry = this.renamingEntry = trueEntry;
     }
 
     completeRename(name?: string): void {
@@ -262,6 +277,8 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         if (name !== undefined && name !== '') {
             this.setListName({ listId: this.renamingEntry.listId, value: name });
         }
+
+        this.mintListId = null;
 
         const entry = this.renamingEntry;
         this.renamingEntry = null;

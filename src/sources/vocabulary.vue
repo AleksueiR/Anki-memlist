@@ -190,7 +190,9 @@ const scrapeConfig = {
                             examples: {
                                 scrape: {
                                     iterator: '.sense:nth-child(1) .example',
-                                    data: 'html'
+                                    data: function($: any) {
+                                        return formatExample($(this).text());
+                                    }
                                 }
                             },
                             subsenses: {
@@ -213,7 +215,9 @@ const scrapeConfig = {
                                         examples: {
                                             scrape: {
                                                 iterator: '.example',
-                                                data: 'html'
+                                                data: function($: any) {
+                                                    return formatExample($(this).text());
+                                                }
                                             }
                                         }
                                     }
@@ -228,6 +232,19 @@ const scrapeConfig = {
 };
 
 // samples endpoint: https://corpus.vocabulary.com/api/1.0/examples.json?query=bag&maxResults=30&startOffset=0&filter=0
+
+// TODO: share among source components
+/**
+ * Format sample sentences by stripping quotes, capitalizing first letters, and adding punctuation in the end (TODO:).
+ *
+ * @param {string} line
+ * @returns {string}
+ */
+function formatExample(line: string): string {
+    line = line.trim().replace(/[\u2018\u2019\u201C\u201D]/g, '');
+    // TODO: add a period at the end of the example if there is none.
+    return line.charAt(0).toUpperCase() + line.slice(1);
+}
 
 @Component({
     components: {

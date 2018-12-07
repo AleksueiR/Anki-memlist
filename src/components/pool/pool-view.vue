@@ -1,117 +1,151 @@
 <template>
-
-    <section
-        class="list-view uk-flex uk-flex-column uk-flex-none">
-
+    <section class="pool-view uk-flex uk-flex-column uk-flex-none">
         <div class="list-header uk-flex uk-inline">
-            <span class="uk-form-icon uk-form-icon">
-                <octo-icon name="search" scale="0.8"></octo-icon>
-            </span>
+            <span class="uk-form-icon uk-form-icon"> <octo-icon name="search" scale="0.8"></octo-icon> </span>
 
             <input
-                class="uk-input uk-form-small"
-
+                class="uk-input uk-form-small uk-margin-right"
                 type="text"
                 placeholder="lookup / add"
                 minlength="3"
                 :value="lookupValue"
                 v-stream:input="lookupStream"
-                @keyup.enter="addWordTemp">
+                @keyup.enter="addWordTemp"
+            />
         </div>
 
         <!-- displays the lookup results from collections -->
-        <div
-            v-if="isLookupValid"
+        <keep-alive>
+            <div v-if="isLookupValid" class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top">
+                <!-- TODO: style nothing found label -->
+                <span v-if="lookupResults.length === 0">Nothing found</span>
 
-            class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top" >
+                <div v-for="(searchGroup, index) in lookupResults" :key="index" class="uk-margin-bottom">
+                    <div>
+                        <span class="search-list-title"> {{ searchGroup.list.name }} </span>
+                        <span class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.items.length }}</span>
+                    </div>
 
-            <!-- TODO: style nothing found label -->
-            <span v-if="lookupResults.length === 0">Nothing found</span>
-
-            <div
-                v-for="(searchGroup, index) in lookupResults"
-                :key="index"
-
-                class="uk-margin-bottom">
-
-                <div>
-                    <span class="search-list-title"> {{ searchGroup.list.name }} </span>
-                    <span
-                        class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.items.length }}</span>
+                    <div class="uk-margin-small-top">
+                        <pool-entry
+                            v-for="item in searchGroup.items"
+                            :key="item.id"
+                            :word="item.word"
+                            :class="{ 'perfect-match': item.score === 0 }"
+                            @select="selectWordSearchAll"
+                            @favourite="setWordFavourite"
+                            @archive="setWordArchived"
+                            @delete="deleteWords"
+                        ></pool-entry>
+                    </div>
                 </div>
-
-                <div class="uk-margin-small-top">
-                    <pool-entry
-                        v-for="item in searchGroup.items"
-                        :key="item.id"
-                        :word="item.word"
-
-                        :class="{ 'perfect-match': item.score === 0 }"
-
-                        @select="selectWordSearchAll"
-                        @favourite="setWordFavourite"
-                        @archive="setWordArchived"
-                        @delete="deleteWords"></pool-entry>
-                </div>
-
             </div>
 
+            <!-- displays pooled words from the selected lists -->
+
+            <div class="uk-flex uk-flex-column uk-flex-1 uk-margin-small-top" v-else>
+                <!--
+                    <div>
+                        <button
+                            uk-tooltip="delay: 500; title: View menu"
+                            class="uk-button uk-button-none list-item-control"
+                        >
+                            blah
+                            <octo-icon name="chevron-down"></octo-icon>
+                        </button>
+                    </div>
+                -->
+
+                <focusable-list
+                    class="list-content uk-margin-small-top  cm-scrollbar"
+                    v-model="focusedEntry"
+                    :allEntries="getPooledWords"
+                    @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id });"
+                    @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id });"
+                    @keydown.native.prevent.f2="startRename(focusedEntry);"
+                >
+                    <template v-for="item in getPooledWords">
+                        <rename-input
+                            v-if="renamingEntry && item.id === renamingEntry.id"
+                            :key="item.id"
+                            :value="renamingEntry.text"
+                            @complete="completeRename"
+                        >
+                        </rename-input>
+
+                        <pool-entry
+                            v-else
+                            :key="item.id"
+                            :word="item"
+                            :isFocused="item === focusedEntry"
+                            v-stay-in-view="item === focusedEntry"
+                            v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
+                            @select="onWordSelected"
+                            @favourite="setWordFavourite"
+                            @archive="setWordArchived"
+                            @rename="startRename"
+                            @delete="deleteWords"
+                        >
+                        </pool-entry>
+                    </template>
+                </focusable-list>
+            </div>
+        </keep-alive>
+
+        <div class="status-bar">
+            <div class="status-bar-item uk-flex-1">
+                <button class="status-bar-item-handle">
+                    <span
+                        >{{ getPooledWords.length }}
+                        <strong>{{ displayModeLabels[poolDisplayMode] }} </strong> words </span
+                    ><span v-if="selectedLists.length > 1"> in {{ selectedLists.length }} lists</span>
+
+                    <template v-else></template>
+                </button>
+                <!--
+                    <div class="status-bar-item-drop">
+                        <ul>
+                            <li>
+                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 0 });">
+                                    Show active <span>{{ poolDisplayCount[0] }}</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 1 });">
+                                    Show new <span>{{ poolDisplayCount[1] }}</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 2 });">
+                                    Show archived <span>{{ poolDisplayCount[2] }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                -->
+
+                <uk-dropdown :pos="'top-center'" :delay-hide="0">
+                    <ul class="uk-nav uk-dropdown-nav">
+                        <li>
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(0);"
+                                >Show all {{ poolDisplayCount[0] }}</a
+                            >
+                        </li>
+                        <li>
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(1);"
+                                >Show active {{ poolDisplayCount[1] }}</a
+                            >
+                        </li>
+                        <li>
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(2);"
+                                >Show archived {{ poolDisplayCount[2] }}</a
+                            >
+                        </li>
+                    </ul>
+                </uk-dropdown>
+            </div>
         </div>
-
-        <!-- displays pooled words from the selected lists -->
-
-        <focusable-list
-            v-else
-
-            class="list-content uk-flex-1 uk-margin-small-top cm-scrollbar"
-
-            v-model="focusedEntry"
-            :allEntries="getPooledWords"
-
-            @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
-            @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
-            @keydown.native.prevent.f2="startRename(focusedEntry)">
-
-            <template
-                v-for="item in getPooledWords">
-
-                <rename-input
-                    v-if="renamingEntry && item.id === renamingEntry.id"
-                    :key="item.id"
-
-                    :value="renamingEntry.text"
-                    @complete="completeRename">
-                </rename-input>
-
-                <pool-entry
-                    v-else
-
-                    :key="item.id"
-
-                    :word="item"
-                    :isFocused="item === focusedEntry"
-
-                    v-stay-in-view="item === focusedEntry"
-                    v-drag-object="{ payload: item.id, tags: { 'drag-target': 'collection-item' } }"
-
-                    @select="onWordSelected"
-                    @favourite="setWordFavourite"
-                    @archive="setWordArchived"
-                    @rename="startRename"
-                    @delete="deleteWords">
-                </pool-entry>
-
-            </template>
-
-        </focusable-list>
-
-        <div>
-            <span>{{ getPooledWords.length }} words</span>
-            <span v-if="selectedLists.length > 1"> in {{ selectedLists.length }} lists</span>
-        </div>
-
     </section>
-
 </template>
 
 <script lang="ts">
@@ -135,13 +169,17 @@ const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
 /* import wordMenu from './word-menu.vue'; */
 
-import { CollectionList, CollectionWord, LookupResult } from '../../store/modules/collection/index';
+import { CollectionList, CollectionWord, CollectionDisplay, LookupResult } from '../../store/modules/collection/index';
 
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
+
+import UkDropdownV from './../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
+
+const collection = namespace('collection');
 
 import { Observable, Subscription, Subject } from 'rxjs';
 import { debounceTime, pluck } from 'rxjs/operators';
@@ -160,7 +198,8 @@ interface VueStream extends Vue {
     components: {
         'focusable-list': FocusableListV,
         'pool-entry': PoolEntryV,
-        'rename-input': RenameInputV
+        'rename-input': RenameInputV,
+        'uk-dropdown': UkDropdownV
     },
     domStreams: [Streams.lookup],
     subscriptions() {
@@ -178,39 +217,29 @@ interface VueStream extends Vue {
     }
 })
 export default class PoolViewV extends mixins(CollectionStateMixin) {
-    @StateCL
-    selectedLists: CollectionList[];
-    @StateCL
-    selectedWords: CollectionWord[];
-    @StateCL
-    lookupResults: LookupResult[];
+    @StateCL selectedLists: CollectionList[];
+    @StateCL selectedWords: CollectionWord[];
+    @StateCL lookupResults: LookupResult[];
 
-    @GetterCL
-    getPooledWords: CollectionWord[];
+    @GetterCL getPooledWords: CollectionWord[];
 
-    @ActionCL
-    addWord: (payload: { listId: string; word: CollectionWord }) => void;
+    @collection.Action setListDisplay: (payload: { listId: string; value: CollectionDisplay }) => void;
 
-    @ActionCL
-    selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
+    @ActionCL addWord: (payload: { listId: string; word: CollectionWord }) => void;
 
-    @ActionCL
-    setWordText: (payload: { wordId: string; value: string; searchAll?: boolean }) => void;
+    @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
 
-    @ActionCL
-    setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
+    @ActionCL setWordText: (payload: { wordId: string; value: string; searchAll?: boolean }) => void;
 
-    @ActionCL
-    setWordArchived: (payload: { wordId: string; value: boolean }) => void;
+    @ActionCL setWordFavourite: (payload: { wordId: string; value: boolean }) => void;
 
-    @ActionCL
-    deleteWord: (payload: { wordId: string }) => void;
+    @ActionCL setWordArchived: (payload: { wordId: string; value: boolean }) => void;
 
-    @ActionCL
-    deleteSelectedWords: () => void;
+    @ActionCL deleteWord: (payload: { wordId: string }) => void;
 
-    @ActionCL
-    performLookup: (options?: { value: string }) => void;
+    @ActionCL deleteSelectedWords: () => void;
+
+    @ActionCL performLookup: (options?: { value: string }) => void;
 
     /**
      * The currently focused entry.
@@ -238,6 +267,37 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     created() {
         this.$observables.lookupObservable.subscribe(value => this.performLookup({ value }));
+    }
+
+    displayModeLabels = {
+        [CollectionDisplay.all]: '',
+        [CollectionDisplay.active]: 'active',
+        [CollectionDisplay.archived]: 'archived',
+        [CollectionDisplay.mixed]: 'mixed'
+    };
+
+    /**
+     * Returns the display mode of the selected lists. If the modes do not align, returns -1;
+     */
+    get poolDisplayMode(): CollectionDisplay | -1 {
+        const map = [0, 0, 0];
+        this.selectedLists.forEach(l => map[l.display]++);
+        const mode = map.findIndex(count => count === this.selectedLists.length);
+
+        return mode;
+    }
+
+    get poolDisplayCount(): number[] {
+        const result = [CollectionDisplay.all, CollectionDisplay.active, CollectionDisplay.archived];
+
+        return result.map(mode => this.selectedLists.reduce<number>((count, l) => count + l.countWords(mode), 0));
+    }
+
+    /**
+     * Sets the specified display mode to all the selected lists.
+     */
+    setSelectedListsDisplay(mode: CollectionDisplay): void {
+        this.selectedLists.forEach(sl => this.setListDisplay({ listId: sl.id, value: mode }));
     }
 
     get isLookupValid(): boolean {
@@ -310,8 +370,9 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
 <style lang="scss" scoped>
 @import './../../styles/variables';
-.list-view {
+.pool-view {
     width: 15em;
+    margin: 0 0.5rem;
 
     .list-header {
         height: 3rem;
@@ -349,5 +410,57 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
 .word-menu {
     text-align: right;
+}
+
+$hover-colour: rgba(
+    $color: $accent-colour,
+    $alpha: 0.1
+);
+
+.status-bar {
+    display: flex;
+
+    position: relative;
+    left: -0.5rem;
+    right: -0.5rem;
+
+    width: calc(100% + 1rem);
+
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+    font-size: 12px;
+
+    .status-bar-item {
+        .status-bar-item-handle {
+            width: 100%;
+
+            background: transparent;
+            border: none;
+            padding: 0 0.5rem;
+            // margin: 0;
+
+            height: 30px;
+            line-height: 22px;
+
+            text-align: left;
+
+            cursor: pointer;
+
+            &:focus {
+                outline: none;
+            }
+        }
+
+        .status-bar-item-drop {
+            position: absolute;
+            bottom: 27px;
+            width: 100%;
+            background-color: red;
+        }
+
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+    }
 }
 </style>

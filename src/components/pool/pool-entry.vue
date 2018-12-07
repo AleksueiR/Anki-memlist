@@ -79,7 +79,7 @@
             class="uk-button uk-button-none list-item-control"
             v-if="isTargeted || word.archived"
             :class="{ active: word.archived }">
-            <octo-icon name="check"></octo-icon>
+            <octo-icon name="primitive-dot"></octo-icon>
         </button>
 
     </div>

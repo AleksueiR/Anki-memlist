@@ -1,7 +1,5 @@
 <template>
-    <div :uk-dropdown="options">
-        <slot></slot>
-    </div>
+    <div :uk-dropdown="options"><slot></slot></div>
 </template>
 
 <script lang="ts">
@@ -70,8 +68,4 @@ export default class UkDropdownV extends Vue {
 }
 </script>
 
-
-<style lang="scss" scoped>
-</style>
-
-
+<style lang="scss" scoped></style>

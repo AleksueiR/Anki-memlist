@@ -1,7 +1,5 @@
 <template>
-
     <section class="root uk-flex">
-
         <collection-toolbar></collection-toolbar>
 
         <span class="divider-right"></span>
@@ -18,14 +16,14 @@
 
         <word-editor class="word-editor"></word-editor>
 
-        <!-- <settings :isOpen.sync="isSettingsOpen"></settings>
-        <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
-
+        <!--
+            <settings :isOpen.sync="isSettingsOpen"></settings>
+            <bulk-import :isOpen.sync="isImportOpen"></bulk-import>
+        -->
     </section>
-
 </template>
 
-<script lang='ts'>
+<script lang="ts">
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
@@ -133,10 +131,9 @@ export default class App extends mixins(AppStateMixin) {
 @import './../../node_modules/uikit/dist/css/uikit.min.css';
 </style>
 
-
 <style lang="scss" scoped>
 .root {
-    padding: 0.5rem 0;
+    padding: 0;
 
     font-size: 16px;
     font-family: Segoe UI;
@@ -153,16 +150,16 @@ span[class^='divider'] {
     background-color: rgba(0, 0, 0, 0.24);
 
     width: 1px;
-    margin: 0 0.5rem;
+    margin: 0; // 0.5rem; // 1rem 0.5rem;
 
     flex-shrink: 0;
 
-    &[class$='-left'] {
+    /* &[class$='-left'] {
         margin-right: 0;
     }
 
     &[class$='-right'] {
         margin-left: 0;
-    }
+    } */
 }
 </style>

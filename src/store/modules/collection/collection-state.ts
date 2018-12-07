@@ -247,6 +247,12 @@ export class CollectionTree {
 }
 
 export type CollectionSortBy = 'name' | 'date';
+export enum CollectionDisplay {
+    all = 0,
+    active = 1,
+    archived = 2,
+    mixed = -1
+}
 export type CollectionSortDirection = 'asc' | 'des';
 export type CollectionWordMap = { [name: string]: CollectionWord };
 
@@ -256,6 +262,7 @@ export interface CollectionListOptions {
     dateCreated?: number;
     dateModified?: number;
 
+    display?: number;
     pinned?: boolean;
     hidden?: boolean;
     colour?: string;
@@ -277,6 +284,7 @@ export class CollectionList {
     readonly dateCreated: number;
     dateModified: number;
 
+    private _display: CollectionDisplay;
     private _pinned: boolean;
     private _hidden: boolean;
     private _colour: string;
@@ -284,8 +292,21 @@ export class CollectionList {
     private _sortBy: CollectionSortBy;
     private _sortDirection: CollectionSortDirection;
 
+    /**
+     * A list CollectionWord ids.
+     *
+     * @type {string[]}
+     * @memberof CollectionList
+     */
     readonly index: string[];
     // readonly words: Map<string, CollectionWord>;
+
+    /**
+     * A dictionary of CollectionWord items referenced by their ids.
+     *
+     * @type {CollectionWordMap}
+     * @memberof CollectionList
+     */
     readonly words: CollectionWordMap;
     private _notes: string;
 
@@ -295,6 +316,7 @@ export class CollectionList {
             name = CollectionList.DEFAULT_NAME,
             dateCreated = moment.now(),
             dateModified = moment.now(),
+            display = CollectionDisplay.all,
             pinned = false,
             hidden = false,
             colour = '#fff',
@@ -309,6 +331,7 @@ export class CollectionList {
         this.name = name;
         this.dateCreated = dateCreated;
         this.dateModified = dateModified;
+        this.display = display;
         this.pinned = pinned;
         this.hidden = hidden;
         this.colour = colour;
@@ -331,6 +354,15 @@ export class CollectionList {
 
     get name(): string {
         return this._name;
+    }
+
+    set display(value: CollectionDisplay) {
+        this._display = value;
+        this.update();
+    }
+
+    get display(): CollectionDisplay {
+        return this._display;
     }
 
     set pinned(value: boolean) {
@@ -391,6 +423,28 @@ export class CollectionList {
         return this.notes !== '';
     }
 
+    /**
+     * Returns the number of words corresponding to the provided display mode.
+     * For `mixed` and `all` returns the total count.
+     *
+     * @param {CollectionDisplay} mode
+     * @returns {number}
+     * @memberof CollectionList
+     */
+    countWords(mode: CollectionDisplay): number {
+        const l = this.index.map(id => this.words[id]);
+
+        switch (mode) {
+            case CollectionDisplay.active:
+                return l.filter(word => word.archived).length;
+
+            case CollectionDisplay.archived:
+                return l.filter(word => !word.archived).length;
+        }
+
+        return l.length;
+    }
+
     addWord(word: CollectionWord): void {
         this.index.push(word.id);
         //this.words.set(word.id, word);
@@ -413,24 +467,24 @@ export class CollectionList {
         this.update();
     }
 
+    /**
+     * Updates the `date modified` timestamp.
+     *
+     * @private
+     * @memberof CollectionList
+     */
     private update(): void {
         this.dateModified = moment.now();
     }
 
+    /**
+     * Convert the collection into a safe, regular JSON object for storage.
+     *
+     * @readonly
+     * @type {CollectionListOptions}
+     * @memberof CollectionList
+     */
     get safeJSON(): CollectionListOptions {
-        // convert Map into a safe, regular JSON object for storage
-        /* const safeWords = Array.from(this.words.values()).reduce(
-            (
-                map: { [name: string]: CollectionWordOptions },
-                word: CollectionWord,
-                {}
-            ) => {
-                map[word.id] = word.safeJSON;
-                return map;
-            },
-            {}
-        ); */
-
         const safeWords = Object.values(this.words).reduce(
             (map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
                 map[word.id] = word.safeJSON;
@@ -444,13 +498,13 @@ export class CollectionList {
             name: this.name,
             dateCreated: this.dateCreated,
             dateModified: this.dateModified,
+            display: this.display,
             pinned: this.pinned,
             hidden: this.hidden,
             colour: this.colour,
             sortBy: this.sortBy,
             sortDirection: this.sortDirection,
             index: this.index,
-            //words: words as Map<string, CollectionWord>,
             words: safeWords as CollectionWordMap,
             notes: this.notes
         };

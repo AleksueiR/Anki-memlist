@@ -8,7 +8,8 @@ import {
     CollectionTree,
     CollectionWord,
     CollectionListMap,
-    LookupResult
+    LookupResult,
+    CollectionDisplay
 } from './collection-state';
 import { RootState } from '@/store/state';
 import { isArray } from 'util';
@@ -21,6 +22,8 @@ const state: CollectionState = new CollectionState();
 
 export enum Action {
     performLookup = 'performLookup',
+
+    setListDisplay = 'setListDisplay',
 
     addWord = 'addWord',
     deleteWord = 'deleteWord',
@@ -46,6 +49,8 @@ export enum Mutation {
     ADD_LIST = 'ADD_LIST',
     SELECT_LIST = 'SELECT_LIST',
     DESELECT_ALL_LISTS = 'DESELECT_ALL_LISTS',
+
+    SET_LIST_DISPLAY = 'SET_LIST_DISPLAY',
     SET_LIST_PINNED = 'SET_LIST_PINNED',
     ADD_WORD = 'ADD_WORD',
     SET_WORD_FAVOURITE = 'SET_WORD_FAVOURITE',
@@ -54,32 +59,41 @@ export enum Mutation {
 }
 
 const getters = {
+    /**
+     * Returns a list of words from all the selected collections. Words can be filterd by the CollectionDisplay setting.
+     *
+     * @param {CollectionState} state
+     * @returns {CollectionWord[]}
+     */
     getPooledWords(state: CollectionState): CollectionWord[] {
         if (state.selectedLists.length === 0) {
             return [];
         }
 
-        console.log('update tppool', state.selectedLists[0]);
+        // console.log('update tppool', state.selectedLists[0]);
 
-        const pooledWords = (<CollectionWord[]>[]).concat(
+        const pooledWords = ([] as CollectionWord[]).concat(
             ...state.selectedLists.map(list =>
                 // list.index.map(wordId => list.words.get(wordId)!)
-                list.index.map(wordId => list.words[wordId]!)
+                list.index
+                    .map(wordId => list.words[wordId]!)
+                    .filter(word => {
+                        // filter out words according to the collection display setting
+                        switch (list.display) {
+                            case CollectionDisplay.active:
+                                return !word.archived;
+
+                            case CollectionDisplay.archived:
+                                return word.archived;
+
+                            default:
+                                return true;
+                        }
+                    })
             )
         );
 
         return pooledWords;
-        // return state.selectedLists[0].index;
-
-        /* const pooledWords = (<CollectionWord[]>[]).concat(
-            ...state.selectedLists.map(list => Array.from(list.words.values()))
-        );
-
-        return pooledWords; */
-
-        /* state.selectedLists.reduce((pooledWords: CollectionWord[], selectedList: CollectionList) => {
-            return pooledWords.concat(selectedList.words)
-        },[]); */
     }
 };
 
@@ -287,6 +301,20 @@ const actions = {
         }
 
         context.commit(Mutation.SET_LIST_NAME, { list, value });
+
+        actions.writeList(context, list.id);
+    },
+
+    [Action.setListDisplay](
+        context: CollectionContext,
+        { listId, value }: { listId: string; value: CollectionDisplay }
+    ): void {
+        const list = state.lists[listId];
+        if (list === undefined) {
+            return;
+        }
+
+        context.commit(Mutation.SET_LIST_DISPLAY, { list, value });
 
         actions.writeList(context, list.id);
     },
@@ -583,6 +611,13 @@ const mutations = {
         list.name = value;
     },
 
+    [Mutation.SET_LIST_DISPLAY](
+        state: CollectionState,
+        { list, value }: { list: CollectionList; value: CollectionDisplay }
+    ): void {
+        list.display = value;
+    },
+
     [Mutation.SET_LIST_PINNED](
         state: CollectionState,
         { list, value }: { list: CollectionList; value: boolean }
@@ -664,6 +699,7 @@ const mutations = {
     [Mutation.SET_LOOKUP_VALUE](state: CollectionState, { value }: { value: string }): void {
         state.lookupValue = value;
     },
+
     [Mutation.SET_LOOKUP_RESULTS](state: CollectionState, { results }: { results: LookupResult[] }): void {
         state.lookupResults = results;
     }

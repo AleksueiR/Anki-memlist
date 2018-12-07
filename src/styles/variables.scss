@@ -10,6 +10,8 @@ $verb-colour: #2980d9;
 
 $accent-colour: #341f97;
 
+// focused colour is 0.6 opacity of accent colour, text color changed to white, bold; fill of icons the same
+
 $primary-colour: #2c3e50;
 $dark-primary-colour: darken($primary-colour, 20%);
 $light-primary-colour: lighten($primary-colour, 20%);

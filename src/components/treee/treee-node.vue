@@ -190,8 +190,9 @@ export default class TreeeNode extends Vue {
             return;
         }
 
+        // not needed anymore
         // set focus to the item occupying the tree node slot
-        (<HTMLElement>(<HTMLElement>this.$refs.slot).firstElementChild!).focus();
+        // (<HTMLElement>(<HTMLElement>this.$refs.slot).firstElementChild!).focus();
 
         this.treee.$emit('node-click', this.item, event);
     }

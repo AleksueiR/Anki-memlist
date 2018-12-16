@@ -1,17 +1,20 @@
 <template>
-    <div class="container  uk-flex-1">
-
-        <!-- <quill-editor v-for="(modelField, index) in modelFields"
+    <div class="container uk-flex-1">
+        <!--
+            <quill-editor v-for="(modelField, index) in modelFields"
             :key="modelField"
             :initialHTML="noteFields[index]"
-            :fieldName="modelField"></quill-editor> -->
+            :fieldName="modelField"></quill-editor>
+        -->
 
         <header>
             <h1 class="title" v-if="word">{{ word.text }}</h1>
 
-            <!-- <div class="controls">
-                <word-menu></word-menu>
-            </div> -->
+            <!--
+                <div class="controls">
+                    <word-menu></word-menu>
+                </div>
+            -->
         </header>
 
         <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut, onDrop: onDrop }">
@@ -20,41 +23,33 @@
         </div>
 
         <section class="container main" v-if="word">
-
-            <section class="content cm-scrollbar">
-                <div
-                    v-for="source in sourceOrder"
-                    :key="source.id"
-
-                    :id="source.id"
-                    v-show="source.hasContent"
-
-                    class="source-view">
-                    <h2 class="title"><span class="name">{{ source.name }}</span><span class="divider"></span></h2>
-                    <component
-                        :is="source.id"
-                        :word="word"
-
-                        @has-content="source.hasContent = $event"></component>
+            <section class="content" v-bar>
+                <div>
+                    <div
+                        v-for="source in sourceOrder"
+                        :key="source.id"
+                        :id="source.id"
+                        v-show="source.hasContent"
+                        class="source-view"
+                    >
+                        <h2 class="title">
+                            <span class="name">{{ source.name }}</span
+                            ><span class="divider"></span>
+                        </h2>
+                        <component :is="source.id" :word="word" @has-content="source.hasContent = $event;"></component>
+                    </div>
                 </div>
             </section>
 
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
-                    <li
-                        v-for="source in sourceOrder"
-                        :key="source.id"
-
-                        class="heading">
-
+                    <li v-for="source in sourceOrder" :key="source.id" class="heading">
                         <a :href="`#${source.id}`" class="anchor" v-if="source.hasContent">{{ source.name }}</a>
                         <span v-else class="anchor uk-text-muted">{{ source.name }}</span>
                     </li>
                 </ul>
-
             </aside>
         </section>
-
     </div>
 </template>
 
@@ -277,7 +272,7 @@ header {
 
     .content {
         flex: 1;
-        padding-right: 1rem;
+        padding-right: 0rem;
 
         .source-view {
             .title {

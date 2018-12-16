@@ -43,7 +43,7 @@
 
             <!-- displays pooled words from the selected lists -->
 
-            <div class="uk-flex uk-flex-column uk-flex-1 uk-margin-small-top" v-else>
+            <div class="uk-flex uk-flex-column uk-flex-1 uk-margin-small-top" v-else v-bar>
                 <!--
                     <div>
                         <button
@@ -57,7 +57,7 @@
                 -->
 
                 <focusable-list
-                    class="list-content uk-margin-small-top  cm-scrollbar"
+                    class="list-content"
                     v-model="focusedEntry"
                     :allEntries="getPooledWords"
                     @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id });"
@@ -372,14 +372,16 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 @import './../../styles/variables';
 .pool-view {
     width: 15em;
-    margin: 0 0.5rem;
+    margin: 0;
 
     .list-header {
         height: 3rem;
         align-items: center;
 
         .uk-input {
-            padding-left: calc(0.5rem + 30px - 1px) !important;
+            padding-left: 0 !important;
+            margin-left: calc(0.5rem + 2rem);
+            border-width: 0 0 1px 0;
         }
     }
 
@@ -421,10 +423,6 @@ $hover-colour: rgba(
     display: flex;
 
     position: relative;
-    left: -0.5rem;
-    right: -0.5rem;
-
-    width: calc(100% + 1rem);
 
     border-top: 1px solid rgba(0, 0, 0, 0.08);
 

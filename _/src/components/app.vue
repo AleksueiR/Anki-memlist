@@ -1,7 +1,5 @@
 <template>
-
     <section class="root uk-flex">
-
         <collection-toolbar></collection-toolbar>
 
         <span class="divider-right"></span>
@@ -18,14 +16,14 @@
 
         <word-editor class="word-editor"></word-editor>
 
-        <!-- <settings :isOpen.sync="isSettingsOpen"></settings>
-        <bulk-import :isOpen.sync="isImportOpen"></bulk-import> -->
-
+        <!--
+            <settings :isOpen.sync="isSettingsOpen"></settings>
+            <bulk-import :isOpen.sync="isImportOpen"></bulk-import>
+        -->
     </section>
-
 </template>
 
-<script lang='ts'>
+<script lang="ts">
 import { Vue, Component, Watch } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
@@ -126,7 +124,6 @@ export default class App extends mixins(AppStateMixin) {
 @import './../styles/common.scss';
 @import './../../node_modules/uikit/dist/css/uikit.min.css';
 </style>
-
 
 <style lang="scss" scoped>
 .root {

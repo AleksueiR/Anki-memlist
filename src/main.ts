@@ -10,6 +10,7 @@ import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 import VueRx from 'vue-rx';
 import { Observable, Subscription, Subject } from 'rxjs';
+import Vuebar from 'vuebar';
 
 import './registerServiceWorker';
 
@@ -32,6 +33,8 @@ Vue.use(VueRx, {
 
 // TODO: remove
 Vue.use(ElementUI);
+
+Vue.use(Vuebar);
 
 const store: Store<RootState> = createStore();
 

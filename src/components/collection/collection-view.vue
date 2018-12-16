@@ -278,7 +278,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 
 .collection-view {
     width: 16em;
-    margin: 0 0.5rem;
+    margin: 0;
 
     .collection-header {
         margin-left: calc(0.5rem + 30px);

@@ -3,6 +3,8 @@ declare module 'blots/block'; */
 
 declare module '@vue/devtools';
 
+declare module 'vuebar';
+
 declare module 'gists';
 
 // declare module 'element-ui';
@@ -37,7 +39,7 @@ declare module 'quill/formats/header';
 declare module 'quill/formats/italic';
 declare module 'quill/formats/bold'; */
 
-declare module "*.json" {
+declare module '*.json' {
     const value: any;
     export default value;
 }

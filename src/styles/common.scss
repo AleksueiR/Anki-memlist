@@ -4,24 +4,6 @@ body {
     color: $text-colour;
 }
 
-// adds modified scroll-bar to the section
-.cm-scrollbar {
-    overflow: auto;
-
-    &::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background-color: lighten(black, 90%);
-        transition: all 0.3s ease;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background-color: lighten(black, 70%);
-    }
-}
-
 .uk-icon {
     align-items: center;
     justify-content: center;
@@ -61,3 +43,42 @@ body {
     justify-content: center;
     display: flex;
 } */
+
+// vuebar scrollbar
+
+.vb > .vb-dragger {
+    z-index: 5;
+    width: 12px;
+    right: 0;
+}
+
+.vb > .vb-dragger > .vb-dragger-styler {
+    backface-visibility: hidden;
+    transform: rotate3d(0, 0, 0, 0);
+    transition: background-color 100ms ease-out, margin 100ms ease-out;
+    background-color: rgba(black, 0.1);
+    margin: 0 0 0 5px;
+    border-radius: 0;
+    height: 100%;
+    display: block;
+}
+
+.vb.vb-scrolling-phantom > .vb-dragger > .vb-dragger-styler {
+    background-color: rgba(black, 0.3);
+}
+
+.vb > .vb-dragger:hover > .vb-dragger-styler {
+    background-color: rgba(black, 0.5);
+    margin: 0px;
+    height: 100%;
+}
+
+.vb.vb-dragging > .vb-dragger > .vb-dragger-styler {
+    background-color: rgba(black, 0.5);
+    margin: 0px;
+    height: 100%;
+}
+
+.vb.vb-dragging-phantom > .vb-dragger > .vb-dragger-styler {
+    background-color: rgba(black, 0.5);
+}

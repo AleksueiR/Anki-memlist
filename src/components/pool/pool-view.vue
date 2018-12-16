@@ -180,6 +180,7 @@ const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
 
 const collection = namespace('collection');
+const display = namespace('display');
 
 import { Observable, Subscription, Subject } from 'rxjs';
 import { debounceTime, pluck } from 'rxjs/operators';
@@ -241,6 +242,15 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     @ActionCL performLookup: (options?: { value: string }) => void;
 
+    // #region Display store
+
+    /**
+     * Loads wordbook definitions for the provided collection word.
+     */
+    @display.Action loadDefinitions: (payload: { value: CollectionWord }) => Promise<void>;
+
+    // #endregion Display store
+
     /**
      * The currently focused entry.
      */
@@ -266,7 +276,10 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     }
 
     created() {
-        this.$observables.lookupObservable.subscribe(value => this.performLookup({ value }));
+        this.$observables.lookupObservable.subscribe(value => {
+            this.performLookup({ value });
+            this.loadDefinitions({ value: new CollectionWord({ text: value }) });
+        });
     }
 
     displayModeLabels = {
@@ -330,10 +343,13 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     }
 
     onWordSelected(payload: { wordId: string; append: boolean }): void {
-        const word = this.getPooledWords.find(word => word.id === payload.wordId);
+        // the word must be in the pool, otherwise it cannot be selected
+        const word = this.getPooledWords.find(word => word.id === payload.wordId)!;
         this.focusedEntry = word!;
 
         this.selectWord(payload);
+
+        this.loadDefinitions({ value: word });
     }
 
     /* onRenameComplete({ id, name }: { id: string; name?: string }) {

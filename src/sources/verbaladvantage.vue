@@ -1,11 +1,13 @@
 <template>
     <div>
         <source-view :definition="definition" :word="word">
-
             <section slot="after-group-list" class="description">
                 <p v-html="vaWord.description" v-if="vaWord"></p>
-            </section>
 
+                <span v-if="vaWord"
+                    >level: {{ Math.floor(vaWord.id / 50) + 1 }}; word: {{ vaWord.id % 50 }}; id: {{ vaWord.id }}</span
+                >
+            </section>
         </source-view>
     </div>
 </template>
@@ -14,15 +16,15 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-// import vaWords from '@/../assets/full-list.json';
+import vaWords from '@/../assets/full-list.json';
 
 type VAList = { [name: string]: VAWord };
-const vaWords: { [name: string]: VAWord } = {};
+// const vaWords: { [name: string]: VAWord } = {};
 
 import loglevel from 'loglevel';
 const log: loglevel.Logger = loglevel.getLogger(`source`);
 
-import { Word } from './../store/modules/words';
+import { CollectionWord } from '@/store/modules/collection';
 
 import SourceView from './../components/editor/source-view.vue';
 import { Source, Definition } from './source.class';
@@ -40,7 +42,7 @@ interface VAWord {
 })
 export default class VerbalAdvantageSource extends Source {
     @Watch('word')
-    onWordChanged(val: Word | null) {
+    onWordChanged(val: CollectionWord | null) {
         // TODO: word changes are not picked up correctly and `hasContent` sometimes is not updated correctly
 
         log.info('word changes');

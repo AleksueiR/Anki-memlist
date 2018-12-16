@@ -1,20 +1,7 @@
 <template>
     <div class="container uk-flex-1">
-        <!--
-            <quill-editor v-for="(modelField, index) in modelFields"
-            :key="modelField"
-            :initialHTML="noteFields[index]"
-            :fieldName="modelField"></quill-editor>
-        -->
-
         <header>
             <h1 class="title" v-if="word">{{ word.text }}</h1>
-
-            <!--
-                <div class="controls">
-                    <word-menu></word-menu>
-                </div>
-            -->
         </header>
 
         <div class="null-state" v-if="!word" v-drag-target="{ onOver: onOver, onOut: onOut, onDrop: onDrop }">
@@ -25,9 +12,15 @@
         <section class="container main" v-if="word">
             <section class="content" v-bar>
                 <div>
+                    <div v-for="[wordbook, definition] in definitions" :key="wordbook.id">
+                        <!-- {{ wordbook.id }} {{ definition }} -->
+
+                        <component :is="wordbook.id" :word="word" :definition="definition"></component>
+                    </div>
+                    <!-- old stuff below -->
                     <div
                         v-for="source in sourceOrder"
-                        :key="source.id"
+                        :key="`${source.id}-`"
                         :id="source.id"
                         v-show="source.hasContent"
                         class="source-view"
@@ -36,6 +29,7 @@
                             <span class="name">{{ source.name }}</span
                             ><span class="divider"></span>
                         </h2>
+
                         <component :is="source.id" :word="word" @has-content="source.hasContent = $event;"></component>
                     </div>
                 </div>
@@ -65,15 +59,18 @@ import sources from './../../sources';
 
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
-import { Word } from './../../store/modules/words';
 // import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
+import { Definition } from '@/sources/source.class';
+import { Wordbook } from '@/api/wordbook/common';
 
 /* const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
  */
+
+const display = namespace('display');
 
 interface SourceEntry {
     name: string;
@@ -95,9 +92,13 @@ export default class WordList extends mixins(CollectionStateMixin) {
     @Prop()
     id: string;
 
-    activeTab: string = 'first';
+    // #region Display store
 
-    raw: string = '';
+    @display.State word: CollectionWord[];
+    @display.State definitions: Definition[];
+    @display.State wordbooks: Wordbook[];
+
+    // #endregion Display store
 
     sourceOrder: SourceEntry[] = [
         {
@@ -118,7 +119,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
     ];
 
     // _word: Word | null = null;
-    get word(): CollectionWord | null {
+    /* get word(): CollectionWord | null {
         if (this.lookupValue !== '') {
             return new CollectionWord({ text: this.lookupValue });
         }
@@ -131,7 +132,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
         return this.selectedWords[0];
 
         //return rSelectedItem(this.$store);
-    }
+    } */
 
     created(): void {
         /*  this.$on(WORD_SELECTED, (word: Word) => {
@@ -150,8 +151,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
 
             this.raw = this.editor.root.innerHTML;
         }); */
-
-        if (!this.id) {
+        /* if (!this.id) {
             return;
         }
 
@@ -162,8 +162,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
         this.modelFields = await anki.getModelFieldNames('Word Vault');
 
         this.notes = await anki.findNotes('English::Word Vault', 'Word', this.word!.text);
-        this.noteFields = await anki.getFields(this.notes[0]);
-
+        this.noteFields = await anki.getFields(this.notes[0]); */
         /* anki.getNotes('English::Word Vault', 'Word', this.word!.text).then(data => {
             console.log(data);
             this.notes = data;

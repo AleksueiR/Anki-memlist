@@ -1,19 +1,21 @@
 import { Vue, Prop, Emit, Watch } from 'vue-property-decorator';
-import { Word } from './../store/modules/words';
+import { CollectionWord } from '@/store/modules/collection';
 
 // TODO: turn this into a mixin
 export class Source extends Vue {
+    // TODO: deprecate
     @Emit()
     hasContent(value: boolean) {}
 
     @Prop()
-    word: Word;
+    word: CollectionWord;
 
     definition: Definition | null = null;
 
     /**
      * Watch `definition` change and fire `hasContent` event depending on the value of the `definition`.
      * TODO: add a `loading` state; this can be fired every time when the `word` is changing
+     * TODO: deprecate
      *
      * @param {(Definition | null)} value
      * @memberof Source

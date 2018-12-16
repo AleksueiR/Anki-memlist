@@ -161,7 +161,7 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import { Word } from './../store/modules/words';
+import { CollectionWord } from '@/store/modules/collection';
 
 import axios, { AxiosPromise, AxiosInstance } from 'axios';
 
@@ -358,7 +358,7 @@ function formatExample(line: string): string {
 })
 export default class OxfordDictionariesSource extends Source {
     @Watch('word')
-    async onWordChanged(val: Word | null) {
+    async onWordChanged(val: CollectionWord | null) {
         log.info('fsd');
 
         if (!val) {

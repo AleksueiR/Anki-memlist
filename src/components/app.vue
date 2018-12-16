@@ -44,6 +44,7 @@ import AppStateMixin from '@/mixins/app-state-mixin';
 // import { dInitCollection } from './../store/modules/collection';
 
 // import { areSettingsValid } from './../settings';
+
 import {
     CollectionState,
     CollectionIndex,
@@ -51,9 +52,12 @@ import {
     CollectionListMap,
     CollectionTree
 } from '../store/modules/collection/index';
+import { books, Wordbook } from '@/api/wordbook';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
+
+const display = namespace('display');
 
 @Component({
     components: {
@@ -106,12 +110,16 @@ export default class App extends mixins(AppStateMixin) {
         return rIsSettingsOpen(this.$store);
     } */
 
+    @display.Action setWordbooks: (payload: { value: Wordbook[] }) => void;
+
     mounted(): void {
         // TODO: when should setting check happen
         // this.init();
 
         console.log('fetch index');
         this.fetchIndex();
+
+        this.setWordbooks({ value: books });
     }
 
     init(): void {

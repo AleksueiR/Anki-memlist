@@ -1,103 +1,112 @@
 <template>
     <div>
         <source-view :definition="definition" :word="word">
-
             <section slot="before-group-list" class="descriptions">
                 <p v-html="shortDescription"></p>
                 <p v-html="longDescription"></p>
             </section>
-
         </source-view>
 
         <div v-if="false">
-            <!-- <p v-html="definition.short"></p>
-            <p v-html="definition.long"></p> -->
+            <!--
+                <p v-html="definition.short"></p>
+                <p v-html="definition.long"></p>
+            -->
 
-            <!--ul class="group-list">
-                <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
+            <!--
+                ul class="group-list">
+                    <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
 
-                    <h3 class="group-title">
-                        <span>{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span>
-                        </span>
-                    </h3>
+                        <h3 class="group-title">
+                            <span>{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span>
+                            </span>
+                        </h3>
 
-                    <div v-for="(part, index) in group.parts" :key="`part-${index}`" class="part">
-                        <span class="part-designator" :class="part.name">{{ part.name }}</span>
+                        <div v-for="(part, index) in group.parts" :key="`part-${index}`" class="part">
+                            <span class="part-designator" :class="part.name">{{ part.name }}</span>
 
-                        <ul class="sense-list">
-                            <li v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`" class="sense-item">
+                            <ul class="sense-list">
+                                <li v-for="(sense, senseIndex) in part.senses" :key="`sense-${senseIndex}`" class="sense-item">
 
-                                <span class="sense-index">{{ senseIndex + 1 }}</span>
+                                    <span class="sense-index">{{ senseIndex + 1 }}</span>
 
-                                <div class="sense-content">
-                                    <p class="sense-definition-block">
+                                    <div class="sense-content">
+                                        <p class="sense-definition-block">
 
-                                        <span v-if="sense.grammaticalNote" class="sense-gram-note">[{{ sense.grammaticalNote }}]</span>
-                                        <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
-                                        <span class="sense-definition">{{ sense.definition }}</span>
-                                    </p>
+                                            <span v-if="sense.grammaticalNote" class="sense-gram-note">[{{ sense.grammaticalNote }}]</span>
+                                            <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
+                                            <span class="sense-definition">{{ sense.definition }}</span>
+                                        </p>
 
-                                    <div class="sense-example-list" v-if="sense.examples.length > 0">
-                                        <li v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
-                                            <p v-html="example"></p>
-                                        </li>
-                                    </div>
+                                        <div class="sense-example-list" v-if="sense.examples.length > 0">
+                                            <li v-for="(example, index) in sense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
+                                                <p v-html="example"></p>
+                                            </li>
+                                        </div>
 
-                                    <ul class="sense-list subsense-list" v-if="sense.subsenses.length > 0">
-                                        <li v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`" class="sense-item">
+                                        <ul class="sense-list subsense-list" v-if="sense.subsenses.length > 0">
+                                            <li v-for="(subsense, subsenseIndex) in sense.subsenses" :key="`subsense-${subsenseIndex}`" class="sense-item">
 
-                                            <span class="sense-index">{{ senseIndex + 1 }}.{{ subsenseIndex + 1 }}</span>
+                                                <span class="sense-index">{{ senseIndex + 1 }}.{{ subsenseIndex + 1 }}</span>
 
-                                            <div class="sense-content">
-                                                <p class="sense-definition-block">
-                                                    <span v-if="subsense.grammaticalNote" class="sense-gram-note">[{{ subsense.grammaticalNote }}]</span>
-                                                    <span v-if="subsense.senseRegisters" class="sense-registers">[{{ subsense.senseRegisters }}]</span>
-                                                    <span class="sense-definition">{{ subsense.definition }}</span>
-                                                </p>
+                                                <div class="sense-content">
+                                                    <p class="sense-definition-block">
+                                                        <span v-if="subsense.grammaticalNote" class="sense-gram-note">[{{ subsense.grammaticalNote }}]</span>
+                                                        <span v-if="subsense.senseRegisters" class="sense-registers">[{{ subsense.senseRegisters }}]</span>
+                                                        <span class="sense-definition">{{ subsense.definition }}</span>
+                                                    </p>
 
-                                                <div class="sense-example-list" v-if="subsense.examples.length > 0">
-                                                    <li v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
-                                                        <p v-html="example"></p>
-                                                    </li>
+                                                    <div class="sense-example-list" v-if="subsense.examples.length > 0">
+                                                        <li v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" class="sense-example-item">
+                                                            <p v-html="example"></p>
+                                                        </li>
+                                                    </div>
                                                 </div>
-                                            </div>
 
 
-                                        </li>
-                                    </ul>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-            </ul-->
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul
+            -->
 
-            <!-- <div v-for="(pronunciation, index) in definition.pronunciations" :key="`pronunciation-${index}`">
-                {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
+            <!--
+                <div v-for="(pronunciation, index) in definition.pronunciations" :key="`pronunciation-${index}`">
+                    {{ pronunciation.part }} <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`">{{ spelling }}</span>
 
 
 
+                    <a class="speaker" @click.stop.prevent="playSound">
+                        <audio ref="player" controls :src="pronunciation.audio"></audio>
+                        <i class="el-icon-service"></i>
+                    </a>
+                </div>
+            -->
+
+            <!--
                 <a class="speaker" @click.stop.prevent="playSound">
-                    <audio ref="player" controls :src="pronunciation.audio"></audio>
+                    <audio ref="player" controls :src="group.pronunciations.find(p => p.part === part.name).audio"></audio>
                     <i class="el-icon-service"></i>
                 </a>
-            </div> -->
+            -->
 
-            <!-- <a class="speaker" @click.stop.prevent="playSound">
-                <audio ref="player" controls :src="group.pronunciations.find(p => p.part === part.name).audio"></audio>
-                <i class="el-icon-service"></i>
-            </a> -->
+            <!--
+                {{ ++senseIndex }} <span class="part-designator">{{ part.name }}</span>
+                <p v-html="sense.grammaticalNote"></p>
+                <p v-html="sense.senseRegisters"></p>
+                <p v-html="sense.definition"></p>
+            -->
 
-            <!-- {{ ++senseIndex }} <span class="part-designator">{{ part.name }}</span>
-            <p v-html="sense.grammaticalNote"></p>
-            <p v-html="sense.senseRegisters"></p>
-            <p v-html="sense.definition"></p> -->
-
-            <!-- <p v-html="subsense.grammaticalNote"></p>
-            <p v-html="subsense.senseRegisters"></p>
-            <p v-html="subsense.definition"></p>
-            <p v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p> -->
-
+            <!--
+                <p v-html="subsense.grammaticalNote"></p>
+                <p v-html="subsense.senseRegisters"></p>
+                <p v-html="subsense.definition"></p>
+                <p v-for="(example, index) in subsense.examples.slice(0, 3)" :key="`example-${index}`" v-html="example"></p>
+            -->
         </div>
     </div>
 </template>
@@ -106,7 +115,7 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-import { Word } from './../store/modules/words';
+import { CollectionWord } from '@/store/modules/collection';
 
 import axios, { AxiosResponse } from 'axios';
 
@@ -258,7 +267,7 @@ export default class VocabularySource extends Source {
     longDescription: string = '';
 
     @Watch('word')
-    async onWordChanged(val: Word | null) {
+    async onWordChanged(val: CollectionWord | null) {
         if (!val) {
             log.info('word is not set');
             return '';

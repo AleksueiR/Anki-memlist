@@ -4,6 +4,7 @@ import createLogger from 'vuex/dist/logger';
 
 import { app } from './modules/app';
 import { collection } from './modules/collection';
+import { display } from './modules/display';
 
 import { RootState } from './state';
 
@@ -16,6 +17,7 @@ export const createStore = () =>
     new Vuex.Store<RootState>({
         modules: {
             app,
-            collection
+            collection,
+            display
         }
     });

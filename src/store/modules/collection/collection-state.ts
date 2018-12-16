@@ -85,6 +85,7 @@ export class CollectionState {
         this.lists = lists;
     }
 
+    // TODO: remove this function - move to the collection ADD_LIST function
     addList(tree: CollectionTree, list: CollectionList): void {
         tree.addList(list);
         this.lists[list.id] = list;

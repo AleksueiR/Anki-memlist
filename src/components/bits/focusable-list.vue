@@ -1,18 +1,14 @@
 <template>
     <div
         tabindex="0"
-
         @focus="listOnFocus"
         @blur="listOnBlur"
-
-        @keydown.prevent.down="listNext()"
-        @keydown.prevent.page-down="listNext(10)"
-
-        @keydown.prevent.up="listPrevious()"
-        @keydown.prevent.page-up="listPrevious(10)">
-
+        @keydown.prevent.down="listNext();"
+        @keydown.prevent.page-down="listNext(10);"
+        @keydown.prevent.up="listPrevious();"
+        @keydown.prevent.page-up="listPrevious(10);"
+    >
         <slot></slot>
-
     </div>
 </template>
 
@@ -40,7 +36,7 @@ export default class FocusableListV extends Vue {
 
         // set focus to the list if the entry is not null
         // this is needed when the user mouse-clicks on a list item to transfer focus to the list
-        console.log('sdflsdj');
+        // console.log('sdflsdj');
 
         if (newValue !== null) {
             this.$el.focus();
@@ -94,7 +90,4 @@ export default class FocusableListV extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-</style>
-
-
+<style lang="scss" scoped></style>

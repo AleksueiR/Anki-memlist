@@ -9,7 +9,7 @@ export const StayInView = {
 
         // console.log('update', element, binding);
 
-        console.log('update', getOffset(element, element.parentElement!));
+        // console.log('update', getOffset(element, element.parentElement!));
 
         const { elementRect, containerRect, offset } = getOffset(element, element.parentElement!);
         let offsetDelta: number = 0;

@@ -1,5 +1,7 @@
 import { ActionContext } from 'vuex';
 import to from 'await-to-js';
+import { Subject, interval, timer, from, zip, of } from 'rxjs';
+import { takeUntil, concatAll } from 'rxjs/operators';
 
 import { DisplayState } from './display-state';
 import { Definition } from '@/sources/source.class';
@@ -23,6 +25,10 @@ export enum Mutation {
     SET_WORD_BOOKS = 'SET_WORD_BOOKS'
 }
 
+const requestStream = new Subject();
+
+requestStream.subscribe(value => console.log('cancel', value));
+
 const getters = {};
 
 const actions = {
@@ -33,23 +39,36 @@ const actions = {
     async [Action.loadDefinitions](context: DisplayContext, { value }: { value: CollectionWord }): Promise<void> {
         const state = context.state;
 
+        // submit an new event into the request stream
+        requestStream.next();
+
+        // reset the list of definitions
         context.commit(Mutation.SET_DEFINITIONS, { value: [] });
 
-        const tuples = state.wordbooks.map<[Wordbook, Promise<Definition>]>(wb => [wb, wb.load(value)]);
-        let tuple;
-
+        // set the current word
         context.commit(Mutation.SET_WORD, { value });
 
-        while (tuples.length > 0) {
-            // error means the definition is not found
-            tuple = tuples.shift()!;
+        // TODO: skip wordbook if it takes longer than a certain time to load
+        // start loading definitions on the all the wordbooks
+        // to() will catche errors and return them as part of an [error, definition] tuple
+        const promiseArray = state.wordbooks.map(wb => to(wb.load(value)));
 
-            const [error, definition] = await to(tuple[1]);
+        const wordbookStream = from(state.wordbooks);
+        const metronomeStream = timer(300, 70).pipe(takeUntil(requestStream));
+        const definitionStream = from(promiseArray).pipe(concatAll());
 
-            if (definition) {
-                context.commit(Mutation.SET_DEFINITIONS, { value: [...state.definitions, [tuple[0], definition]] });
+        // add resolved definitions in the order of the wordbooks even if the definitions load in different order.
+        // delay initial definition loading by 350sm and stagger further definition loading by 100ms for smoother feel (esp when they load extremely fast)
+        zip(metronomeStream, wordbookStream, definitionStream).subscribe(([_, wordbook, [error, definition]]) => {
+            if (!definition) {
+                console.log('Definition not found in', wordbook.id);
+            } else {
+                console.log('Definition found in', wordbook.id);
+
+                // stagger definition loading by 100ms for smoother feel (esp when they load extremely fast)
+                context.commit(Mutation.SET_DEFINITIONS, { value: [...state.definitions, [wordbook, definition]] });
             }
-        }
+        });
     }
 };
 

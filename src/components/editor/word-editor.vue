@@ -11,13 +11,27 @@
 
         <section class="container main" v-if="word">
             <section class="content" v-bar>
-                <div>
-                    <div v-for="[wordbook, definition] in definitions" :key="wordbook.id">
+                <transition-group name="list" tag="div">
+                    <div
+                        v-for="[wordbook, definition] in definitions"
+                        :key="wordbook.id"
+                        class="uk-margin-small-bottom"
+                    >
                         <!-- {{ wordbook.id }} {{ definition }} -->
 
-                        <component :is="wordbook.id" :word="word" :definition="definition"></component>
+                        <component
+                            :is="wordbook.id"
+                            :word="word"
+                            :definition="definition"
+                            :wordbook="wordbook"
+                        ></component>
+                        <!-- {{ wordbook }} -->
                     </div>
-                    <!-- old stuff below -->
+                </transition-group>
+
+                <!-- old stuff below -->
+
+                <!--
                     <div
                         v-for="source in sourceOrder"
                         :key="`${source.id}-`"
@@ -32,14 +46,16 @@
 
                         <component :is="source.id" :word="word" @has-content="source.hasContent = $event;"></component>
                     </div>
-                </div>
+                -->
             </section>
 
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
-                    <li v-for="source in sourceOrder" :key="source.id" class="heading">
-                        <a :href="`#${source.id}`" class="anchor" v-if="source.hasContent">{{ source.name }}</a>
-                        <span v-else class="anchor uk-text-muted">{{ source.name }}</span>
+                    <li v-for="wordbook in wordbooks" :key="wordbook.id" class="heading">
+                        <a :href="`#${wordbook.id}`" class="anchor" v-if="definitionExists(wordbook)">{{
+                            wordbook.name
+                        }}</a>
+                        <span v-else class="anchor uk-text-muted">{{ wordbook.name }}</span>
                     </li>
                 </ul>
             </aside>
@@ -65,10 +81,15 @@ import { DragObject, DragTarget } from '@/am-drag.plugin';
 import { Definition } from '@/sources/source.class';
 import { Wordbook } from '@/api/wordbook/common';
 
+import SourceViewV from '@/components/editor/source-view.vue';
+import '@/components/wordbook';
+
 /* const StateCL = namespace('collection', State);
 const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
  */
+
+Vue.component('source-view', SourceViewV);
 
 const display = namespace('display');
 
@@ -95,12 +116,16 @@ export default class WordList extends mixins(CollectionStateMixin) {
     // #region Display store
 
     @display.State word: CollectionWord[];
-    @display.State definitions: Definition[];
+    @display.State definitions: [Wordbook, Definition][];
     @display.State wordbooks: Wordbook[];
 
     // #endregion Display store
 
-    sourceOrder: SourceEntry[] = [
+    definitionExists(wordbook: Wordbook): boolean {
+        return this.definitions.some(([wb, de]) => wb.id === wordbook.id);
+    }
+
+    /* sourceOrder: SourceEntry[] = [
         {
             name: 'Vocabulary.com',
             id: 'vocabulary-source',
@@ -116,7 +141,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
             id: 'verbaladvantage-source',
             hasContent: false
         }
-    ];
+    ]; */
 
     // _word: Word | null = null;
     /* get word(): CollectionWord | null {
@@ -205,6 +230,21 @@ export default class WordList extends mixins(CollectionStateMixin) {
 // @import '~quill/dist/quill.core.css';
 @import './../../styles/variables';
 
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s;
+}
+
+.list-enter, .list-leave-to_ /* .list-leave-active below version 2.1.8 */ {
+    opacity: 0;
+    transform: translateY(3px);
+}
+
+.list-leave-to {
+    opacity: 0;
+    // transform: translateY(-3px);
+}
+
 .drag-target-active {
     //.drag-over {
     border: 1px solid blue;
@@ -274,25 +314,6 @@ header {
         padding-right: 0rem;
 
         .source-view {
-            .title {
-                display: flex;
-                font-weight: 400;
-                font-size: 2em;
-                margin: 0 0 0 1.5rem;
-                align-items: center;
-
-                .name {
-                    flex-shrink: 0;
-                }
-
-                .divider {
-                    flex: 1;
-                    border-bottom: 1px solid $very-dark-secondary-colour;
-                    height: 0.4em;
-                    margin: 0 1.5rem 0 1em;
-                }
-            }
-
             margin: 0 0 2.5em 0;
         }
     }

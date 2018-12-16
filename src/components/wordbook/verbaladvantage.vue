@@ -1,35 +1,27 @@
 <template>
-    <div>
-        <source-view :definition="definition" :word="word">
-            <section slot="after-group-list" class="description">
-                <p v-html="vaWord.description" v-if="vaWord"></p>
+    <source-view :word="word" :definition="definition" :wordbook="wordbook">
+        <section slot="after-group-list" class="description">
+            <p v-html="definition.description"></p>
 
-                <span v-if="vaWord"
-                    >level: {{ Math.floor(vaWord.id / 50) + 1 }}; word: {{ vaWord.id % 50 }}; id: {{ vaWord.id }}</span
-                >
-            </section>
-        </source-view>
-    </div>
+            <span>
+                level: {{ Math.floor(definition.id / 50) + 1 }}; word: {{ definition.id % 50 }}; id: {{ definition.id }}
+            </span>
+        </section>
+    </source-view>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
-import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
+import { Component } from 'vue-property-decorator';
+import { mixins } from 'vue-class-component';
 
-/* import loglevel from 'loglevel';
-const log: loglevel.Logger = loglevel.getLogger(`source`);
- */
-
-import { Source, Definition } from '@/sources/source.class';
-
-interface VAWord {
-    id: number;
-    pronunciation: string;
-    description: string;
-}
+import WordbookMixin from './wordbook-mixin';
+import { VADefinition } from '@/api/wordbook/verbaladvantage';
 
 @Component
-export default class VerbalAdvantageSource extends Source {}
+export default class VerbalAdvantageV extends mixins(WordbookMixin) {
+    definition: VADefinition;
+}
 </script>
 
 <style lang="scss" scoped>

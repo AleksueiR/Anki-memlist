@@ -1,7 +1,7 @@
 <template>
-    <section v-if="definition">
+    <section class="wordbook">
         <h2 class="title">
-            <span class="name">{{ source.name }}</span
+            <span class="name">{{ wordbook.name }}</span
             ><span class="divider"></span>
         </h2>
 
@@ -161,6 +161,7 @@ import axios from 'axios';
 import fs from 'fs';
 import tmp from 'tmp';
 import electron, { clipboard } from 'electron';
+import { Wordbook } from '@/api/wordbook';
 const app = electron.remote.app;
 
 // Axios defaults to the xhrAdapter (XMLHttpRequest) in Electron an no stream is available
@@ -173,10 +174,13 @@ axios.defaults.adapter = require('axios/lib/adapters/http');
 })
 export default class SourceViewV extends Vue {
     @Prop()
+    word: Word;
+
+    @Prop()
     definition: Definition;
 
     @Prop()
-    word: Word;
+    wordbook: Wordbook;
 
     playSound({ currentTarget }: { currentTarget: HTMLElement }): void {
         // console.log(event);
@@ -214,12 +218,34 @@ export default class SourceViewV extends Vue {
         return typeof this.$slots[name] !== 'undefined';
     } */
 }
-
-Vue.component('source-view', SourceViewV);
 </script>
 
 <style lang="scss" scoped>
 @import '../../styles/variables';
+
+.wordbook {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    display: flex;
+    font-weight: 400;
+    font-size: 2em;
+    margin: 0 0 0 1.5rem;
+    align-items: center;
+
+    .name {
+        flex-shrink: 0;
+    }
+
+    .divider {
+        flex: 1;
+        border-bottom: 1px solid $very-dark-secondary-colour;
+        height: 0.4em;
+        margin: 0 1.5rem 0 1em;
+    }
+}
 
 .group-list {
     list-style: none;

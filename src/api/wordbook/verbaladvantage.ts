@@ -3,15 +3,15 @@ import { Definition } from '@/sources/source.class';
 import { CollectionWord } from '@/store/modules/collection';
 import { Wordbook } from './common';
 
-type VAList = { [name: string]: VAWord };
+export type VAList = { [name: string]: VAWord };
 
-interface VAWord {
+export interface VAWord {
     id: number;
     pronunciation: string;
     description: string;
 }
 
-interface VADefinition extends Definition {
+export interface VADefinition extends Definition {
     id: number;
     pronunciation: string;
     description: string;
@@ -57,4 +57,4 @@ class VerbalAdvantageBook extends Wordbook {
     }
 }
 
-export default new VerbalAdvantageBook('verbaladvantage-source', 'Verbal Advantage');
+export default new VerbalAdvantageBook('verbaladvantage-wordbook', 'Verbal Advantage');

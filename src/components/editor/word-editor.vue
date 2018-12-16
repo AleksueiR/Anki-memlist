@@ -17,36 +17,15 @@
                         :key="wordbook.id"
                         class="uk-margin-small-bottom"
                     >
-                        <!-- {{ wordbook.id }} {{ definition }} -->
-
                         <component
                             :is="wordbook.id"
+                            :id="wordbook.id"
                             :word="word"
                             :definition="definition"
                             :wordbook="wordbook"
                         ></component>
-                        <!-- {{ wordbook }} -->
                     </div>
                 </transition-group>
-
-                <!-- old stuff below -->
-
-                <!--
-                    <div
-                        v-for="source in sourceOrder"
-                        :key="`${source.id}-`"
-                        :id="source.id"
-                        v-show="source.hasContent"
-                        class="source-view"
-                    >
-                        <h2 class="title">
-                            <span class="name">{{ source.name }}</span
-                            ><span class="divider"></span>
-                        </h2>
-
-                        <component :is="source.id" :word="word" @has-content="source.hasContent = $event;"></component>
-                    </div>
-                -->
             </section>
 
             <aside class="sidebar cm-scrollbar">
@@ -71,44 +50,20 @@ import { mixins } from 'vue-class-component';
 
 import anki from './../../api/anki';
 
-import sources from './../../sources';
-
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
-// import wordMenu from './../list/word-menu.vue';
 import { CollectionWord } from '../../store/modules/collection/index';
 import { DragObject, DragTarget } from '@/am-drag.plugin';
-import { Definition } from '@/sources/source.class';
-import { Wordbook } from '@/api/wordbook/common';
+import { Definition, Wordbook } from '@/api/wordbook';
 
 import SourceViewV from '@/components/editor/source-view.vue';
-import '@/components/wordbook';
-
-/* const StateCL = namespace('collection', State);
-const GetterCL = namespace('collection', Getter);
-const ActionCL = namespace('collection', Action);
- */
+import '@/components/wordbook'; // import to register all the workbooks with the store
 
 Vue.component('source-view', SourceViewV);
 
 const display = namespace('display');
 
-interface SourceEntry {
-    name: string;
-    id: string;
-    hasContent: boolean;
-}
-
-@Component({
-    components: Object.assign(
-        {},
-        {
-            // wordMenu: wordMenu
-            // 'quill-editor': QuillEditor
-        },
-        sources
-    )
-})
+@Component
 export default class WordList extends mixins(CollectionStateMixin) {
     @Prop()
     id: string;
@@ -121,51 +76,11 @@ export default class WordList extends mixins(CollectionStateMixin) {
 
     // #endregion Display store
 
+    /**
+     * Check if a word definition was loaded for the provided wordbook.
+     */
     definitionExists(wordbook: Wordbook): boolean {
         return this.definitions.some(([wb, de]) => wb.id === wordbook.id);
-    }
-
-    /* sourceOrder: SourceEntry[] = [
-        {
-            name: 'Vocabulary.com',
-            id: 'vocabulary-source',
-            hasContent: false
-        },
-        {
-            name: 'Oxford Dictonaries',
-            id: 'oxforddictionaries-source',
-            hasContent: false
-        },
-        {
-            name: 'Verbal Advantage',
-            id: 'verbaladvantage-source',
-            hasContent: false
-        }
-    ]; */
-
-    // _word: Word | null = null;
-    /* get word(): CollectionWord | null {
-        if (this.lookupValue !== '') {
-            return new CollectionWord({ text: this.lookupValue });
-        }
-
-        if (this.selectedWords.length === 0) {
-            return null;
-        }
-
-        // TODO: when a word is renamed, reload the editor
-        return this.selectedWords[0];
-
-        //return rSelectedItem(this.$store);
-    } */
-
-    created(): void {
-        /*  this.$on(WORD_SELECTED, (word: Word) => {
-            console.log(word);
-            this._word = word;
-
-            this.$nextTick();
-        }); */
     }
 
     async mounted(): Promise<void> {

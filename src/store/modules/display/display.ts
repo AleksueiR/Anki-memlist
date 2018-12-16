@@ -1,13 +1,12 @@
 import { ActionContext } from 'vuex';
 import to from 'await-to-js';
-import { Subject, interval, timer, from, zip, of } from 'rxjs';
+import { Subject, timer, from, zip } from 'rxjs';
 import { takeUntil, concatAll } from 'rxjs/operators';
 
 import { DisplayState } from './display-state';
-import { Definition } from '@/sources/source.class';
 import { RootState } from '@/store/state';
 import { CollectionWord } from '../collection';
-import { Wordbook } from '@/api/wordbook';
+import { Definition, Wordbook } from '@/api/wordbook';
 
 type DisplayContext = ActionContext<DisplayState, RootState>;
 
@@ -27,8 +26,6 @@ export enum Mutation {
 
 const requestStream = new Subject();
 
-requestStream.subscribe(value => console.log('cancel', value));
-
 const getters = {};
 
 const actions = {
@@ -39,7 +36,7 @@ const actions = {
     async [Action.loadDefinitions](context: DisplayContext, { value }: { value: CollectionWord }): Promise<void> {
         const state = context.state;
 
-        // submit an new event into the request stream
+        // submit an new event into the request stream to stop any subscribers from previous requests
         requestStream.next();
 
         // reset the list of definitions

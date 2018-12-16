@@ -3,9 +3,8 @@ import to from 'await-to-js';
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
-import { Definition } from '@/sources/source.class';
 import { CollectionWord } from '@/store/modules/collection';
-import { Wordbook, formatExample } from './common';
+import { Definition, Wordbook, formatExample } from './common';
 
 const scrapeConfig = {
     groups: {

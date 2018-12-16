@@ -3,15 +3,16 @@ import to from 'await-to-js';
 import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
+import { CollectionWord } from '@/store/modules/collection';
 import {
     Definition,
     DefinitionGroup,
     DefinitionPronunciation,
     DefinitionSense,
-    DefinitionPart
-} from '@/sources/source.class';
-import { CollectionWord } from '@/store/modules/collection';
-import { Wordbook, formatExample } from './common';
+    DefinitionPart,
+    Wordbook,
+    formatExample
+} from './common';
 
 const scrapeConfig = {
     short: {

@@ -1,6 +1,5 @@
-import { Definition } from '@/sources/source.class';
 import { CollectionWord } from '../collection';
-import { Wordbook } from '@/api/wordbook';
+import { Wordbook, Definition } from '@/api/wordbook';
 
 export class DisplayState {
     /**

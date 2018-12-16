@@ -1,7 +1,6 @@
 import vaWords from '@/../assets/full-list.json';
-import { Definition } from '@/sources/source.class';
 import { CollectionWord } from '@/store/modules/collection';
-import { Wordbook } from './common';
+import { Definition, Wordbook } from './common';
 
 export type VAList = { [name: string]: VAWord };
 

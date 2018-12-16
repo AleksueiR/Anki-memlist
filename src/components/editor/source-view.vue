@@ -152,7 +152,6 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 
-import { Definition } from './../../sources/source.class';
 import { Word } from './../../store/modules/words';
 
 import SourceExamples from './source-examples.vue';
@@ -161,7 +160,7 @@ import axios from 'axios';
 import fs from 'fs';
 import tmp from 'tmp';
 import electron, { clipboard } from 'electron';
-import { Wordbook } from '@/api/wordbook';
+import { Definition, Wordbook } from '@/api/wordbook';
 const app = electron.remote.app;
 
 // Axios defaults to the xhrAdapter (XMLHttpRequest) in Electron an no stream is available

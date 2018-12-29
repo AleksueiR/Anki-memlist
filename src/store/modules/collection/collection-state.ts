@@ -437,10 +437,10 @@ export class CollectionList {
 
         switch (mode) {
             case CollectionDisplay.active:
-                return l.filter(word => word.archived).length;
+                return l.filter(word => !word.archived).length;
 
             case CollectionDisplay.archived:
-                return l.filter(word => !word.archived).length;
+                return l.filter(word => word.archived).length;
         }
 
         return l.length;

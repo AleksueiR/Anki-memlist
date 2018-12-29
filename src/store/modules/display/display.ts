@@ -50,8 +50,8 @@ const actions = {
         // to() will catche errors and return them as part of an [error, definition] tuple
         const promiseArray = state.wordbooks.map(wb => to(wb.load(value)));
 
-        const wordbookStream = from(state.wordbooks);
         const metronomeStream = timer(300, 70).pipe(takeUntil(requestStream));
+        const wordbookStream = from(state.wordbooks);
         const definitionStream = from(promiseArray).pipe(concatAll());
 
         // add resolved definitions in the order of the wordbooks even if the definitions load in different order.

@@ -16,34 +16,36 @@
 
         <!-- displays the lookup results from collections -->
         <keep-alive>
-            <div v-if="isLookupValid" class="list-content cm-scrollbar uk-flex-1 uk-margin-small-top">
-                <!-- TODO: style nothing found label -->
-                <span v-if="lookupResults.length === 0">Nothing found</span>
+            <div v-if="isLookupValid" class="list-content uk-flex-1 uk-margin-small-top" v-bar key="one">
+                <div class="wrapper">
+                    <!-- TODO: style nothing found label -->
+                    <span v-if="lookupResults.length === 0">Nothing found</span>
 
-                <div v-for="(searchGroup, index) in lookupResults" :key="index" class="uk-margin-bottom">
-                    <div>
-                        <span class="search-list-title"> {{ searchGroup.list.name }} </span>
-                        <span class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.items.length }}</span>
-                    </div>
+                    <div v-for="(searchGroup, index) in lookupResults" :key="index" class="uk-margin-bottom">
+                        <div>
+                            <span class="search-list-title"> {{ searchGroup.list.name }} </span>
+                            <span class="item-word-count uk-flex-1 uk-text-muted">{{ searchGroup.items.length }}</span>
+                        </div>
 
-                    <div class="uk-margin-small-top">
-                        <pool-entry
-                            v-for="item in searchGroup.items"
-                            :key="item.id"
-                            :word="item.word"
-                            :class="{ 'perfect-match': item.score === 0 }"
-                            @select="selectWordSearchAll"
-                            @favourite="setWordFavourite"
-                            @archive="setWordArchived"
-                            @delete="deleteWords"
-                        ></pool-entry>
+                        <div class="uk-margin-small-top">
+                            <pool-entry
+                                v-for="item in searchGroup.items"
+                                :key="item.id"
+                                :word="item.word"
+                                :class="{ 'perfect-match': item.score === 0 }"
+                                @select="selectWordSearchAll"
+                                @favourite="setWordFavourite"
+                                @archive="setWordArchived"
+                                @delete="deleteWords"
+                            ></pool-entry>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- displays pooled words from the selected lists -->
 
-            <div class="uk-flex uk-flex-column uk-flex-1 uk-margin-small-top" v-else v-bar>
+            <div class="uk-flex uk-flex-column uk-flex-1 uk-margin-small-top" v-else v-bar key="two">
                 <!--
                     <div>
                         <button
@@ -60,9 +62,9 @@
                     class="list-content"
                     v-model="focusedEntry"
                     :allEntries="getPooledWords"
-                    @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id });"
-                    @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id });"
-                    @keydown.native.prevent.f2="startRename(focusedEntry);"
+                    @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
+                    @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
+                    @keydown.native.prevent.f2="startRename(focusedEntry)"
                 >
                     <template v-for="item in getPooledWords">
                         <rename-input
@@ -127,17 +129,17 @@
                 <uk-dropdown :pos="'top-center'" :delay-hide="0">
                     <ul class="uk-nav uk-dropdown-nav">
                         <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(0);"
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(0)"
                                 >Show all {{ poolDisplayCount[0] }}</a
                             >
                         </li>
                         <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(1);"
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(1)"
                                 >Show active {{ poolDisplayCount[1] }}</a
                             >
                         </li>
                         <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(2);"
+                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(2)"
                                 >Show archived {{ poolDisplayCount[2] }}</a
                             >
                         </li>

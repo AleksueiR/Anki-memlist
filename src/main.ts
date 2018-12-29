@@ -88,6 +88,15 @@ Vue.config.keyCodes = {
 import amDrag from './am-drag.plugin';
 Vue.use(amDrag);
 
+// augment Vue type with vuebar functions
+declare module 'vue/types/vue' {
+    interface Vue {
+        $vuebar: {
+            refreshScrollbar: (elemeht: HTMLElement) => void;
+        };
+    }
+}
+
 new Vue({
     el: '#app',
     store,

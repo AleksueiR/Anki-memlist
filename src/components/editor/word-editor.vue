@@ -14,7 +14,7 @@
                 <transition-group name="list" tag="div">
                     <div
                         v-for="[wordbook, definition] in definitions"
-                        :key="wordbook.id"
+                        :key="`${wordbook.id}-content`"
                         class="uk-margin-small-bottom"
                     >
                         <component

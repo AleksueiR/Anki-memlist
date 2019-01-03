@@ -1,7 +1,7 @@
 import { ActionContext } from 'vuex';
 import to from 'await-to-js';
 import { Subject, timer, from, zip } from 'rxjs';
-import { takeUntil, concatAll } from 'rxjs/operators';
+import { takeUntil, concatAll, take } from 'rxjs/operators';
 
 import { DisplayState } from './display-state';
 import { RootState } from '@/store/state';
@@ -47,20 +47,22 @@ const actions = {
 
         // TODO: skip wordbook if it takes longer than a certain time to load
         // start loading definitions on the all the wordbooks
-        // to() will catche errors and return them as part of an [error, definition] tuple
+        // to() will catch errors and return them as part of an [error, definition] tuple
         const promiseArray = state.wordbooks.map(wb => to(wb.load(value)));
 
-        const metronomeStream = timer(300, 70).pipe(takeUntil(requestStream));
+        const metronomeStream = timer(300, 70).pipe(take(promiseArray.length));
         const wordbookStream = from(state.wordbooks);
-        const definitionStream = from(promiseArray).pipe(concatAll());
+        const definitionStream = from(promiseArray)
+            .pipe(concatAll())
+            .pipe(takeUntil(requestStream)); // stop definition stream on the next request
 
         // add resolved definitions in the order of the wordbooks even if the definitions load in different order.
         // delay initial definition loading by 350sm and stagger further definition loading by 100ms for smoother feel (esp when they load extremely fast)
         zip(metronomeStream, wordbookStream, definitionStream).subscribe(([_, wordbook, [error, definition]]) => {
             if (!definition) {
-                console.log('Definition not found in', wordbook.id);
+                console.log('Definition not found in', wordbook.id, value);
             } else {
-                console.log('Definition found in', wordbook.id);
+                console.log('Definition found in', wordbook.id, value);
 
                 // stagger definition loading by 100ms for smoother feel (esp when they load extremely fast)
                 context.commit(Mutation.SET_DEFINITIONS, { value: [...state.definitions, [wordbook, definition]] });

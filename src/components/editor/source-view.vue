@@ -24,7 +24,8 @@
 
                         <span v-if="pronunciation.spellings.length > 0" class="spelling">
                             <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`"
-                                ><span v-if="index !== 0">, </span>{{ spelling }}</span
+                                ><span v-if="index !== 0">, </span
+                                ><span class="spelling-item">{{ spelling }}</span></span
                             >
                         </span>
 
@@ -33,7 +34,7 @@
                                 v-for="(audio, index) in pronunciation.audios"
                                 :key="`audio-${index}`"
                                 @click.stop.prevent="playSound"
-                                @click.right.stop.prevent="downloadSound(audio);"
+                                @click.right.stop.prevent="downloadSound(audio)"
                             >
                                 <audio ref="player" controls :src="audio"></audio> <i class="el-icon-service"></i>
                             </a>
@@ -276,6 +277,13 @@ export default class SourceViewV extends Vue {
 
         .spelling {
             margin-left: 0.5rem;
+
+            .spelling-item {
+                &:before,
+                &:after {
+                    content: '/';
+                }
+            }
         }
 
         .speaker {

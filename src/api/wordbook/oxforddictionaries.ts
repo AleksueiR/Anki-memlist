@@ -72,7 +72,11 @@ const scrapeConfig = {
                     spellings: {
                         scrape: {
                             iterator: '.phoneticspelling',
-                            data: 'text'
+                            data: function($: any) {
+                                return $(this)
+                                    .text()
+                                    .slice(1, -1);
+                            }
                         }
                     },
                     audios: {

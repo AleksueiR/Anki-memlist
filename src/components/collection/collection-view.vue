@@ -2,50 +2,53 @@
     <section class="collection-view uk-flex uk-flex-column uk-flex-none">
         <div class="collection-header uk-flex">
             <span class="title uk-flex-1">Collections</span>
+
             <button @click="createNewList" uk-tooltip="delay: 500; title: New" class="uk-button uk-button-none">
                 <octo-icon name="plus"></octo-icon>
             </button>
         </div>
 
-        <focusable-list
-            class="collection-tree cm-scrollbar uk-margin-small-top uk-flex-1"
-            v-model="focusedEntry"
-            :allEntries="flattenedTreeItems"
-            @keydown.native.prevent.f2="startRename(focusedEntry);"
-            @keydown.native.prevent.enter="selectList({ listId: focusedEntry.listId, append: $event.ctrlKey });"
-            @keydown.native.prevent.space="
-                setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned });
-            "
-            @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true });"
-            @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false });"
-        >
-            <treee class="treee" v-model="treeItems" :draggable="isTreeDraggable" @node-click="nodeClick">
-                <template slot-scope="{ item, level }">
-                    <rename-input
-                        v-if="renamingEntry && item.listId === renamingEntry.listId"
-                        :key="item.id"
-                        :value="lists[renamingEntry.listId].name"
-                        @complete="completeRename"
-                    >
-                    </rename-input>
+        <div class="uk-flex uk-flex-column uk-flex-1" v-bar>
+            <focusable-list
+                class="collection-tree uk-margin-small-top uk-flex-1"
+                v-model="focusedEntry"
+                :allEntries="flattenedTreeItems"
+                @keydown.native.prevent.f2="startRename(focusedEntry)"
+                @keydown.native.prevent.enter="selectList({ listId: focusedEntry.listId, append: $event.ctrlKey })"
+                @keydown.native.prevent.space="
+                    setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })
+                "
+                @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true })"
+                @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false })"
+            >
+                <treee class="treee" v-model="treeItems" :draggable="isTreeDraggable" @node-click="nodeClick">
+                    <template slot-scope="{ item, level }">
+                        <rename-input
+                            v-if="renamingEntry && item.listId === renamingEntry.listId"
+                            :key="item.id"
+                            :value="lists[renamingEntry.listId].name"
+                            @complete="completeRename"
+                        >
+                        </rename-input>
 
-                    <collection-item
-                        v-else
-                        :class="`level-${level}`"
-                        :item="item"
-                        :mint-list-id="mintListId"
-                        :isFocused="focusedEntry && item.listId === focusedEntry.listId"
-                        v-drag-target="{ payload: item.listId, onDrop: onListItemDrop }"
-                        @default="setIndexDefaultList"
-                        @pinned="setListPinned"
-                        @expanded="setIndexExpandedTree"
-                        @rename="startRename"
-                        @delete="deleteLists"
-                    >
-                    </collection-item>
-                </template>
-            </treee>
-        </focusable-list>
+                        <collection-item
+                            v-else
+                            :class="`level-${level}`"
+                            :item="item"
+                            :mint-list-id="mintListId"
+                            :isFocused="focusedEntry && item.listId === focusedEntry.listId"
+                            v-drag-target="{ payload: item.listId, onDrop: onListItemDrop }"
+                            @default="setIndexDefaultList"
+                            @pinned="setListPinned"
+                            @expanded="setIndexExpandedTree"
+                            @rename="startRename"
+                            @delete="deleteLists"
+                        >
+                        </collection-item>
+                    </template>
+                </treee>
+            </focusable-list>
+        </div>
     </section>
 </template>
 
@@ -290,6 +293,10 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         .title {
             font-size: 1.2rem;
         }
+    }
+
+    .collection-tree {
+        outline: none;
     }
 }
 

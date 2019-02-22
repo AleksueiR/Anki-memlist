@@ -62,7 +62,7 @@
                     class="list-content"
                     v-model="focusedEntry"
                     :allEntries="getPooledWords"
-                    @keydown.native.prevent.enter="selectWord({ wordId: focusedEntry.id })"
+                    @keydown.native.prevent.enter="onWordSelected({ wordId: focusedEntry.id })"
                     @keydown.native.prevent.space="setWordArchived({ wordId: focusedEntry.id })"
                     @keydown.native.prevent.f2="startRename(focusedEntry)"
                 >
@@ -346,6 +346,8 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     onWordSelected(payload: { wordId: string; append: boolean }): void {
         // the word must be in the pool, otherwise it cannot be selected
+        console.log('on owr serse');
+
         const word = this.getPooledWords.find(word => word.id === payload.wordId)!;
         this.focusedEntry = word!;
 

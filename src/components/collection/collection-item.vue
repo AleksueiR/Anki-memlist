@@ -1,18 +1,19 @@
 <template>
-
     <!-- TODO: use https://github.com/DominikSerafin/vuebar for scrollbar  -->
 
-    <div class="list-item"
+    <div
+        class="list-item"
         :class="{ hover: isHovered || isTargeted, selected: isSelected, focused: isFocused }"
         @mouseover="isHovered = true"
-        @mouseleave="isHovered = false">
-
+        @mouseleave="isHovered = false"
+    >
         <span class="highlight"></span>
 
         <span
             class="uk-icon list-item-control first active"
             uk-tooltip="delay: 1500; title: Default list"
-            v-if="isDefault">
+            v-if="isDefault"
+        >
             <octo-icon name="bookmark-plain"></octo-icon>
         </span>
 
@@ -21,7 +22,8 @@
             uk-tooltip="delay: 500; title: Pin"
             class="uk-button uk-button-none list-item-control first"
             v-if="(isTargeted || list.pinned) && !isDefault"
-            :class="{ active: list.pinned }">
+            :class="{ active: list.pinned }"
+        >
             <octo-icon name="pin"></octo-icon>
         </button>
 
@@ -37,14 +39,15 @@
 
         <!-- mousedown and click listeners prevent default click handles on the Treee nodes from firing -->
         <span class="list-item-text">
-            {{ list.name }}
+            <span class="item-name">{{ list.name }}</span>
 
             <span
+                v-if="!isHovered && list.index.length !== 0"
                 class="list-item-control item-word-count uk-text-muted"
-                :class="{ 'uk-invisible': list.index.length === 0}">{{ list.index.length }}</span>
+                :class="`item-display-${list.display}`"
+                ><!-- {{ list.index.length }}: -->{{ list.countWords(list.display) }}</span
+            >
         </span>
-
-
 
         <template v-if="isTargeted">
             <!-- <a
@@ -59,39 +62,28 @@
                 @click="vnull"
                 uk-tooltip="delay: 500; title: View menu"
                 class="uk-button uk-button-none list-item-control"
-                v-if="isTargeted">
+                v-if="isTargeted"
+            >
                 <octo-icon name="kebab-horizontal"></octo-icon>
             </button>
-            <uk-dropdown
-                :pos="'right-center'"
-                :delay-hide="0"
-                @show="isMenuOpened = true"
-                @hide="isMenuOpened = false">
-
+            <uk-dropdown :pos="'right-center'" :delay-hide="0" @show="isMenuOpened = true" @hide="isMenuOpened = false">
                 <ul class="uk-nav uk-dropdown-nav">
-
                     <li :class="{ 'uk-active': list.pinned }">
-                        <a href="#" class="uk-nav-check"
-                            @click.stop.prevent="togglePinned">
-
+                        <a href="#" class="uk-nav-check" @click.stop.prevent="togglePinned">
                             <span>Pinned</span>
                             <octo-icon name="check" v-if="list.pinned"></octo-icon>
                         </a>
                     </li>
 
                     <li :class="{ 'uk-active': list.hidden }">
-                        <a href="#" class="uk-nav-check"
-                            @click.stop.prevent="toggleHidden">
-
+                        <a href="#" class="uk-nav-check" @click.stop.prevent="toggleHidden">
                             <span>Hidden</span>
                             <octo-icon name="check" v-if="list.hidden"></octo-icon>
                         </a>
                     </li>
 
                     <li :class="{ 'uk-active': isDefault }">
-                        <a href="#" class="uk-nav-check"
-                            @click.stop.prevent="setDefault">
-
+                        <a href="#" class="uk-nav-check" @click.stop.prevent="setDefault">
                             <span>Default</span>
                             <octo-icon name="check" v-if="isDefault"></octo-icon>
                         </a>
@@ -101,22 +93,18 @@
 
                     <li><a href="#" @click.stop.prevent="rename(item)">Edit</a></li>
                     <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
-
                 </ul>
-
             </uk-dropdown>
-
         </template>
 
         <button
             @click.stop="toggleExpand"
             uk-tooltip="delay: 500; title: Expand"
             class="uk-button uk-button-none list-item-control"
-            :class="{ 'uk-invisible': item.items.length === 0}">
-
-            <octo-icon :name="`chevron-${ item.expanded ? 'up' : 'down' }`"></octo-icon>
+            :class="{ 'uk-invisible': item.items.length === 0 }"
+        >
+            <octo-icon :name="`chevron-${item.expanded ? 'up' : 'down'}`"></octo-icon>
         </button>
-
     </div>
 </template>
 
@@ -177,28 +165,22 @@ export default class CollectionItemV extends Vue {
     /**
      * Rename event is used the pool view, so it doesn't need the full store payload signature.
      */
-    @Emit()
-    rename(item: CollectionTree) {}
+    @Emit() rename(item: CollectionTree) {}
 
     // passed in CollectionTree object
-    @Prop()
-    item: CollectionTree;
+    @Prop() item: CollectionTree;
 
     // id of the newly created, mint list; trigger auto-renaming
-    @Prop()
-    mintListId: string;
+    @Prop() mintListId: string;
 
     // boolean flag specifying if the collection list is currently selected
-    @Prop()
-    isFocused: boolean;
+    @Prop() isFocused: boolean;
 
     // an array of selected lists
-    @StateCL
-    selectedLists: CollectionList[];
+    @StateCL selectedLists: CollectionList[];
 
     // a object map of all lists available
-    @StateCL
-    lists: CollectionListMap;
+    @StateCL lists: CollectionListMap;
 
     // the id of the default list
     @StateCL((state: CollectionState) => state.index.defaultListId)
@@ -209,10 +191,13 @@ export default class CollectionItemV extends Vue {
         return this.list.id;
     }
 
-    // used by the rename mixin
-    getCurrentName(): string {
+    /**
+     * Returns the current name of the list.
+     * deprecated
+     */
+    /* getCurrentName(): string {
         return this.list.name;
-    }
+    } */
 
     /**
      * The CollectionList object of the current CollectionTree object
@@ -341,6 +326,32 @@ $base-indent: 1rem;
     .rename-input {
         .level-#{$i} & {
             margin-left: calc(0.5rem + 30px - 10px + #{$i} * #{$base-indent});
+        }
+    }
+}
+
+.list-item-text {
+    display: flex;
+
+    .item-name {
+        min-width: 10px;
+        flex: 1;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .item-word-count {
+        flex-shrink: 0;
+
+        &.item-display-1:after {
+            content: '╹';
+            position: absolute;
+        }
+
+        &.item-display-2:after {
+            content: '╻';
+            position: absolute;
         }
     }
 }

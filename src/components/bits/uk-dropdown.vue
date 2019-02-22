@@ -27,14 +27,22 @@ export default class UkDropdownV extends Vue {
     pos: string;
 
     @Prop({ default: 800 })
-    delayHide: string;
+    delayHide: number;
+
+    @Prop({ default: 0 })
+    duration: number;
+
+    @Prop({ default: 10 })
+    offset: number;
 
     get ukDropdown(): UkDropdown {
         return UIkit.dropdown(this.$el);
     }
 
     get options(): string {
-        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${this.delayHide};`;
+        return `mode: ${this.mode}; pos: ${this.pos}; delay-hide: ${this.delayHide}; duration: ${
+            this.duration
+        }; offset: ${this.offset}`;
     }
 
     mounted(): void {

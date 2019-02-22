@@ -94,6 +94,7 @@
             </div>
         </keep-alive>
 
+        <!-- change if the list show active, archived or both types of words -->
         <div class="status-bar">
             <div class="status-bar-item uk-flex-1">
                 <button class="status-bar-item-handle">
@@ -104,44 +105,37 @@
 
                     <template v-else></template>
                 </button>
-                <!--
-                    <div class="status-bar-item-drop">
-                        <ul>
-                            <li>
-                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 0 });">
-                                    Show active <span>{{ poolDisplayCount[0] }}</span>
-                                </button>
-                            </li>
-                            <li>
-                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 1 });">
-                                    Show new <span>{{ poolDisplayCount[1] }}</span>
-                                </button>
-                            </li>
-                            <li>
-                                <button @click.stop="setListDisplay({ listId: selectedLists[0].id, value: 2 });">
-                                    Show archived <span>{{ poolDisplayCount[2] }}</span>
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                -->
 
-                <uk-dropdown :pos="'top-center'" :delay-hide="0">
+                <uk-dropdown :duration="0" :pos="'top-center'" :delay-hide="0" :offset="1" class="display-menu">
                     <ul class="uk-nav uk-dropdown-nav">
-                        <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(0)"
-                                >Show all {{ poolDisplayCount[0] }}</a
-                            >
+                        <li :class="{ 'uk-active': poolDisplayMode === 0 }">
+                            <a class="uk-nav-check" href="#" @click.stop.prevent="setSelectedListsDisplay(0)">
+                                <span class="menu-item">
+                                    <span class="item-name">Show all</span>
+                                    <span class="item-count">{{ poolDisplayCount[0] }}</span>
+                                </span>
+                                <octo-icon name="check" :class="{ 'uk-invisible': poolDisplayMode !== 0 }"></octo-icon>
+                            </a>
                         </li>
-                        <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(1)"
-                                >Show active {{ poolDisplayCount[1] }}</a
-                            >
+
+                        <li :class="{ 'uk-active': poolDisplayMode === 1 }">
+                            <a class="uk-nav-check" href="#" @click.stop.prevent="setSelectedListsDisplay(1)">
+                                <span class="menu-item">
+                                    <span class="item-name">Show active</span>
+                                    <span class="item-count display-1">{{ poolDisplayCount[1] }}</span>
+                                </span>
+                                <octo-icon name="check" :class="{ 'uk-invisible': poolDisplayMode !== 1 }"></octo-icon>
+                            </a>
                         </li>
-                        <li>
-                            <a href="#" @click.stop.prevent="setSelectedListsDisplay(2)"
-                                >Show archived {{ poolDisplayCount[2] }}</a
-                            >
+
+                        <li :class="{ 'uk-active': poolDisplayMode === 2 }">
+                            <a class="uk-nav-check" href="#" @click.stop.prevent="setSelectedListsDisplay(2)">
+                                <span class="menu-item">
+                                    <span class="item-name">Show archived</span>
+                                    <span class="item-count display-2">{{ poolDisplayCount[2] }}</span>
+                                </span>
+                                <octo-icon name="check" :class="{ 'uk-invisible': poolDisplayMode !== 2 }"></octo-icon>
+                            </a>
                         </li>
                     </ul>
                 </uk-dropdown>
@@ -446,15 +440,13 @@ $hover-colour: rgba(
 
     border-top: 1px solid rgba(0, 0, 0, 0.08);
 
-    font-size: 12px;
-
     .status-bar-item {
         .status-bar-item-handle {
             width: 100%;
 
             background: transparent;
             border: none;
-            padding: 0 0.5rem;
+            padding: 0 1rem;
             // margin: 0;
 
             height: 30px;
@@ -469,11 +461,34 @@ $hover-colour: rgba(
             }
         }
 
-        .status-bar-item-drop {
-            position: absolute;
-            bottom: 27px;
-            width: 100%;
-            background-color: red;
+        .display-menu {
+            width: 15em;
+            box-shadow: 0px -5px 12px -4px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0.5rem 0.5rem 1rem;
+        }
+
+        .menu-item {
+            display: flex;
+            margin-right: 1.2rem;
+        }
+
+        .item-name {
+            flex: 1;
+            min-width: 10px;
+        }
+
+        .item-count {
+            flex: 0;
+
+            &.display-1:after {
+                content: '╹';
+                position: absolute;
+            }
+
+            &.display-2:after {
+                content: '╻';
+                position: absolute;
+            }
         }
 
         &:hover {

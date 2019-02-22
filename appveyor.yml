@@ -18,7 +18,7 @@ install:
 build_script:
     - ps: >-
           if ($env:APPVEYOR_REPO_TAG -eq "true") {
-              npm run build:electron
+              npm run electron:build
           }
 
 test: off

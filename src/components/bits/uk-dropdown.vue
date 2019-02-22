@@ -63,9 +63,11 @@ export default class UkDropdownV extends Vue {
         this.emShow();
 
         const bbox = this.$el.getBoundingClientRect();
-        this.$el.style.position = 'fixed';
-        this.$el.style.left = `${bbox.left - 10}px`;
-        this.$el.style.top = `${bbox.top}px`;
+
+        const el = this.$el as HTMLElement;
+        el.style.position = 'fixed';
+        el.style.left = `${bbox.left - 10}px`;
+        el.style.top = `${bbox.top}px`;
     }
 
     hide(): void {

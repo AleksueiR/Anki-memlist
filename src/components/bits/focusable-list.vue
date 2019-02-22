@@ -3,10 +3,10 @@
         tabindex="0"
         @focus="listOnFocus"
         @blur="listOnBlur"
-        @keydown.prevent.down="listNext();"
-        @keydown.prevent.page-down="listNext(10);"
-        @keydown.prevent.up="listPrevious();"
-        @keydown.prevent.page-up="listPrevious(10);"
+        @keydown.prevent.down="listNext()"
+        @keydown.prevent.page-down="listNext(10)"
+        @keydown.prevent.up="listPrevious()"
+        @keydown.prevent.page-up="listPrevious(10)"
     >
         <slot></slot>
     </div>
@@ -39,7 +39,7 @@ export default class FocusableListV extends Vue {
         // console.log('sdflsdj');
 
         if (newValue !== null) {
-            this.$el.focus();
+            (this.$el as HTMLElement).focus();
         }
     }
 

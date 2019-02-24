@@ -479,15 +479,26 @@ $hover-colour: rgba(
 
         .item-count {
             flex: 0;
+            position: relative;
+
+            &.display-1:after,
+            &.display-2:after {
+                content: '';
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                border-width: 1px;
+                border-color: #999;
+            }
 
             &.display-1:after {
-                content: '╹';
-                position: absolute;
+                top: -2px;
+                border-style: solid solid none none;
             }
 
             &.display-2:after {
-                content: '╻';
-                position: absolute;
+                bottom: -2px;
+                border-style: none solid solid none;
             }
         }
 

@@ -344,14 +344,24 @@ $base-indent: 1rem;
     .item-word-count {
         flex-shrink: 0;
 
-        &.item-display-1:after {
-            content: '╹';
+        &.item-display-1:after,
+        &.item-display-2:after {
+            content: '';
             position: absolute;
+            width: 6px;
+            height: 6px;
+            border-width: 1px;
+            border-color: #999;
+        }
+
+        &.item-display-1:after {
+            top: 5px;
+            border-style: solid solid none none;
         }
 
         &.item-display-2:after {
-            content: '╻';
-            position: absolute;
+            bottom: 5px;
+            border-style: none solid solid none;
         }
     }
 }

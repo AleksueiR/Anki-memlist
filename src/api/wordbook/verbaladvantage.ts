@@ -1,10 +1,10 @@
-// import vaWords from '@/../assets/full-list.json';
+import vaWords from '@/../assets/full-list.json';
 import { CollectionWord } from '@/store/modules/collection';
 import { Definition, Wordbook } from './common';
 
 export type VAList = { [name: string]: VAWord };
 
-const vaWords = {};
+// const vaWords = {};
 
 export interface VAWord {
     id: number;

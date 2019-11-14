@@ -206,7 +206,7 @@ export default class SourceViewV extends Vue {
             dir: app.getPath('temp')
         });
 
-        fs.writeFileSync(tmpobj.fd, response.data);
+        fs.writeFileSync(tmpobj.fd, new Buffer(response.data));
         clipboard.writeText(tmpobj.name);
 
         // TODO: do not create multiple files for the same word

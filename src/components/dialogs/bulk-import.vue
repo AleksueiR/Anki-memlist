@@ -1,5 +1,8 @@
 <template>
-    <el-dialog
+    <div>
+        blah
+    </div>
+    <!-- <el-dialog
         title="Import"
         :visible.sync="isOpen"
         :before-close="close"
@@ -21,7 +24,7 @@
             <el-button @click="close">Cancel</el-button>
             <el-button type="primary" @click="addBulkLines" :disabled="!isBulkImportValid">Import</el-button>
         </div>
-    </el-dialog>
+    </el-dialog> -->
 </template>
 
 <script lang="ts">
@@ -109,8 +112,4 @@ export default class BulkImport extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-
-</style>
-
-
+<style lang="scss" scoped></style>

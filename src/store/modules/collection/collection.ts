@@ -94,6 +94,15 @@ const getters = {
         );
 
         return pooledWords;
+    },
+
+    /**
+     * Check if the word exists in the whole collection.
+     */
+    doesExist: (state: CollectionState) => (value: string): boolean => {
+        return Object.values(state.lists).some(list => {
+            return Object.values(list.words).some(word => word.text === value);
+        });
     }
 };
 
@@ -205,6 +214,7 @@ const actions = {
         // remove the list from the index first
         context.commit(Mutation.DELETE_LIST, { list, tree: parentTree });
         storage.deleteList(listId);
+        delete state.lists[listId];
 
         // check if there are any orphaned lists left and remove them as well
         const flatTree = state.index.flatTree;
@@ -215,9 +225,12 @@ const actions = {
             }
 
             storage.deleteList(listId);
+            delete state.lists[listId];
         });
 
         actions.writeIndex(context);
+
+        // TODO: remove deleted lists from selection
     },
 
     setIndexDefaultList(context: CollectionContext, { listId }: { listId: string }): void {
@@ -269,10 +282,7 @@ const actions = {
      * @param {{ listId: string; append: boolean }} {listId, append  = false}
      * @returns
      */
-    selectList(
-        context: CollectionContext,
-        { listId, append = false, value }: { listId: string; append: boolean; value?: boolean }
-    ) {
+    selectList(context: CollectionContext, { listId, append = false, value }: { listId: string; append: boolean; value?: boolean }) {
         if (!append) {
             context.commit('DESELECT_ALL_LISTS');
         }
@@ -305,10 +315,7 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    [Action.setListDisplay](
-        context: CollectionContext,
-        { listId, value }: { listId: string; value: CollectionDisplay }
-    ): void {
+    [Action.setListDisplay](context: CollectionContext, { listId, value }: { listId: string; value: CollectionDisplay }): void {
         const list = state.lists[listId];
         if (list === undefined) {
             return;
@@ -330,13 +337,15 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    [Action.addWord](context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord }): void {
+    [Action.addWord](context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord | CollectionWord[] }): void {
         const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
 
-        context.commit('ADD_WORD', { list, word });
+        const words = Array.isArray(word) ? word : [word];
+
+        words.forEach(word => context.commit('ADD_WORD', { list, word }));
 
         actions.writeList(context, list.id);
     },
@@ -418,10 +427,7 @@ const actions = {
      * @param {{ wordId: string; value: string }} { wordId, value }
      * @returns {void}
      */
-    setWordText(
-        context: CollectionContext,
-        { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }
-    ): void {
+    setWordText(context: CollectionContext, { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }): void {
         const { word, list } = helpers.findWord(context, wordId, searchAll);
         if (!word) {
             return;
@@ -467,12 +473,7 @@ const actions = {
      */
     selectWord(
         context: CollectionContext,
-        {
-            wordId,
-            append = false,
-            value,
-            searchAll
-        }: { wordId: string; append: boolean; value?: boolean; searchAll?: boolean }
+        { wordId, append = false, value, searchAll }: { wordId: string; append: boolean; value?: boolean; searchAll?: boolean }
     ): void {
         if (!append) {
             context.commit(Mutation.DESELECT_ALL_WORDS);
@@ -528,9 +529,7 @@ const actions = {
             const mappedWords = list.index.map(wordId => list.words[wordId]);
 
             const fuse = new Fuse(mappedWords, fuseOptions);
-            const items = fuse
-                .search<{ score: number; item: CollectionWord }>(value)
-                .map(r => ({ score: r.score, word: r.item }));
+            const items = fuse.search<{ score: number; item: CollectionWord }>(value).map(r => ({ score: r.score, word: r.item }));
 
             if (items.length === 0) {
                 return resultMap;
@@ -560,10 +559,7 @@ const mutations = {
         state.index.defaultListId = list.id;
     },
 
-    [Mutation.SET_INDEX_EXPANDED_TREE](
-        state: CollectionState,
-        { tree, value }: { tree: CollectionTree; value: boolean }
-    ): void {
+    [Mutation.SET_INDEX_EXPANDED_TREE](state: CollectionState, { tree, value }: { tree: CollectionTree; value: boolean }): void {
         tree.expanded = value;
     },
 
@@ -596,10 +592,7 @@ const mutations = {
         state.selectedLists.splice(0);
     },
 
-    [Mutation.DELETE_LIST](
-        state: CollectionState,
-        { list, tree }: { list: CollectionList; tree: CollectionTree }
-    ): void {
+    [Mutation.DELETE_LIST](state: CollectionState, { list, tree }: { list: CollectionList; tree: CollectionTree }): void {
         tree.deleteList(list);
     },
 
@@ -611,17 +604,11 @@ const mutations = {
         list.name = value;
     },
 
-    [Mutation.SET_LIST_DISPLAY](
-        state: CollectionState,
-        { list, value }: { list: CollectionList; value: CollectionDisplay }
-    ): void {
+    [Mutation.SET_LIST_DISPLAY](state: CollectionState, { list, value }: { list: CollectionList; value: CollectionDisplay }): void {
         list.display = value;
     },
 
-    [Mutation.SET_LIST_PINNED](
-        state: CollectionState,
-        { list, value }: { list: CollectionList; value: boolean }
-    ): void {
+    [Mutation.SET_LIST_PINNED](state: CollectionState, { list, value }: { list: CollectionList; value: boolean }): void {
         list.pinned = value;
     },
 
@@ -635,10 +622,7 @@ const mutations = {
      * @param {CollectionState} state
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
-    [Mutation.DELETE_WORD](
-        state: CollectionState,
-        { list, word }: { list: CollectionList; word: CollectionWord }
-    ): void {
+    [Mutation.DELETE_WORD](state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
         list.deleteWord(word);
     },
 
@@ -650,17 +634,11 @@ const mutations = {
         word.text = value;
     },
 
-    [Mutation.SET_WORD_FAVOURITE](
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value: boolean }
-    ): void {
+    [Mutation.SET_WORD_FAVOURITE](state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
         word.favourite = value;
     },
 
-    [Mutation.SET_WORD_ARCHIVED](
-        state: CollectionState,
-        { word, value }: { word: CollectionWord; value?: boolean }
-    ): void {
+    [Mutation.SET_WORD_ARCHIVED](state: CollectionState, { word, value }: { word: CollectionWord; value?: boolean }): void {
         // if no value specified, toggle the state of the archived flag
         if (value === undefined) {
             value = !word.archived;
@@ -715,11 +693,7 @@ const helpers = {
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {({ word: CollectionWord?; list?: CollectionList })}
      */
-    findWord(
-        context: CollectionContext,
-        wordId: string,
-        searchAll: boolean = false
-    ): { word?: CollectionWord; list?: CollectionList } {
+    findWord(context: CollectionContext, wordId: string, searchAll: boolean = false): { word?: CollectionWord; list?: CollectionList } {
         const listToSearch = searchAll
             ? Object.values(context.state.lists) // get all the lists
             : context.state.selectedLists;
@@ -748,8 +722,11 @@ const helpers = {
         const stack: { parent: CollectionTree; list: CollectionTree }[] = [];
         let root: CollectionTree = context.state.index.tree;
 
-        // push to the stack itemo from the top level of the root tree
-        stack.push.apply(stack, root.items.map(item => ({ parent: root, list: item })));
+        // push to the stack item from the top level of the root tree
+        stack.push.apply(
+            stack,
+            root.items.map(item => ({ parent: root, list: item }))
+        );
 
         // check if the list in the stack has matching id and return it and its parent
         while (stack.length !== 0) {

@@ -15,9 +15,7 @@
                 :allEntries="flattenedTreeItems"
                 @keydown.native.prevent.f2="startRename(focusedEntry)"
                 @keydown.native.prevent.enter="selectList({ listId: focusedEntry.listId, append: $event.ctrlKey })"
-                @keydown.native.prevent.space="
-                    setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })
-                "
+                @keydown.native.prevent.space="setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })"
                 @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true })"
                 @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false })"
             >
@@ -42,6 +40,7 @@
                             @pinned="setListPinned"
                             @expanded="setIndexExpandedTree"
                             @rename="startRename"
+                            @import="openImport"
                             @delete="deleteLists"
                         >
                         </collection-item>
@@ -59,6 +58,8 @@
 import { Vue, Component, Provide, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
+
+import UIkit from 'uikit';
 
 import { DragObject, DragTarget } from '@/am-drag.plugin';
 
@@ -92,36 +93,31 @@ const ActionCL = namespace('collection', Action);
 export default class CollectionView extends mixins(CollectionStateMixin) {
     // #region vuex
 
-    @StateCL
-    selectedLists: CollectionList[];
+    @StateCL selectedLists: CollectionList[];
 
-    @ActionCL
-    setIndexDefaultList: (payload: { listId: string }) => void;
+    @GetterCL doesExist: (value: string) => boolean;
 
-    @ActionCL
-    setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL addWord: (payload: { listId: string; word: CollectionWord | CollectionWord[] }) => void;
 
-    @ActionCL
-    setListPinned: (payload: { listId: string; value: boolean }) => void;
+    @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
+
+    @ActionCL setIndexExpandedTree: (payload: { listId: string; value: boolean }) => void;
+
+    @ActionCL setListPinned: (payload: { listId: string; value: boolean }) => void;
 
     // replaces the existing tree index with the new one
-    @ActionCL
-    setIndexTree: (payload: { tree: CollectionTree }) => void;
+    @ActionCL setIndexTree: (payload: { tree: CollectionTree }) => void;
 
     // adds a new list to the bottom of the top level of the list tree
-    @ActionCL
-    addList: (list: CollectionList) => void;
+    @ActionCL addList: (list: CollectionList) => void;
 
-    @ActionCL
-    deleteList: (payload: { listId: string }) => void;
+    @ActionCL deleteList: (payload: { listId: string }) => void;
 
     // sets a new list name
-    @ActionCL
-    setListName: (payload: { listId: string; value: string }) => void;
+    @ActionCL setListName: (payload: { listId: string; value: string }) => void;
 
     // select the list
-    @ActionCL
-    selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
+    @ActionCL selectList: ({ listId, append }: { listId: string; append?: boolean }) => void;
 
     // #endregion vuex
 
@@ -215,6 +211,45 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 
         this.setListName({ listId: id, value: name });
     } */
+
+    openImport({ listId }: { listId: string }): void {
+        const dialog = UIkit.modal.dialog(`
+            <div class="uk-modal-body">
+                <h2 class="uk-modal-title">Import</h2>
+
+                <div class="uk-margin">
+                    <textarea class="uk-textarea" rows="5" placeholder="Textarea" autofocus></textarea>
+                </div>
+
+
+                <p class="uk-text-right">
+                    <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
+                    <button class="uk-button uk-button-primary submit-button" type="button">Ok</button>
+                </p>
+            </div>
+
+        `);
+
+        UIkit.util.on(dialog.$el, 'click', '.submit-button', (event: Event) => {
+            const lines = ((dialog.$el.querySelector('.uk-textarea').value as string) || '')
+                .split(/\r?\n/)
+                .filter(l => l)
+                .map(l => l.trim());
+            const filteredLines = lines.filter(l => !this.doesExist(l));
+
+            const words = filteredLines.map(line => new CollectionWord({ text: line }));
+
+            console.log(`importing ${lines.length} words; ${lines.length - filteredLines.length} skipped`);
+            console.log(
+                'skipped:',
+                lines.filter(l => this.doesExist(l))
+            );
+
+            this.addWord({ listId, word: words });
+
+            dialog.hide();
+        });
+    }
 
     deleteLists({ listId }: { listId: string }): void {
         const list = this.selectedLists.find(list => list.id === listId);

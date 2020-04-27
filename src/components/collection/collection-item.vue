@@ -92,6 +92,7 @@
                     <li class="uk-nav-divider"></li>
 
                     <li><a href="#" @click.stop.prevent="rename(item)">Edit</a></li>
+                    <li><a href="#" @click.stop.prevent="bulkImport(item)">Import</a></li>
                     <li><a href="#" @click.stop.prevent="deleteList">Delete</a></li>
                 </ul>
             </uk-dropdown>
@@ -113,8 +114,10 @@ import { Vue, Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-d
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
 import { mixins } from 'vue-class-component';
 
+import UIkit from 'uikit';
+
 import { CollectionList, CollectionListMap, CollectionTree, CollectionState } from '@/store/modules/collection/index';
-import UkDropdownV from './../bits/uk-dropdown.vue';
+import UkDropdownV, { UkDropdown } from './../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -128,7 +131,7 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        'uk-dropdown': UkDropdownV
+        'uk-dropdown': UkDropdownV,
     },
     directives: {
         // Register a local custom directive called `v-input-focus`
@@ -142,9 +145,9 @@ const ActionCL = namespace('collection', Action);
                     return;
                 }
                 input.focus();
-            }
-        }
-    }
+            },
+        },
+    },
 })
 export default class CollectionItemV extends Vue {
     @Emit('default')
@@ -158,6 +161,9 @@ export default class CollectionItemV extends Vue {
 
     @Emit('expanded')
     emExpanded(payload: { listId: string; value: boolean }) {}
+
+    @Emit('import')
+    emImport(payload: { listId: string }) {}
 
     @Emit('delete')
     emDelete(payload: { listId: string }) {}
@@ -210,7 +216,7 @@ export default class CollectionItemV extends Vue {
      * The flag indicating if this list is one of the selected lists.
      */
     get isSelected(): boolean {
-        return this.selectedLists.some(selectedList => this.list.id === selectedList.id);
+        return this.selectedLists.some((selectedList) => this.list.id === selectedList.id);
     }
 
     /**
@@ -248,6 +254,13 @@ export default class CollectionItemV extends Vue {
 
     toggleExpand(): void {
         this.emExpanded({ listId: this.list.id, value: !this.item.expanded });
+    }
+
+    bulkImport(): void {
+        // force-close the dropdown
+        UIkit.dropdown(this.$el.querySelector('.uk-dropdown')).hide();
+
+        this.emImport({ listId: this.list.id });
     }
 
     deleteList(): void {

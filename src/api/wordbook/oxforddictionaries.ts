@@ -81,7 +81,7 @@ const scrapeConfig = {
                     },
                     audios: {
                         scrape: {
-                            iterator: '.pronunciations audio',
+                            iterator: '.phoneticspelling + a > audio',
                             data: function($: any) {
                                 return $(this).attr('src');
                             }

@@ -30,12 +30,12 @@
                         <div class="uk-margin-small-top">
                             <pool-entry
                                 v-for="item in searchGroup.items"
-                                :key="item.id"
+                                :key="item.word.id"
                                 :word="item.word"
                                 :class="{ 'perfect-match': item.score === 0 }"
                                 @select="selectWordSearchAll"
                                 @favourite="setWordFavourite"
-                                @archive="setWordArchived"
+                                @archive="setWordArchived({ wordId: item.word.id, searchAll: true })"
                                 @delete="deleteWords"
                             ></pool-entry>
                         </div>
@@ -99,8 +99,7 @@
             <div class="status-bar-item uk-flex-1">
                 <button class="status-bar-item-handle">
                     <span
-                        >{{ getPooledWords.length }}
-                        <strong>{{ displayModeLabels[poolDisplayMode] }} </strong> words </span
+                        >{{ getPooledWords.length }} <strong>{{ displayModeLabels[poolDisplayMode] }} </strong> words </span
                     ><span v-if="selectedLists.length > 1"> in {{ selectedLists.length }} lists</span>
 
                     <template v-else></template>
@@ -203,10 +202,7 @@ interface VueStream extends Vue {
         const vues: VueStream = this as VueStream;
 
         return {
-            lookupObservable: vues.lookupStream.pipe(
-                debounceTime(300),
-                pluck<Event, string>('event', 'target', 'value')
-            )
+            lookupObservable: vues.lookupStream.pipe(debounceTime(300), pluck<Event, string>('event', 'target', 'value'))
         };
     },
     directives: {

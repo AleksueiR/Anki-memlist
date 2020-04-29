@@ -523,22 +523,24 @@ const actions = {
 
         context.commit(Mutation.SET_LOOKUP_VALUE, { value });
 
-        const results = state.index.flatTree.reduce<LookupResult[]>((resultMap, listId) => {
-            const list = state.lists[listId];
+        const results = state.index.flatTree
+            .reduce<LookupResult[]>((resultMap, listId) => {
+                const list = state.lists[listId];
 
-            const mappedWords = list.index.map(wordId => list.words[wordId]);
+                const mappedWords = list.index.map(wordId => list.words[wordId]);
 
-            const fuse = new Fuse(mappedWords, fuseOptions);
-            const items = fuse.search<{ score: number; item: CollectionWord }>(value).map(r => ({ score: r.score, word: r.item }));
+                const fuse = new Fuse(mappedWords, fuseOptions);
+                const items = fuse.search<{ score: number; item: CollectionWord }>(value).map(r => ({ score: r.score, word: r.item }));
 
-            if (items.length === 0) {
+                if (items.length === 0) {
+                    return resultMap;
+                }
+
+                resultMap.push({ list, items });
+
                 return resultMap;
-            }
-
-            resultMap.push({ list, items });
-
-            return resultMap;
-        }, []);
+            }, [])
+            .sort((a, b) => (a.items.some(item => item.score === 0) ? -1 : 1));
 
         context.commit(Mutation.SET_LOOKUP_RESULTS, { results });
     }

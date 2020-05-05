@@ -57,7 +57,7 @@ export class DefinitionPhrase {
 export class DefinitionSense {
     constructor(
         public grammaticalNote: string = '',
-        public senseREgisters: string = '',
+        public senseRegisters: string = '',
         public definition: string = '',
         public examples: string[] = [],
         public subsenses: DefinitionSense[] = []

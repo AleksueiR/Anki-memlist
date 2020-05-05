@@ -1,32 +1,22 @@
 <template>
     <div class="container" v-if="collection.length > 0">
-
         <!-- {{ from }} {{ to }} {{ limit }} {{ collection.length }} -->
-        <div
-            class="controls"
-            v-if="total !== 1"
-
-            @mousedown="engage">
-
+        <div class="controls" v-if="total !== 1" @mousedown="engage">
             <button
-                v-for="(page, index) in (total)"
+                v-for="(page, index) in total"
                 :key="index"
-
                 class="page-button"
                 :class="{ selected: index === current }"
                 @click="current = index"
-                @mouseover="onMouseOverHandler(index)">
-            </button>
-
+                @mouseover="onMouseOverHandler(index)"
+            ></button>
         </div>
 
-        <div class="example-list" v-if="collection.length > 0">
-            <li v-for="(example, index) in sortedCollection.slice(from, to)" :key="`example-${index}`"
-                class="example-item">
+        <ul class="example-list" v-if="collection.length > 0">
+            <li v-for="(example, index) in sortedCollection.slice(from, to)" :key="`example-${index}`" class="example-item">
                 <p v-html="example"></p>
             </li>
-        </div>
-
+        </ul>
     </div>
 </template>
 
@@ -162,6 +152,9 @@ $select-colour: rgba(
     flex: 1;
     margin: 0 0 0 1em;
     font-family: Consolas;
+    list-style: none;
+    padding: 0;
+
     .example-item {
         margin: 0 0 0.5em 0;
         p {

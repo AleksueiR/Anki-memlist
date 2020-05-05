@@ -4,15 +4,7 @@ import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
 import { CollectionWord } from '@/store/modules/collection';
-import {
-    Definition,
-    DefinitionGroup,
-    DefinitionPronunciation,
-    DefinitionSense,
-    DefinitionPart,
-    Wordbook,
-    formatExample
-} from './common';
+import { Definition, DefinitionGroup, DefinitionPronunciation, DefinitionSense, DefinitionPart, Wordbook, formatExample } from './common';
 
 const scrapeConfig = {
     short: {
@@ -121,6 +113,7 @@ const scrapeConfig = {
 export class VocabularyDefinition extends Definition {
     shortDescription: string;
     longDescription: string;
+    examples: string[] = [];
 }
 
 class VocabularyBook extends Wordbook {
@@ -129,9 +122,7 @@ class VocabularyBook extends Wordbook {
     }
 
     async load(value: CollectionWord): Promise<Definition> {
-        const [error, response] = await to(
-            axios.get(`https://www.vocabulary.com/dictionary/definition.ajax?search=${value.text}&lang=en`)
-        );
+        const [error, response] = await to(axios.get(`https://www.vocabulary.com/dictionary/definition.ajax?search=${value.text}&lang=en`));
 
         if (!response) {
             throw new Error('Definition not found');
@@ -141,6 +132,18 @@ class VocabularyBook extends Wordbook {
 
         if (!vocabularyDefinition) {
             throw new Error('Definition not found');
+        }
+
+        // try to fetch sample sentences
+        const [samplesError, samplesResponse] = await to(
+            axios.get(`https://corpus.vocabulary.com/api/1.0/examples.json?query=${value.text}&domain=F&maxResults=25&filter=0`)
+        );
+
+        if (samplesResponse) {
+            vocabularyDefinition.examples = samplesResponse.data.result.sentences.map((s: { sentence: string }) => s.sentence);
+            console.log(samplesResponse.data.result.sentences);
+        } else {
+            console.log('No sample sentences found');
         }
 
         return vocabularyDefinition;
@@ -180,7 +183,6 @@ class VocabularyBook extends Wordbook {
         });
 
         // console.log('scraped groups', definition);
-
         return definition;
     }
 

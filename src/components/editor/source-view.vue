@@ -9,23 +9,18 @@
 
         <ul class="group-list">
             <li v-for="(group, index) in definition.groups" :key="`group-${index}`" class="group-item">
+                <!-- header -->
                 <h3 class="group-title">
                     <span class="word"
-                        >{{ word.text
-                        }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span></span
+                        >{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span></span
                     >
 
-                    <span
-                        v-for="(pronunciation, index) in group.pronunciations"
-                        :key="`pronunciation-${index}`"
-                        class="pronunciation"
-                    >
+                    <span v-for="(pronunciation, index) in group.pronunciations" :key="`pronunciation-${index}`" class="pronunciation">
                         <span v-if="pronunciation.part">{{ pronunciation.part }}.</span>
 
                         <span v-if="pronunciation.spellings.length > 0" class="spelling">
                             <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`"
-                                ><span v-if="index !== 0">, </span
-                                ><span class="spelling-item">{{ spelling }}</span></span
+                                ><span v-if="index !== 0">, </span><span class="spelling-item">{{ spelling }}</span></span
                             >
                         </span>
 
@@ -52,12 +47,8 @@
 
                             <div class="sense-content">
                                 <p class="sense-definition-block">
-                                    <span v-if="sense.grammaticalNote" class="sense-gram-note"
-                                        >[{{ sense.grammaticalNote }}]</span
-                                    >
-                                    <span v-if="sense.senseRegisters" class="sense-registers"
-                                        >[{{ sense.senseRegisters }}]</span
-                                    >
+                                    <span v-if="sense.grammaticalNote" class="sense-gram-note">[{{ sense.grammaticalNote }}]</span>
+                                    <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
                                     <span class="sense-definition">{{ sense.definition }}</span>
                                 </p>
 
@@ -90,10 +81,7 @@
                                                 <span class="sense-definition">{{ subsense.definition }}</span>
                                             </p>
 
-                                            <source-examples
-                                                :collection="subsense.examples"
-                                                class="source-examples"
-                                            ></source-examples>
+                                            <source-examples :collection="subsense.examples" class="source-examples"></source-examples>
 
                                             <!--
                                                 <div class="sense-example-list" v-if="subsense.examples.length > 0">
@@ -110,6 +98,7 @@
                     </ul>
                 </div>
 
+                <!-- phrases -->
                 <section v-if="group.phrases.length > 0" class="extra phrases">
                     <h4 class="title">Phrases</h4>
 
@@ -117,8 +106,7 @@
                         <h5 class="phrase-title">{{ phrase.text }}</h5>
 
                         <span class="phrase-definition"
-                            ><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span>
-                            {{ phrase.definition }}</span
+                            ><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</span
                         >
 
                         <source-examples :collection="phrase.examples" class="source-examples"></source-examples>
@@ -133,6 +121,7 @@
                     </div>
                 </section>
 
+                <!-- notes -->
                 <section v-if="group.notes.length > 0" class="extra notes">
                     <h4 class="title">Notes</h4>
 
@@ -407,10 +396,12 @@ export default class SourceViewV extends Vue {
     margin: 1em 1.5em 1.5em 1.5em;
 
     .title {
+        font-size: 1.6rem;
         margin: 0 0 0.5em 0;
     }
 
     .sub-title {
+        font-size: 1.2rem;
         margin: 0.5em 0 0 0;
     }
 

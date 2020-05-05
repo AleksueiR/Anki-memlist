@@ -27,7 +27,7 @@ body {
 }
 
 .uk-dropdown-nav {
-    // styles checkobx items in the dropdown menus
+    // styles checkbox items in the dropdown menus
     .uk-nav-check {
         display: flex;
         align-items: center;
@@ -57,7 +57,7 @@ body {
     transform: rotate3d(0, 0, 0, 0);
     transition: background-color 100ms ease-out, margin 100ms ease-out;
     background-color: rgba(black, 0.1);
-    margin: 0 0 0 5px;
+    margin: 0 0 0 9px;
     border-radius: 0;
     height: 100%;
     display: block;

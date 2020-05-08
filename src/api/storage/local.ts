@@ -17,7 +17,7 @@ import {
 
 /*
 console.log('path', jsonStorage.getDataPath());
-console.log('defautl path', jsonStorage.getDefaultDataPath());
+console.log('default path', jsonStorage.getDefaultDataPath());
 console.log('home dir', os.homedir());
 */
 

@@ -130,6 +130,12 @@ const local: Storage = {
         return promise;
     },
 
+    /**
+     * Removes a list with the specified list id from the storage.
+     *
+     * @param {string} listId
+     * @returns {Promise<void>}
+     */
     deleteList(listId: string): Promise<void> {
         const promise = new Promise<void>((resolve, reject) => {
             jsonStorage.remove(listFileName(listId), error => {

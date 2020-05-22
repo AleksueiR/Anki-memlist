@@ -35,6 +35,7 @@ export enum Mutation {
     DELETE_LIST = 'DELETE_LIST',
 
     SET_WORD_TEXT = 'SET_WORD_TEXT',
+    DELETE_WORD_FROM_INDEX = 'DELETE_WORD_FROM_INDEX',
     DELETE_WORD = 'DELETE_WORD',
     SELECT_WORD = 'SELECT_WORD',
     DESELECT_ALL_WORDS = 'DESELECT_ALL_WORDS',
@@ -52,7 +53,8 @@ export enum Mutation {
 
     SET_LIST_DISPLAY = 'SET_LIST_DISPLAY',
     SET_LIST_PINNED = 'SET_LIST_PINNED',
-    ADD_WORD = 'ADD_WORD',
+    ADD_WORD_TO_INDEX = 'ADD_WORD_TO_INDEX',
+    ADD_WORD_TO_LIST = 'ADD_WORD_TO_LIST',
     SET_WORD_FAVOURITE = 'SET_WORD_FAVOURITE',
     SET_WORD_ARCHIVED = 'SET_WORD_ARCHIVED',
     SET_WORD_NOTES = 'SET_WORD_NOTES'
@@ -60,7 +62,7 @@ export enum Mutation {
 
 const getters = {
     /**
-     * Returns a list of words from all the selected collections. Words can be filterd by the CollectionDisplay setting.
+     * Returns an accumulated list of words from all the selected list. Words can be filtered by the CollectionDisplay setting.
      *
      * @param {CollectionState} state
      * @returns {CollectionWord[]}
@@ -70,13 +72,12 @@ const getters = {
             return [];
         }
 
-        // console.log('update tppool', state.selectedLists[0]);
+        // console.log('update pool', state.selectedLists[0]);
 
         const pooledWords = ([] as CollectionWord[]).concat(
             ...state.selectedLists.map(list =>
-                // list.index.map(wordId => list.words.get(wordId)!)
                 list.index
-                    .map(wordId => list.words[wordId]!)
+                    .map(wordId => state.index.words[wordId])
                     .filter(word => {
                         // filter out words according to the collection display setting
                         switch (list.display) {
@@ -93,16 +94,41 @@ const getters = {
             )
         );
 
-        return pooledWords;
+        // remove duplicates from the set
+        return [...new Set(pooledWords)];
     },
 
     /**
      * Check if the word exists in the whole collection.
      */
     doesExist: (state: CollectionState) => (value: string): boolean => {
-        return Object.values(state.lists).some(list => {
+        throw new Error();
+
+        /* return Object.values(state.lists).some(list => {
             return Object.values(list.words).some(word => word.text === value);
-        });
+        }); */
+    },
+
+    /**
+     * Returns the number of words in a specified list corresponding to the provided display mode.
+     * For `mixed` and `all` returns the total count.
+     *
+     * @param {CollectionDisplay} mode
+     * @returns {number}
+     * @memberof CollectionList
+     */
+    countWords: (state: CollectionState) => (listId: string, mode: CollectionDisplay): number => {
+        const l = state.lists[listId].index.map(id => state.index.words[id]);
+
+        switch (mode) {
+            case CollectionDisplay.active:
+                return l.filter(word => !word.archived).length;
+
+            case CollectionDisplay.archived:
+                return l.filter(word => word.archived).length;
+        }
+
+        return l.length;
     }
 };
 
@@ -121,6 +147,17 @@ const actions = {
         } else {
             ({ index, lists } = await storage.loadCollection());
         }
+
+        // NOTE:  move all words from the lists to the index files;
+        // this is only need for old way of storing words
+        index.flatTree.forEach(listId => {
+            const listWords = lists[listId].words;
+            if (listWords === undefined) {
+                return;
+            }
+
+            index.words = { ...listWords, ...index.words };
+        });
 
         context.commit('SET_INDEX', index);
         context.commit('SET_LISTS', lists);
@@ -218,6 +255,8 @@ const actions = {
 
         // check if there are any orphaned lists left and remove them as well
         const flatTree = state.index.flatTree;
+
+        // TODO: clean up orphaned words in the `state.index`
 
         Object.keys(state.lists).forEach(listId => {
             if (flatTree.includes(listId)) {
@@ -337,32 +376,72 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    [Action.addWord](context: CollectionContext, { listId, word }: { listId: string; word: CollectionWord | CollectionWord[] }): void {
+    /**
+     * `allowDuplicates` will create a new word even if there is already a word with the same text in the index.
+     *
+     * @param {CollectionContext} context
+     * @param {({ listId: string; text: string | string[], allowDuplicates: boolean })} { listId, text, allowDuplicates }
+     * @returns {void}
+     */
+    [Action.addWord](
+        context: CollectionContext,
+        { listId, text, allowDuplicates = false }: { listId: string; text: string | string[]; allowDuplicates: boolean }
+    ): void {
         const list = state.lists[listId];
         if (list === undefined) {
             return;
         }
 
-        const words = Array.isArray(word) ? word : [word];
+        const texts = Array.isArray(text) ? text : [text];
 
-        words.forEach(word => context.commit('ADD_WORD', { list, word }));
+        texts.forEach(text => {
+            let word;
 
+            if (!context.state.index.hasWord(text)) {
+                // check if the world is already in the index and add if it's not there
+                word = new CollectionWord({ text });
+                context.commit('ADD_WORD_TO_INDEX', { word });
+            } else {
+                // if the word is in the index, check if `allowDuplicates` is `true`
+                word = allowDuplicates ? new CollectionWord({ text }) : context.state.index.getWord(text)!;
+            }
+
+            context.commit('ADD_WORD_TO_LIST', { list, wordId: word.id });
+        });
+
+        actions.writeIndex(context);
         actions.writeList(context, list.id);
     },
 
     // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
 
+    /**
+     * Deletes a word from all lists it's in.
+     *
+     * @param {CollectionContext} context
+     * @param {{ wordId: string }} { wordId }
+     * @returns {void}
+     */
     [Action.deleteWord](context: CollectionContext, { wordId }: { wordId: string }): void {
-        const { word, list } = helpers.findWord(context, wordId, true);
+        const { word, lists } = helpers.findWord(context.state, wordId, true);
 
         if (!word) {
             return;
         }
 
-        context.commit(Mutation.SELECT_WORD, { word, value: false });
-        context.commit(Mutation.DELETE_WORD, { list, word });
-        actions.writeList(context, list!.id);
+        lists!.forEach(list => {
+            context.commit(Mutation.SELECT_WORD, { word, value: false });
+            context.commit(Mutation.DELETE_WORD, { list, wordId: word.id });
+
+            actions.writeList(context, list.id);
+        });
+
+        context.commit(Mutation.DELETE_WORD_FROM_INDEX, { word });
+
+        actions.writeIndex(context);
     },
+
+    // TODO: implement function to
 
     /**
      * Move a word from one list to the other give a word id and the target list id.
@@ -372,7 +451,10 @@ const actions = {
      * @returns {void}
      */
     [Action.moveWord](context: CollectionContext, { wordId, listId }: { wordId: string; listId: string }): void {
-        const { word } = helpers.findWord(context, wordId, true);
+        console.warn('Not available yet');
+        return;
+
+        const { word } = helpers._findWord(context, wordId, true);
         const toList = context.state.lists[listId];
 
         if (!toList || !word) {
@@ -389,11 +471,14 @@ const actions = {
      * @param {CollectionContext} context
      */
     deleteSelectedWords(context: CollectionContext): void {
+        console.warn('Not available yet');
+        return;
+
         type AggregatedLists = { [name: string]: { list: CollectionList; words: CollectionWord[] } };
 
         // map selected words to their corresponding lists, so each lists can be processed in turn
         const lists = state.selectedWords.reduce<AggregatedLists>((map, { id }) => {
-            const { word, list } = helpers.findWord(context, id);
+            const { word, list } = helpers._findWord(context, id);
             if (!word || !list) {
                 return map;
             }
@@ -410,7 +495,7 @@ const actions = {
         Object.values(lists).forEach(({ list, words }) => {
             words.forEach(word => {
                 context.commit(Mutation.SELECT_WORD, { word, value: false });
-                context.commit(Mutation.DELETE_WORD, { list, word });
+                context.commit(Mutation.DELETE_WORD, { list, wordId: word.id });
             });
             actions.writeList(context, list.id);
         });
@@ -428,40 +513,41 @@ const actions = {
      * @returns {void}
      */
     setWordText(context: CollectionContext, { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }): void {
-        const { word, list } = helpers.findWord(context, wordId, searchAll);
+        const { word } = helpers.findWord(context.state, wordId, searchAll);
         if (!word) {
             return;
         }
 
         context.commit(Mutation.SET_WORD_TEXT, { word, value });
-        actions.writeList(context, list!.id);
+        actions.writeIndex(context);
     },
 
     setWordFavourite(
         context: CollectionContext,
         { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }
     ): void {
-        const { word, list } = helpers.findWord(context, wordId, searchAll);
+        const { word } = helpers.findWord(context.state, wordId, searchAll);
+
         if (!word) {
             return;
         }
 
         context.commit('SET_WORD_FAVOURITE', { word, value });
-        actions.writeList(context, list!.id);
+        actions.writeIndex(context);
     },
 
     setWordArchived(
         context: CollectionContext,
         { wordId, value, searchAll }: { wordId: string; value?: boolean; searchAll?: boolean }
     ): void {
-        const { word, list } = helpers.findWord(context, wordId, searchAll);
+        const { word } = helpers.findWord(context.state, wordId, searchAll);
 
-        if (word == undefined || list == undefined) {
+        if (!word) {
             return;
         }
 
         context.commit(Mutation.SET_WORD_ARCHIVED, { word, value });
-        actions.writeList(context, list.id);
+        actions.writeIndex(context);
     },
 
     /**
@@ -479,7 +565,7 @@ const actions = {
             context.commit(Mutation.DESELECT_ALL_WORDS);
         }
 
-        const { word, list } = helpers.findWord(context, wordId, searchAll);
+        const { word } = helpers.findWord(context.state, wordId, searchAll);
 
         if (!word) {
             return;
@@ -527,7 +613,7 @@ const actions = {
             .reduce<LookupResult[]>((resultMap, listId) => {
                 const list = state.lists[listId];
 
-                const mappedWords = list.index.map(wordId => list.words[wordId]);
+                const mappedWords = list.index.map(wordId => context.state.index.words[wordId]);
 
                 const fuse = new Fuse(mappedWords, fuseOptions);
                 const items = fuse.search<{ score: number; item: CollectionWord }>(value).map(r => ({ score: r.score, word: r.item }));
@@ -614,8 +700,16 @@ const mutations = {
         list.pinned = value;
     },
 
-    [Mutation.ADD_WORD](state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
-        list.addWord(word);
+    [Mutation.ADD_WORD_TO_INDEX](state: CollectionState, { word }: { word: CollectionWord }): void {
+        state.index.addWord(word);
+    },
+
+    [Mutation.ADD_WORD_TO_LIST](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
+        list.addWord(wordId);
+    },
+
+    [Mutation.DELETE_WORD_FROM_INDEX](state: CollectionState, { word }: { word: CollectionWord }): void {
+        state.index.deleteWord(word);
     },
 
     /**
@@ -624,8 +718,8 @@ const mutations = {
      * @param {CollectionState} state
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
-    [Mutation.DELETE_WORD](state: CollectionState, { list, word }: { list: CollectionList; word: CollectionWord }): void {
-        list.deleteWord(word);
+    [Mutation.DELETE_WORD](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
+        list.deleteWord(wordId);
     },
 
     // #endregion
@@ -687,6 +781,30 @@ const mutations = {
 
 const helpers = {
     /**
+     *
+     *
+     * @param {CollectionState} state Collection state
+     * @param {string} wordId word id
+     * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
+     * @returns {{ word?: CollectionWord; lists?: CollectionList[] }}
+     */
+    findWord(state: CollectionState, wordId: string, searchAll: boolean = false): { word?: CollectionWord; lists?: CollectionList[] } {
+        const listToSearch = searchAll
+            ? Object.values(state.lists) // get all the lists
+            : state.selectedLists;
+
+        const lists = listToSearch.filter(list => list.index.includes(wordId));
+
+        // the word will be in the found list
+        const word = state.index.words[wordId];
+
+        return {
+            word,
+            lists
+        };
+    },
+
+    /**
      * Finds and returns a CollectionWord object (given its id) and its parent CollectionList.
      * By default, searches only in the selected lists.
      *
@@ -695,8 +813,10 @@ const helpers = {
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {({ word: CollectionWord?; list?: CollectionList })}
      */
-    findWord(context: CollectionContext, wordId: string, searchAll: boolean = false): { word?: CollectionWord; list?: CollectionList } {
-        const listToSearch = searchAll
+    _findWord(context: CollectionContext, wordId: string, searchAll: boolean = false): { word?: CollectionWord; list?: CollectionList } {
+        throw new Error("deprecated, don't use");
+
+        /* const listToSearch = searchAll
             ? Object.values(context.state.lists) // get all the lists
             : context.state.selectedLists;
 
@@ -709,7 +829,7 @@ const helpers = {
         // the word will be in the found list
         const word = list.words[wordId];
 
-        return { word, list };
+        return { word, list }; */
     },
 
     /**

@@ -216,9 +216,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     @GetterCL getPooledWords: CollectionWord[];
 
+    @GetterCL countWords: (listId: string, mode: CollectionDisplay) => number;
+
     @collection.Action setListDisplay: (payload: { listId: string; value: CollectionDisplay }) => void;
 
-    @ActionCL addWord: (payload: { listId: string; word: CollectionWord }) => void;
+    @ActionCL addWord: (payload: { listId: string; text: string }) => void;
 
     @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
 
@@ -295,7 +297,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     get poolDisplayCount(): number[] {
         const result = [CollectionDisplay.all, CollectionDisplay.active, CollectionDisplay.archived];
 
-        return result.map(mode => this.selectedLists.reduce<number>((count, l) => count + l.countWords(mode), 0));
+        return result.map(mode => this.selectedLists.reduce<number>((count, l) => count + this.countWords(l.id, mode), 0));
     }
 
     /**
@@ -311,13 +313,14 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     addWordTemp(): void {
         const listId = this.selectedLists[0].id;
-        const word = new CollectionWord({ text: this.lookupValue });
-        this.addWord({ listId, word });
+        this.addWord({ listId, text: this.lookupValue });
 
         this.performLookup();
     }
 
     deleteWords({ wordId }: { wordId: string }): void {
+        // Not sure what is going on here :/
+        // why deleting selected words?
         const word = this.selectedWords.find(word => word.id === wordId);
         if (word) {
             this.deleteSelectedWords();

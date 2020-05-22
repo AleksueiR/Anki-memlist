@@ -9,11 +9,7 @@
     >
         <span class="highlight"></span>
 
-        <span
-            class="uk-icon list-item-control first active"
-            uk-tooltip="delay: 1500; title: Default list"
-            v-if="isDefault"
-        >
+        <span class="uk-icon list-item-control first active" uk-tooltip="delay: 1500; title: Default list" v-if="isDefault">
             <octo-icon name="bookmark-plain"></octo-icon>
         </span>
 
@@ -45,7 +41,7 @@
                 v-if="!isHovered && list.index.length !== 0"
                 class="list-item-control item-word-count uk-text-muted"
                 :class="`item-display-${list.display}`"
-                ><!-- {{ list.index.length }}: -->{{ list.countWords(list.display) }}</span
+                ><!-- {{ list.index.length }}: -->{{ countWords(list.id, list.display) }}</span
             >
         </span>
 
@@ -116,10 +112,11 @@ import { mixins } from 'vue-class-component';
 
 import UIkit from 'uikit';
 
-import { CollectionList, CollectionListMap, CollectionTree, CollectionState } from '@/store/modules/collection/index';
+import { CollectionList, CollectionListMap, CollectionTree, CollectionState, CollectionDisplay } from '@/store/modules/collection/index';
 import UkDropdownV, { UkDropdown } from './../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
+const GetterCL = namespace('collection', Getter);
 const ActionCL = namespace('collection', Action);
 
 // TODO: need colors for tree item highlighting
@@ -131,7 +128,7 @@ const ActionCL = namespace('collection', Action);
 
 @Component({
     components: {
-        'uk-dropdown': UkDropdownV,
+        'uk-dropdown': UkDropdownV
     },
     directives: {
         // Register a local custom directive called `v-input-focus`
@@ -145,28 +142,22 @@ const ActionCL = namespace('collection', Action);
                     return;
                 }
                 input.focus();
-            },
-        },
-    },
+            }
+        }
+    }
 })
 export default class CollectionItemV extends Vue {
-    @Emit('default')
-    emDefault(payload: { listId: string }) {}
+    @Emit('default') emDefault(payload: { listId: string }) {}
 
-    @Emit('pinned')
-    emPinned(payload: { listId: string; value: boolean }) {}
+    @Emit('pinned') emPinned(payload: { listId: string; value: boolean }) {}
 
-    @Emit('hidden')
-    emHidden(payload: { listId: string; value: boolean }) {}
+    @Emit('hidden') emHidden(payload: { listId: string; value: boolean }) {}
 
-    @Emit('expanded')
-    emExpanded(payload: { listId: string; value: boolean }) {}
+    @Emit('expanded') emExpanded(payload: { listId: string; value: boolean }) {}
 
-    @Emit('import')
-    emImport(payload: { listId: string }) {}
+    @Emit('import') emImport(payload: { listId: string }) {}
 
-    @Emit('delete')
-    emDelete(payload: { listId: string }) {}
+    @Emit('delete') emDelete(payload: { listId: string }) {}
 
     /**
      * Rename event is used the pool view, so it doesn't need the full store payload signature.
@@ -192,6 +183,8 @@ export default class CollectionItemV extends Vue {
     @StateCL((state: CollectionState) => state.index.defaultListId)
     defaultListId: string;
 
+    @GetterCL countWords: (listId: string, mode: CollectionDisplay) => number;
+
     // used by the rename mixin
     get id(): string {
         return this.list.id;
@@ -216,7 +209,7 @@ export default class CollectionItemV extends Vue {
      * The flag indicating if this list is one of the selected lists.
      */
     get isSelected(): boolean {
-        return this.selectedLists.some((selectedList) => this.list.id === selectedList.id);
+        return this.selectedLists.some(selectedList => this.list.id === selectedList.id);
     }
 
     /**

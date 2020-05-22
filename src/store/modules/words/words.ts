@@ -27,10 +27,7 @@ const actions = {
         console.log('fetchwords');
 
         try {
-            const fetchedState: WordsState = await gists.get<WordsState>(
-                gistIdSetting.get(),
-                gistFileNameSetting.get()
-            );
+            const fetchedState: WordsState = await gists.get<WordsState>(gistIdSetting.get(), gistFileNameSetting.get());
 
             mutations.keepWords(context.state, {
                 items: fetchedState.items
@@ -72,11 +69,11 @@ const mutations = {
         }; */
     },
 
-    addWord(state: WordsState, word: Word) {
+    _addWord(state: WordsState, word: Word) {
         state.items.push(word);
     },
 
-    removeWord(state: WordsState, word: Word) {
+    _removeWord(state: WordsState, word: Word) {
         const index: number = state.items.findIndex((w: Word) => w === word);
 
         if (index !== -1) {

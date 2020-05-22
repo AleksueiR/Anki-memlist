@@ -2,7 +2,6 @@ import uniqid from 'uniqid';
 import moment from 'moment';
 
 // import electron from 'electron';
-import WordList from '@/components/editor/word-editor.vue';
 
 // // remote module has a limitation which prevents preventing the close event
 // // see https://github.com/electron/electron/issues/4473 and https://github.com/electron/electron/issues/3362
@@ -30,7 +29,7 @@ import WordList from '@/components/editor/word-editor.vue';
  * A result of the word lookup in the entire collection.
  *
  * @export
- * @interface ookupResult
+ * @interface LookupResult
  */
 export interface LookupResult {
     /**
@@ -99,6 +98,7 @@ export interface CollectionIndexOptions {
     tree?: CollectionTree;
     dateCreated?: number;
     dateModified?: number;
+    words?: CollectionWordMap;
 }
 
 export class CollectionIndex {
@@ -106,6 +106,7 @@ export class CollectionIndex {
     protected _defaultListId: string | null;
 
     protected _tree: CollectionTree;
+    protected _words: CollectionWordMap;
 
     readonly dateCreated: number;
     dateModified: number;
@@ -115,6 +116,7 @@ export class CollectionIndex {
             id = uniqid.time(),
             defaultListId = null,
             tree = {},
+            words = {},
             dateCreated = moment.now(),
             dateModified = moment.now()
         } = options;
@@ -124,6 +126,14 @@ export class CollectionIndex {
         this.tree = new CollectionTree(tree, this);
         this.dateCreated = dateCreated;
         this.dateModified = dateModified;
+
+        // convert word dictionary into a proper Map of CollectionWord object
+        // type words in the dictionary
+        this.words = Object.values(words).reduce((map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
+            const word = new CollectionWord(wordOptions);
+            map[word.id] = word;
+            return map;
+        }, {});
     }
 
     set tree(value: CollectionTree) {
@@ -133,6 +143,33 @@ export class CollectionIndex {
 
     get tree(): CollectionTree {
         return this._tree;
+    }
+
+    set words(value: CollectionWordMap) {
+        this._words = value;
+        this.update();
+    }
+
+    get words(): CollectionWordMap {
+        return this._words;
+    }
+
+    deleteWord(word: CollectionWord): void {
+        delete this.words[word.id];
+        this.update();
+    }
+
+    addWord(word: CollectionWord): void {
+        this.words[word.id] = word;
+        this.update();
+    }
+
+    hasWord(text: string): boolean {
+        return Object.values(this.words).some(word => word.text === text);
+    }
+
+    getWord(text: string): CollectionWord | undefined {
+        return Object.values(this.words).find(word => word.text === text);
     }
 
     set defaultListId(value: string | null) {
@@ -178,10 +215,16 @@ export class CollectionIndex {
     }
 
     get safeJSON(): CollectionIndexOptions {
+        const safeWords = Object.values(this.words).reduce((map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
+            map[word.id] = word.safeJSON;
+            return map;
+        }, {});
+
         return {
             id: this.id,
             defaultListId: this.defaultListId,
             tree: this.tree.safeJSON as CollectionTree,
+            words: safeWords as CollectionWordMap,
             dateCreated: this.dateCreated,
             dateModified: this.dateModified
         };
@@ -300,15 +343,15 @@ export class CollectionList {
      * @memberof CollectionList
      */
     readonly index: string[];
-    // readonly words: Map<string, CollectionWord>;
 
     /**
-     * A dictionary of CollectionWord items referenced by their ids.
+     * [Deprecated] A dictionary of CollectionWord items referenced by their ids.
      *
+     * @deprecated
      * @type {CollectionWordMap}
      * @memberof CollectionList
      */
-    readonly words: CollectionWordMap;
+    readonly words: CollectionWordMap | undefined;
     private _notes: string;
 
     constructor(options: CollectionListOptions = {}) {
@@ -324,7 +367,6 @@ export class CollectionList {
             sortBy = 'name',
             sortDirection = 'asc',
             index = [] as string[],
-            words = {},
             notes = ''
         } = options;
 
@@ -338,7 +380,6 @@ export class CollectionList {
         this.colour = colour;
         this.sortBy = sortBy;
         this.sortDirection = sortDirection;
-        this.words = words;
         this.index = index;
         this.notes = notes;
     }
@@ -424,45 +465,19 @@ export class CollectionList {
         return this.notes !== '';
     }
 
-    /**
-     * Returns the number of words corresponding to the provided display mode.
-     * For `mixed` and `all` returns the total count.
-     *
-     * @param {CollectionDisplay} mode
-     * @returns {number}
-     * @memberof CollectionList
-     */
-    countWords(mode: CollectionDisplay): number {
-        const l = this.index.map(id => this.words[id]);
-
-        switch (mode) {
-            case CollectionDisplay.active:
-                return l.filter(word => !word.archived).length;
-
-            case CollectionDisplay.archived:
-                return l.filter(word => word.archived).length;
-        }
-
-        return l.length;
-    }
-
-    addWord(word: CollectionWord): void {
-        this.index.push(word.id);
-        //this.words.set(word.id, word);
-        this.words[word.id] = word;
+    addWord(wordId: string): void {
+        this.index.push(wordId);
         this.update();
     }
 
     /**
-     * Deletes the worf from the list.
+     * Deletes the word from the list.
      *
      * @param {CollectionWord} word
      * @memberof CollectionList
      */
-    deleteWord(word: CollectionWord): void {
-        delete this.words[word.id];
-
-        const index = this.index.indexOf(word.id);
+    deleteWord(wordId: string): void {
+        const index = this.index.indexOf(wordId);
         this.index.splice(index, 1);
 
         this.update();
@@ -486,14 +501,6 @@ export class CollectionList {
      * @memberof CollectionList
      */
     get safeJSON(): CollectionListOptions {
-        const safeWords = Object.values(this.words).reduce(
-            (map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
-                map[word.id] = word.safeJSON;
-                return map;
-            },
-            {}
-        );
-
         return {
             id: this.id,
             name: this.name,
@@ -506,7 +513,6 @@ export class CollectionList {
             sortBy: this.sortBy,
             sortDirection: this.sortDirection,
             index: this.index,
-            words: safeWords as CollectionWordMap,
             notes: this.notes
         };
     }

@@ -237,6 +237,8 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
                 .map(l => l.trim());
             const filteredLines = lines.filter(l => !this.doesExist(l));
 
+            // lines = [...new Set(lines)];
+
             const words = filteredLines.map(line => new CollectionWord({ text: line }));
 
             console.log(`importing ${lines.length} words; ${lines.length - filteredLines.length} skipped`);
@@ -245,7 +247,8 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
                 lines.filter(l => this.doesExist(l))
             );
 
-            this.addWord({ listId, word: words });
+            // TODO: refactor
+            // this.addWord({ listId, word: words });
 
             dialog.hide();
         });

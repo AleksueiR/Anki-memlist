@@ -220,7 +220,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     @collection.Action setListDisplay: (payload: { listId: string; value: CollectionDisplay }) => void;
 
-    @ActionCL addWord: (payload: { listId: string; text: string }) => void;
+    @ActionCL addWord: (payload: { listId: string; text: string | string[] }) => void;
 
     @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
 

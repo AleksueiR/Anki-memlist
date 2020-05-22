@@ -99,14 +99,15 @@ const getters = {
     },
 
     /**
-     * Check if the word exists in the whole collection.
+     * Check if the word exists in the whole collection or a specific list.
      */
-    doesExist: (state: CollectionState) => (value: string): boolean => {
-        throw new Error();
+    doesExist: (state: CollectionState) => (value: string, listId?: string): boolean => {
+        // pick either one list or the whole collection
+        const lists = listId ? [state.lists[listId]] : Object.values(state.lists);
 
-        /* return Object.values(state.lists).some(list => {
-            return Object.values(list.words).some(word => word.text === value);
-        }); */
+        return lists.some(list => {
+            return list.index.some(wordId => state.index.words[wordId].text === value);
+        });
     },
 
     /**
@@ -236,6 +237,8 @@ const actions = {
     },
 
     deleteList(context: CollectionContext, { listId }: { listId: string }): void {
+        const state = context.state;
+
         const list = state.lists[listId];
         if (!list) {
             return;
@@ -255,9 +258,6 @@ const actions = {
 
         // check if there are any orphaned lists left and remove them as well
         const flatTree = state.index.flatTree;
-
-        // TODO: clean up orphaned words in the `state.index`
-
         Object.keys(state.lists).forEach(listId => {
             if (flatTree.includes(listId)) {
                 return;
@@ -267,7 +267,17 @@ const actions = {
             delete state.lists[listId];
         });
 
-        actions.writeIndex(context);
+        // check for orphaned words (words that are not referenced by other lists) and remove them as well
+        list.index.forEach(wordId => {
+            const word = state.index.words[wordId];
+            if (context.getters.doesExist(word.text)) {
+                return;
+            }
+
+            context.commit(Mutation.DELETE_WORD_FROM_INDEX, { word });
+        });
+
+        context.dispatch('writeIndex');
 
         // TODO: remove deleted lists from selection
     },
@@ -378,6 +388,7 @@ const actions = {
 
     /**
      * `allowDuplicates` will create a new word even if there is already a word with the same text in the index.
+     * // TODO: do I even need this `create duplicate` option???
      *
      * @param {CollectionContext} context
      * @param {({ listId: string; text: string | string[], allowDuplicates: boolean })} { listId, text, allowDuplicates }
@@ -400,12 +411,17 @@ const actions = {
             if (!context.state.index.hasWord(text)) {
                 // check if the world is already in the index and add if it's not there
                 word = new CollectionWord({ text });
-                context.commit('ADD_WORD_TO_INDEX', { word });
             } else {
                 // if the word is in the index, check if `allowDuplicates` is `true`
                 word = allowDuplicates ? new CollectionWord({ text }) : context.state.index.getWord(text)!;
             }
 
+            // if the words is already in this list, don't add it again
+            if (list.index.includes(word.id)) {
+                return;
+            }
+
+            context.commit('ADD_WORD_TO_INDEX', { word });
             context.commit('ADD_WORD_TO_LIST', { list, wordId: word.id });
         });
 
@@ -467,38 +483,38 @@ const actions = {
 
     /**
      * Deletes all currently selected words from the corresponding lists.
+     * This removes words from all the lists and the index.
+     *
+     * TODO: create a function to just remove the word from the list; or add a parameter to this one
      *
      * @param {CollectionContext} context
      */
     deleteSelectedWords(context: CollectionContext): void {
-        console.warn('Not available yet');
-        return;
+        // got through the list of selected words and reduce it to the list of list ids where these words are found
+        state.selectedWords
+            .reduce<string[]>((map, word) => {
+                // find lists where this word id present
+                const { lists } = helpers.findWord(context.state, word.id, true);
+                if (!word) {
+                    return map;
+                }
 
-        type AggregatedLists = { [name: string]: { list: CollectionList; words: CollectionWord[] } };
+                // remove this word from each list
+                lists!.forEach(list => {
+                    context.commit(Mutation.SELECT_WORD, { word, value: false });
+                    context.commit(Mutation.DELETE_WORD, { list, wordId: word.id });
+                });
 
-        // map selected words to their corresponding lists, so each lists can be processed in turn
-        const lists = state.selectedWords.reduce<AggregatedLists>((map, { id }) => {
-            const { word, list } = helpers._findWord(context, id);
-            if (!word || !list) {
-                return map;
-            }
+                // remove the word from the index since it's no longer in any of the lists
+                context.commit(Mutation.DELETE_WORD_FROM_INDEX, { word });
 
-            if (!map[list.id]) {
-                map[list.id] = { list, words: [] };
-            }
+                return map.concat(lists.map(l => l.id));
+            }, [])
+            // save all modified lists
+            .forEach(listId => context.dispatch('writeList', listId));
 
-            map[list.id].words.push(word);
-
-            return map;
-        }, {});
-
-        Object.values(lists).forEach(({ list, words }) => {
-            words.forEach(word => {
-                context.commit(Mutation.SELECT_WORD, { word, value: false });
-                context.commit(Mutation.DELETE_WORD, { list, wordId: word.id });
-            });
-            actions.writeList(context, list.id);
-        });
+        // save index
+        context.dispatch('writeIndex');
     },
 
     // #endregion
@@ -795,7 +811,7 @@ const helpers = {
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {{ word?: CollectionWord; lists?: CollectionList[] }}
      */
-    findWord(state: CollectionState, wordId: string, searchAll: boolean = false): { word?: CollectionWord; lists?: CollectionList[] } {
+    findWord(state: CollectionState, wordId: string, searchAll: boolean = false): { word?: CollectionWord; lists: CollectionList[] } {
         const listToSearch = searchAll
             ? Object.values(state.lists) // get all the lists
             : state.selectedLists;

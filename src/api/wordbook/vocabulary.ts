@@ -141,9 +141,9 @@ class VocabularyBook extends Wordbook {
 
         if (samplesResponse) {
             vocabularyDefinition.examples = samplesResponse.data.result.sentences.map((s: { sentence: string }) => s.sentence);
-            console.log(samplesResponse.data.result.sentences);
+            // console.log(samplesResponse.data.result.sentences);
         } else {
-            console.log('No sample sentences found');
+            console.log('No `vocabularyDefinition` sample sentences found');
         }
 
         return vocabularyDefinition;

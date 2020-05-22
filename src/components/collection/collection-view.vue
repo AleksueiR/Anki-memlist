@@ -95,9 +95,9 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 
     @StateCL selectedLists: CollectionList[];
 
-    @GetterCL doesExist: (value: string) => boolean;
+    @GetterCL doesExist: (value: string, listId?: string) => boolean;
 
-    @ActionCL addWord: (payload: { listId: string; word: CollectionWord | CollectionWord[] }) => void;
+    @ActionCL addWord: (payload: { listId: string; text: string | string[] }) => void;
 
     @ActionCL setIndexDefaultList: (payload: { listId: string }) => void;
 
@@ -231,24 +231,37 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         `);
 
         UIkit.util.on(dialog.$el, 'click', '.submit-button', (event: Event) => {
-            const lines = ((dialog.$el.querySelector('.uk-textarea').value as string) || '')
-                .split(/\r?\n/)
-                .filter(l => l)
-                .map(l => l.trim());
-            const filteredLines = lines.filter(l => !this.doesExist(l));
+            // get lines from the dialog
+            const value = (dialog.$el.querySelector('.uk-textarea').value as string) || '';
 
-            // lines = [...new Set(lines)];
+            const allLines = value
+                .split(/\r?\n/) // split
+                .filter(l => l) // filter empties
+                .map(
+                    l =>
+                        l
+                            .trim() // trim white space
+                            .toLowerCase() // cast to lower-case
+                            .replace(/[^a-z]/g, '') // remove non-characters
+                );
 
-            const words = filteredLines.map(line => new CollectionWord({ text: line }));
+            const cleanLines = [...new Set(allLines)]; // remove duplicates
 
-            console.log(`importing ${lines.length} words; ${lines.length - filteredLines.length} skipped`);
+            const newLines = cleanLines.filter(l => !this.doesExist(l, listId)); // filter out words already present in **this** list
+
+            // log info stuff
+            console.log(`importing ${newLines.length} words`);
             console.log(
-                'skipped:',
-                lines.filter(l => this.doesExist(l))
+                `   ${cleanLines.length - newLines.length} are present in this list and skipped:`,
+                cleanLines.filter(l => !newLines.includes(l))
             );
 
-            // TODO: refactor
-            // this.addWord({ listId, word: words });
+            const existingLines = newLines.filter(l => this.doesExist(l));
+            console.log(`   ${existingLines.length} words are present in the collection and linked:`, existingLines);
+
+            this.addWord({ listId, text: newLines });
+
+            console.log('import completed');
 
             dialog.hide();
         });

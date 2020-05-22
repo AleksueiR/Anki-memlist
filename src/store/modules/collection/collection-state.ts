@@ -164,6 +164,14 @@ export class CollectionIndex {
         this.update();
     }
 
+    /**
+     * Checks if the word (by the text) already exist in the collection.
+     *
+     * // TODO: use `doesExist` function in the collection instead, I think
+     * @param {string} text
+     * @returns {boolean}
+     * @memberof CollectionIndex
+     */
     hasWord(text: string): boolean {
         return Object.values(this.words).some(word => word.text === text);
     }

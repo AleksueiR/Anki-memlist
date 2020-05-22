@@ -375,6 +375,7 @@ export class CollectionList {
             sortBy = 'name',
             sortDirection = 'asc',
             index = [] as string[],
+            words = {},
             notes = ''
         } = options;
 
@@ -389,6 +390,7 @@ export class CollectionList {
         this.sortBy = sortBy;
         this.sortDirection = sortDirection;
         this.index = index;
+        this.words = words;
         this.notes = notes;
     }
 

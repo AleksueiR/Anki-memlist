@@ -559,7 +559,7 @@ export class CollectionWord {
         this.favourite = favourite;
         this.notes = notes;
         this.dateAdded = dateAdded;
-        this.dateAdded = dateModified;
+        this.dateModified = dateModified;
     }
 
     set text(value: string) {

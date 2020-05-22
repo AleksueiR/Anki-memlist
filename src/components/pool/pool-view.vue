@@ -330,8 +330,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     }
 
     /**
-     * Selects the word even if it's not in the selected list.
-     * // TODO: why???
+     * Selects the word even if it's not in the selected list because lookup shows words from the whole collection.
      */
     selectWordSearchAll(event: any) {
         this.selectWord({ ...event, searchAll: true });
@@ -339,7 +338,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     onWordSelected(payload: { wordId: string; append: boolean }): void {
         // the word must be in the pool, otherwise it cannot be selected
-        console.log('on owr serse');
+        // console.log('on word selected');
 
         const word = this.getPooledWords.find(word => word.id === payload.wordId)!;
         this.focusedEntry = word!;

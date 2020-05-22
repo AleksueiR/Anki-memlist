@@ -571,6 +571,13 @@ const actions = {
             return;
         }
 
+        const { lists } = helpers.findWord(context.state, wordId, true);
+
+        console.log(
+            `${word.text} is found in ${lists!.length} lists: `,
+            lists!.map(l => l.name)
+        );
+
         context.commit(Mutation.SELECT_WORD, { word, value });
     },
 

@@ -12,11 +12,7 @@
         <section class="container main" v-if="word">
             <section class="content" v-bar>
                 <transition-group name="list" tag="div">
-                    <div
-                        v-for="[wordbook, definition] in definitions"
-                        :key="`${wordbook.id}-content`"
-                        class="uk-margin-small-bottom"
-                    >
+                    <div v-for="[wordbook, definition] in definitions" :key="`${wordbook.id}-content`" class="uk-margin-small-bottom">
                         <component
                             :is="wordbook.id"
                             :id="wordbook.id"
@@ -31,9 +27,7 @@
             <aside class="sidebar cm-scrollbar">
                 <ul class="headings">
                     <li v-for="wordbook in wordbooks" :key="wordbook.id" class="heading">
-                        <a :href="`#${wordbook.id}`" class="anchor" v-if="definitionExists(wordbook)">{{
-                            wordbook.name
-                        }}</a>
+                        <a :href="`#${wordbook.id}`" class="anchor" v-if="definitionExists(wordbook)">{{ wordbook.name }}</a>
                         <span v-else class="anchor uk-text-muted">{{ wordbook.name }}</span>
                     </li>
                 </ul>
@@ -84,16 +78,7 @@ export default class WordList extends mixins(CollectionStateMixin) {
     }
 
     async mounted(): Promise<void> {
-        /* this.editor = new Quill('#editor');
-
-        this.editor.on('text-change', () => {
-            console.log('???');
-
-            this.raw = this.editor.root.innerHTML;
-        }); */
-        /* if (!this.id) {
-            return;
-        }
+        /*
 
         anki.retrieveMediaFile('earth_global_circulation1_-_en.svg.png').then((data: any) => {
             //console.log(data);
@@ -141,8 +126,6 @@ export default class WordList extends mixins(CollectionStateMixin) {
 </script>
 
 <style lang="scss" scoped>
-// TODO: quill is not used right now
-// @import '~quill/dist/quill.core.css';
 @import './../../styles/variables';
 
 .list-enter-active,

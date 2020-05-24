@@ -122,7 +122,13 @@ class VocabularyBook extends Wordbook {
     }
 
     async load(value: CollectionWord): Promise<Definition> {
-        const [error, response] = await to(axios.get(`https://www.vocabulary.com/dictionary/definition.ajax?search=${value.text}&lang=en`));
+        // const [error, response] = await to(axios.get(`https://www.vocabulary.com/dictionary/definition.ajax?search=${value.text}&lang=en`));
+        // TODO: html encode non-ascii characters
+        const [error, response] = await to(
+            axios.get(
+                `https://blashdiak.azurewebsites.net/api/HttpTrigger1?name=https://www.vocabulary.com/dictionary/definition.ajax?search=${value.text}&lang=en`
+            )
+        );
 
         if (!response) {
             throw new Error('Definition not found');

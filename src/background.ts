@@ -59,7 +59,7 @@ function createMainWindow() {
     const window = new BrowserWindow({
         width: 1440,
         height: 820,
-        webPreferences: { webSecurity: false }
+        webPreferences: { webSecurity: true }
     });
 
     // https://discuss.atom.io/t/how-to-get-startup-arguments-from-electron-app/35353/6

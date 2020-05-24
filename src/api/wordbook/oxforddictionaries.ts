@@ -179,7 +179,13 @@ class OxfordDictionariesBook extends Wordbook {
     }
 
     async load(value: CollectionWord): Promise<Definition> {
-        const [error, response] = await to(axios.get(`https://en.oxforddictionaries.com/definition/${value.text}`));
+        // const [error, response] = await to(axios.get(`https://en.oxforddictionaries.com/definition/${value.text}`));
+
+        const [error, response] = await to(
+            axios.get(
+                `https://blashdiak.azurewebsites.net/api/HttpTrigger1?name=https://en.oxforddictionaries.com/definition/${value.text}`
+            )
+        );
 
         if (!response) {
             throw new Error('Definition not found');

@@ -4,7 +4,7 @@ import { format as formatUrl } from 'url';
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 
 import log from 'electron-log';
-import { autoUpdater } from 'electron-updater';
+// import { autoUpdater } from 'electron-updater';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -15,7 +15,7 @@ if (isDevelopment) {
 
 // #region auto-updater1
 
-log.transports.file.level = 'info';
+/* log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
 log.info('App starting...');
@@ -45,7 +45,7 @@ autoUpdater.on('download-progress', (progressObj: any) => {
 
 autoUpdater.on('update-downloaded', (info: any) => {
     log.info('Update downloaded', info);
-});
+}); */
 
 // #endregion auto-updater
 
@@ -129,5 +129,5 @@ app.on('ready', async () => {
     }
     mainWindow = createMainWindow();
 
-    autoUpdater.checkForUpdatesAndNotify();
+    // autoUpdater.checkForUpdatesAndNotify();
 });

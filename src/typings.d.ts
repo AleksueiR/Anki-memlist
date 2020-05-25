@@ -6,8 +6,6 @@ declare module 'vuebar';
 
 declare module 'gists';
 
-// declare module 'element-ui';
-
 declare module 'artoo-js';
 
 declare module 'vue-perfect-scrollbar';

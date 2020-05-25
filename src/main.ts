@@ -12,8 +12,6 @@ import VueRx from 'vue-rx';
 import { Observable, Subscription, Subject } from 'rxjs';
 import Vuebar from 'vuebar';
 
-import './registerServiceWorker';
-
 // TODO: remove element UI; we are using uikit now
 import ElementUI from 'element-ui';
 // import 'element-ui/lib/theme-default/index.css'

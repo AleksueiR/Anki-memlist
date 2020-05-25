@@ -29,7 +29,7 @@
                                 v-for="(audio, index) in pronunciation.audios"
                                 :key="`audio-${index}`"
                                 @click.stop.prevent="playSound"
-                                @click.right.stop.prevent="downloadSound(audio)"
+                                @click.right.stop.prevent="copySoundUrl(audio)"
                             >
                                 <audio ref="player" controls :src="audio"></audio> <i class="el-icon-service"></i>
                             </a>
@@ -147,11 +147,8 @@ import { Word } from './../../store/modules/words';
 import SourceExamples from './source-examples.vue';
 
 import axios from 'axios';
-import fs from 'fs';
-import tmp from 'tmp';
-import electron, { clipboard } from 'electron';
+import { clipboard } from 'electron';
 import { Definition, Wordbook } from '@/api/wordbook';
-const app = electron.remote.app;
 
 // Axios defaults to the xhrAdapter (XMLHttpRequest) in Electron an no stream is available
 // forces axios to use the node adapter
@@ -176,30 +173,14 @@ export default class SourceViewV extends Vue {
 
         const audioElement = currentTarget.firstElementChild as HTMLAudioElement;
         audioElement.play();
-        this.downloadSound(audioElement.src);
+        this.copySoundUrl(audioElement.src);
     }
 
-    async downloadSound(url: string): Promise<void> {
-        const response = await axios.get<Buffer>(url, { responseType: 'arraybuffer' });
-
-        console.log(response);
-
-        // https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript/12900504#12900504
-        const extension = url.slice((Math.max(0, url.lastIndexOf('.')) || Infinity) + 1);
-
-        // need to specify temp folder in Electron apps
-        // https://github.com/raszi/node-tmp/issues/176
-        const tmpobj = tmp.fileSync({
-            prefix: `${this.word.text}-`,
-            postfix: `.${extension}`,
-            dir: app.getPath('temp')
-        });
-
-        fs.writeFileSync(tmpobj.fd, new Buffer(response.data));
-        clipboard.writeText(tmpobj.name);
-
-        // TODO: do not create multiple files for the same word
-        // TODO: need to clean up temporary files after
+    /**
+     * Copy the sound url into the clipboard in the form that Anki understands.
+     */
+    copySoundUrl(url: string): void {
+        clipboard.writeText(`[sound:${url}]`);
     }
 
     // TODO: what is this for?

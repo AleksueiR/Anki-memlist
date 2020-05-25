@@ -154,7 +154,6 @@ import { StayInView } from '@/directives/stay-in-view';
 import FocusableListV from '@/components/bits/focusable-list.vue';
 import RenameInputV from '@/components/bits/rename-input.vue';
 import PoolEntryV from './pool-entry.vue';
-// import VirtualScrollList from 'vue-virtual-scroll-list';
 
 import loglevel from 'loglevel';
 loglevel.setDefaultLevel(loglevel.levels.TRACE);

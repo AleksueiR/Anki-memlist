@@ -31,7 +31,8 @@
                                 @click.stop.prevent="playSound"
                                 @click.right.stop.prevent="copySoundUrl(audio)"
                             >
-                                <audio ref="player" controls :src="audio"></audio> <i class="el-icon-service"></i>
+                                <audio ref="player" controls :src="audio"></audio> <octo-icon name="megaphone"></octo-icon>
+                                <!-- <i class="el-icon-service"></i> -->
                             </a>
                         </span>
                     </span>

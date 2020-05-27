@@ -1,7 +1,7 @@
 <template>
     <section class="pool-view uk-flex uk-flex-column uk-flex-none">
         <div class="list-header uk-flex uk-inline">
-            <span class="uk-form-icon uk-form-icon"> <octo-icon name="search" scale="0.8"></octo-icon> </span>
+            <span class="uk-form-icon"> <octo-icon name="search" scale="0.8"></octo-icon> </span>
 
             <input
                 class="uk-input uk-form-small uk-margin-right"
@@ -163,7 +163,7 @@ const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
 /* import wordMenu from './word-menu.vue'; */
 
-import { CollectionList, CollectionWord, CollectionDisplay, LookupResult } from '../../store/modules/collection/index';
+import { collectionFactory, CollectionList, CollectionWord, CollectionDisplay, LookupResult } from '../../store/modules/collection/index';
 
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
@@ -271,7 +271,8 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     created() {
         this.$observables.lookupObservable.subscribe(value => {
             this.performLookup({ value });
-            this.loadDefinitions({ value: new CollectionWord({ text: value }) });
+            // TODO: update `loadDefinitions` to accept wordid or just text
+            this.loadDefinitions({ value: collectionFactory.CollectionWord(value) });
         });
     }
 

@@ -11,7 +11,6 @@ import {
     CollectionListOptions,
     CollectionWord,
     CollectionListMap,
-    CollectionWordOptions,
     CollectionWordMap
 } from '../../store/modules/collection/index';
 
@@ -116,13 +115,13 @@ const local: Storage = {
                 // convert word dictionary into a proper Map of CollectionWord object
                 // type words in the dictionary
 
-                if (data.words) {
+                /* if (data.words) {
                     data.words = Object.values(data.words!).reduce((map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
                         const word = new CollectionWord(wordOptions);
                         map[word.id] = word;
                         return map;
                     }, {});
-                }
+                } */
 
                 // TODO: handle errors
                 resolve(new CollectionList(data));

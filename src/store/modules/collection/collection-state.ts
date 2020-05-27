@@ -129,11 +129,12 @@ export class CollectionIndex {
 
         // convert word dictionary into a proper Map of CollectionWord object
         // type words in the dictionary
-        this.words = Object.values(words).reduce((map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
+        this.words = words;
+        /* this.words = Object.values(words).reduce((map: CollectionWordMap, wordOptions: CollectionWordOptions) => {
             const word = new CollectionWord(wordOptions);
             map[word.id] = word;
             return map;
-        }, {});
+        }, {}); */
     }
 
     set tree(value: CollectionTree) {
@@ -223,16 +224,16 @@ export class CollectionIndex {
     }
 
     get safeJSON(): CollectionIndexOptions {
-        const safeWords = Object.values(this.words).reduce((map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
+        /* const safeWords = Object.values(this.words).reduce((map: { [name: string]: CollectionWordOptions }, word: CollectionWord, {}) => {
             map[word.id] = word.safeJSON;
             return map;
-        }, {});
+        }, {}); */
 
         return {
             id: this.id,
             defaultListId: this.defaultListId,
             tree: this.tree.safeJSON as CollectionTree,
-            words: safeWords as CollectionWordMap,
+            words: this.words, // safeWords as CollectionWordMap,
             dateCreated: this.dateCreated,
             dateModified: this.dateModified
         };
@@ -528,103 +529,26 @@ export class CollectionList {
     }
 }
 
-export interface CollectionWordOptions {
-    id?: string;
+export interface CollectionWord {
+    id: string;
 
-    text?: string;
-    archived?: boolean;
-    favourite?: boolean;
-    notes?: string;
+    text: string;
+    archived: boolean;
+    favourite: boolean;
+    notes: string;
 
-    dateAdded?: number;
-    dateModified?: number;
+    dateAdded: number;
 }
 
-export class CollectionWord {
-    readonly id: string;
-
-    _text: string;
-    _archived: boolean;
-    _favourite: boolean;
-    _notes: string;
-    //noteIds: string[];
-
-    readonly dateAdded: number;
-    dateModified: number;
-
-    constructor(options: CollectionWordOptions = {}) {
-        const {
-            id = uniqid.time(),
-            text = '',
-            archived = false,
-            favourite = false,
-            notes = '',
-            dateAdded = moment.now(),
-            dateModified = moment.now()
-        } = options;
-
-        this.id = id;
-        this.text = text;
-        this.archived = archived;
-        this.favourite = favourite;
-        this.notes = notes;
-        this.dateAdded = dateAdded;
-        this.dateModified = dateModified;
-    }
-
-    set text(value: string) {
-        this._text = value;
-        this.update();
-    }
-
-    get text(): string {
-        return this._text;
-    }
-
-    set archived(value: boolean) {
-        this._archived = value;
-        this.update();
-    }
-
-    get archived(): boolean {
-        return this._archived;
-    }
-
-    set favourite(value: boolean) {
-        this._favourite = value;
-        this.update();
-    }
-
-    get favourite(): boolean {
-        return this._favourite;
-    }
-
-    set notes(value: string) {
-        this._notes = value;
-        this.update();
-    }
-
-    get notes(): string {
-        return this._notes;
-    }
-
-    get hasNotes(): boolean {
-        return this.notes !== '';
-    }
-
-    private update(): void {
-        this.dateModified = moment.now();
-    }
-
-    get safeJSON(): CollectionWordOptions {
+export const collectionFactory = {
+    CollectionWord(text: string): CollectionWord {
         return {
-            id: this.id,
-            text: this.text,
-            archived: this.archived,
-            favourite: this.favourite,
-            notes: this.notes,
-            dateAdded: this.dateAdded,
-            dateModified: this.dateModified
+            id: uniqid.time(),
+            text,
+            archived: false,
+            favourite: false,
+            notes: '',
+            dateAdded: moment.now()
         };
     }
-}
+};

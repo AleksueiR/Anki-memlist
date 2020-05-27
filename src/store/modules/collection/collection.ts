@@ -2,6 +2,7 @@ import { ActionContext } from 'vuex';
 
 import storage from '@/api/storage';
 import {
+    collectionFactory,
     CollectionState,
     CollectionIndex,
     CollectionList,
@@ -410,10 +411,10 @@ const actions = {
 
             if (!context.state.index.hasWord(text)) {
                 // check if the world is already in the index and add if it's not there
-                word = new CollectionWord({ text });
+                word = collectionFactory.CollectionWord(text);
             } else {
                 // if the word is in the index, check if `allowDuplicates` is `true`
-                word = allowDuplicates ? new CollectionWord({ text }) : context.state.index.getWord(text)!;
+                word = allowDuplicates ? collectionFactory.CollectionWord(text) : context.state.index.getWord(text)!;
             }
 
             // if the words is already in this list, don't add it again

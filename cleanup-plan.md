@@ -25,3 +25,5 @@ Ref
 -   individual components are welcome to call the store directly using pathify; no need to pump events up until the parent component needs to do something fancy
 -   store items in the store as flat as you can (https://stackoverflow.com/questions/54345327/is-using-es6-classes-in-vue-vuex-flux-an-anti-pattern)
 -   export/import can work on a single file with everything included.
+-   with sources, if the word is found in other lists, we can look up the word in the sources of that list as well, not only in the current list
+-   can use `subscribe` function of vuex to listen to mutations and potentially update `dateModified` value after stuff is changed

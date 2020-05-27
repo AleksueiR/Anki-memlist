@@ -754,8 +754,10 @@ const mutations = {
         word.text = value;
     },
 
+    // TODO: remove
+    // [deprecated]
     [Mutation.SET_WORD_FAVOURITE](state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
-        word.favourite = value;
+        //word.favourite = value;
     },
 
     [Mutation.SET_WORD_ARCHIVED](state: CollectionState, { word, value }: { word: CollectionWord; value?: boolean }): void {

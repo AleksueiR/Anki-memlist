@@ -529,24 +529,67 @@ export class CollectionList {
     }
 }
 
+/**
+ * Represents a word in the collection.
+ *
+ * @export
+ * @interface CollectionWord
+ */
 export interface CollectionWord {
+    /**
+     * The id of the CollectionWord.
+     *
+     * @type {string}
+     * @memberof CollectionWord
+     */
     id: string;
 
+    /**
+     * The text value of the CollectionWord.
+     *
+     * @type {string}
+     * @memberof CollectionWord
+     */
     text: string;
+    /**
+     * The archived flag. Archived words can be hidden from view.
+     *
+     * @type {boolean}
+     * @memberof CollectionWord
+     */
     archived: boolean;
-    favourite: boolean;
+    /**
+     * Notes about this CollectionWord.
+     *
+     * @type {string}
+     * @memberof CollectionWord
+     */
     notes: string;
 
+    /**
+     * The date when the CollectionWord was added to the collection.
+     *
+     * @type {number}
+     * @memberof CollectionWord
+     */
     dateAdded: number;
 }
 
+/**
+ * A set of factory functions for the Collection State.
+ */
 export const collectionFactory = {
+    /**
+     * Create and return a new CollectionWord given its text value.
+     *
+     * @param {string} text
+     * @returns {CollectionWord}
+     */
     CollectionWord(text: string): CollectionWord {
         return {
             id: uniqid.time(),
             text,
             archived: false,
-            favourite: false,
             notes: '',
             dateAdded: moment.now()
         };

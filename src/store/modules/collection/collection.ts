@@ -144,7 +144,7 @@ const actions = {
         const hasCollection = await storage.hasCollection();
 
         if (!hasCollection) {
-            actions.addList(context, new CollectionList());
+            actions.addList(context, collectionFactory.CollectionList());
             actions.writeCollection(context);
         } else {
             ({ index, lists } = await storage.loadCollection());
@@ -152,14 +152,16 @@ const actions = {
 
         // NOTE:  move all words from the lists to the index files;
         // this is only need for old way of storing words
-        index.flatTree.forEach(listId => {
+        // TODO: remove
+        // [deprecated]
+        /* index.flatTree.forEach(listId => {
             const listWords = lists[listId].words;
             if (listWords === undefined) {
                 return;
             }
 
             index.words = { ...listWords, ...index.words };
-        });
+        }); */
 
         context.commit('SET_INDEX', index);
         context.commit('SET_LISTS', lists);
@@ -729,7 +731,7 @@ const mutations = {
     },
 
     [Mutation.ADD_WORD_TO_LIST](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
-        list.addWord(wordId);
+        list.index.push(wordId);
     },
 
     [Mutation.DELETE_WORD_FROM_INDEX](state: CollectionState, { word }: { word: CollectionWord }): void {
@@ -743,7 +745,8 @@ const mutations = {
      * @param {{ list: CollectionList; word: CollectionWord }} { list, word }
      */
     [Mutation.DELETE_WORD](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
-        list.deleteWord(wordId);
+        const index = list.index.indexOf(wordId);
+        list.index.splice(index, 1);
     },
 
     // #endregion

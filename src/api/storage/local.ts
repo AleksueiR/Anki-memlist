@@ -8,7 +8,7 @@ import {
     CollectionList,
     // CollectionTree,
     CollectionIndexOptions,
-    CollectionListOptions,
+    /* CollectionListOptions, */
     CollectionWord,
     CollectionListMap,
     CollectionWordMap
@@ -84,9 +84,9 @@ const local: Storage = {
 
     saveList(list: CollectionList): Promise<void> {
         const promise = new Promise<void>((resolve, reject) => {
-            jsonStorage.set(listFileName(list.id), list.safeJSON, error => {
+            jsonStorage.set(listFileName(list.id), list, error => {
                 // TODO: handle errors
-                console.log('save list', list.id, list.safeJSON);
+                console.log('save list', list.id, list);
 
                 resolve();
             });
@@ -111,7 +111,7 @@ const local: Storage = {
 
     loadList(listId: string): Promise<CollectionList> {
         const promise = new Promise<CollectionList>((resolve, reject) => {
-            jsonStorage.get(listFileName(listId), (error, data: CollectionListOptions) => {
+            jsonStorage.get(listFileName(listId), (error, data: object) => {
                 // convert word dictionary into a proper Map of CollectionWord object
                 // type words in the dictionary
 
@@ -124,7 +124,7 @@ const local: Storage = {
                 } */
 
                 // TODO: handle errors
-                resolve(new CollectionList(data));
+                resolve(data as CollectionList);
             });
         });
 

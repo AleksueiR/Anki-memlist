@@ -294,7 +294,9 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         return mode;
     }
 
+    // TODO: this should be moved to the store getters
     get poolDisplayCount(): number[] {
+
         const result = [CollectionDisplay.all, CollectionDisplay.active, CollectionDisplay.archived];
 
         return result.map(mode => this.selectedLists.reduce<number>((count, l) => count + this.countWords(l.id, mode), 0));

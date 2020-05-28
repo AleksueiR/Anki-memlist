@@ -300,233 +300,52 @@ export class CollectionTree {
 }
 
 export type CollectionSortBy = 'name' | 'date';
+export enum CollectionSortBy_ {
+    name = 'name',
+    date = 'date'
+}
+
 export enum CollectionDisplay {
     all = 0,
     active = 1,
     archived = 2,
     mixed = -1
 }
+
+export enum CollectionSortDirection_ {
+    ascending = 'asc',
+    descending = 'des'
+}
+
 export type CollectionSortDirection = 'asc' | 'des';
 export type CollectionWordMap = { [name: string]: CollectionWord };
 
-export interface CollectionListOptions {
-    id?: string;
-    name?: string;
-    dateCreated?: number;
-    dateModified?: number;
+/**
+ * Represents a list in the collection.
+ *
+ * @export
+ * @interface CollectionList
+ */
+export interface CollectionList {
+    id: string;
 
-    display?: number;
-    pinned?: boolean;
-    hidden?: boolean;
-    colour?: string;
+    name: string;
+    index: string[];
 
-    sortBy?: CollectionSortBy;
-    sortDirection?: CollectionSortDirection;
-
-    index?: string[];
-    //words?: Map<string, CollectionWord>;
-    words?: CollectionWordMap;
-    notes?: string;
-}
-
-export class CollectionList {
-    static readonly DEFAULT_NAME: string = 'Untitled List';
-
-    readonly id: string;
-    private _name: string;
-    readonly dateCreated: number;
-    dateModified: number;
-
-    private _display: CollectionDisplay;
-    private _pinned: boolean;
-    private _hidden: boolean;
-    private _colour: string;
-
-    private _sortBy: CollectionSortBy;
-    private _sortDirection: CollectionSortDirection;
+    display: CollectionDisplay; // TODO: rename to `displayMode`
+    pinned: boolean;
+    hidden: boolean;
+    sortBy: CollectionSortBy;
+    sortDirection: CollectionSortDirection;
+    notes: string;
 
     /**
-     * A list CollectionWord ids.
+     * The date when the CollectionWord was added to the collection.
      *
-     * @type {string[]}
+     * @type {number}
      * @memberof CollectionList
      */
-    readonly index: string[];
-
-    /**
-     * [Deprecated] A dictionary of CollectionWord items referenced by their ids.
-     *
-     * @deprecated
-     * @type {CollectionWordMap}
-     * @memberof CollectionList
-     */
-    readonly words: CollectionWordMap | undefined;
-    private _notes: string;
-
-    constructor(options: CollectionListOptions = {}) {
-        const {
-            id = uniqid.time(),
-            name = CollectionList.DEFAULT_NAME,
-            dateCreated = moment.now(),
-            dateModified = moment.now(),
-            display = CollectionDisplay.all,
-            pinned = false,
-            hidden = false,
-            colour = '#fff',
-            sortBy = 'name',
-            sortDirection = 'asc',
-            index = [] as string[],
-            words = {},
-            notes = ''
-        } = options;
-
-        this.id = id;
-        this.name = name;
-        this.dateCreated = dateCreated;
-        this.dateModified = dateModified;
-        this.display = display;
-        this.pinned = pinned;
-        this.hidden = hidden;
-        this.colour = colour;
-        this.sortBy = sortBy;
-        this.sortDirection = sortDirection;
-        this.index = index;
-        this.words = words;
-        this.notes = notes;
-    }
-
-    /**
-     * List name as displayed in the Collection view.
-     *
-     * @memberof CollectionList
-     */
-    set name(value: string) {
-        this._name = value;
-        this.update();
-    }
-
-    get name(): string {
-        return this._name;
-    }
-
-    set display(value: CollectionDisplay) {
-        this._display = value;
-        this.update();
-    }
-
-    get display(): CollectionDisplay {
-        return this._display;
-    }
-
-    set pinned(value: boolean) {
-        this._pinned = value;
-        this.update();
-    }
-
-    get pinned(): boolean {
-        return this._pinned;
-    }
-
-    set hidden(value: boolean) {
-        this._hidden = value;
-        this.update();
-    }
-
-    get hidden(): boolean {
-        return this._hidden;
-    }
-
-    set colour(value: string) {
-        this._colour = value;
-        this.update();
-    }
-
-    get colour(): string {
-        return this._colour;
-    }
-
-    set sortBy(value: CollectionSortBy) {
-        this._sortBy = value;
-        this.update();
-    }
-
-    get sortBy(): CollectionSortBy {
-        return this._sortBy;
-    }
-
-    set sortDirection(value: CollectionSortDirection) {
-        this._sortDirection = value;
-        this.update();
-    }
-
-    get sortDirection(): CollectionSortDirection {
-        return this._sortDirection;
-    }
-
-    set notes(value: string) {
-        this._notes = value;
-        this.update();
-    }
-
-    get notes(): string {
-        return this._notes;
-    }
-
-    get hasNotes(): boolean {
-        return this.notes !== '';
-    }
-
-    addWord(wordId: string): void {
-        this.index.push(wordId);
-        this.update();
-    }
-
-    /**
-     * Deletes the word from the list.
-     *
-     * @param {CollectionWord} word
-     * @memberof CollectionList
-     */
-    deleteWord(wordId: string): void {
-        const index = this.index.indexOf(wordId);
-        this.index.splice(index, 1);
-
-        this.update();
-    }
-
-    /**
-     * Updates the `date modified` timestamp.
-     *
-     * @private
-     * @memberof CollectionList
-     */
-    private update(): void {
-        this.dateModified = moment.now();
-    }
-
-    /**
-     * Convert the collection into a safe, regular JSON object for storage.
-     *
-     * @readonly
-     * @type {CollectionListOptions}
-     * @memberof CollectionList
-     */
-    get safeJSON(): CollectionListOptions {
-        return {
-            id: this.id,
-            name: this.name,
-            dateCreated: this.dateCreated,
-            dateModified: this.dateModified,
-            display: this.display,
-            pinned: this.pinned,
-            hidden: this.hidden,
-            colour: this.colour,
-            sortBy: this.sortBy,
-            sortDirection: this.sortDirection,
-            index: this.index,
-            notes: this.notes
-        };
-    }
+    dateCreated: number;
 }
 
 /**
@@ -580,7 +399,7 @@ export interface CollectionWord {
  */
 export const collectionFactory = {
     /**
-     * Create and return a new CollectionWord given its text value.
+     * Creates and returns a new CollectionWord given its text value.
      *
      * @param {string} text
      * @returns {CollectionWord}
@@ -592,6 +411,26 @@ export const collectionFactory = {
             archived: false,
             notes: '',
             dateAdded: moment.now()
+        };
+    },
+
+    /**
+     * Creates and returns a new CollectionList.
+     *
+     * @returns {CollectionList}
+     */
+    CollectionList(): CollectionList {
+        return {
+            id: uniqid.time(),
+            name: 'Untitled List',
+            index: [],
+            display: CollectionDisplay.all,
+            pinned: false,
+            hidden: false,
+            sortBy: CollectionSortBy_.name,
+            sortDirection: CollectionSortDirection_.ascending,
+            notes: '',
+            dateCreated: moment.now()
         };
     }
 };

@@ -19,9 +19,9 @@
 
         <span class="list-item-text">{{ word.text }}</span>
 
-        <span class="uk-icon list-item-control" uk-tooltip="delay: 1500; title: Has notes" v-show="!isTargeted" v-if="word.hasNotes">
+        <!-- <span class="uk-icon list-item-control" uk-tooltip="delay: 1500; title: Has notes" v-show="!isTargeted" v-if="word.hasNotes">
             <octo-icon name="comment"></octo-icon>
-        </span>
+        </span> -->
 
         <template v-if="isTargeted">
             <button

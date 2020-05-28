@@ -74,7 +74,8 @@ import {
     CollectionIndex,
     CollectionList,
     CollectionWord,
-    CollectionListMap
+    CollectionListMap,
+    collectionFactory
 } from '../../store/modules/collection';
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
@@ -282,7 +283,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
      * After the CollectionItemV is mounted, start renaming the list so the user can change its name.
      */
     createNewList(): void {
-        const list = new CollectionList();
+        const list = collectionFactory.CollectionList();
         this.mintListId = list.id;
         this.addList(list);
     }

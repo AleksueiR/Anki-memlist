@@ -1,29 +1,48 @@
 import uniqid from 'uniqid';
 import moment from 'moment';
 
-// import electron from 'electron';
+// backup
+interface CollectionBackup {
+    id: string;
+    defaultListId: string;
 
-// // remote module has a limitation which prevents preventing the close event
-// // see https://github.com/electron/electron/issues/4473 and https://github.com/electron/electron/issues/3362
-// electron.remote.getCurrentWindow().on('close', event => {
-//     console.log('current windwo', event);
-//     /* event.stopImmediatePropagation();
-//     event.stopPropagation(); */
-//     event.returnValue = false;
-//     event.preventDefault();
-// });
+    tree: []; // listIds of the first level
 
-// window.onbeforeunload = e => {
-//     console.log('I do not want to be closed');
+    words: {
+        //
+    };
 
-//     // Unlike usual browsers that a message box will be prompted to users, returning
-//     // a non-void value will silently cancel the close.
-//     // It is recommended to use the dialog API to let the user confirm closing the
-//     // application.
-//     // e.returnValue = false;
-// };
+    lists: {
+        istId: {
+            // blah
+            items: []; // listIds of this list
+        };
 
-// overloading constructors https://stackoverflow.com/a/40976608
+        //
+    };
+}
+
+interface nIndex {
+    id: string;
+    defaultListId: string;
+
+    tree: []; // listIds of the first level
+
+    wordsIds: []; // list of all wordIds in the collection
+
+    listIds: []; // list of all listIds in the collection
+}
+
+interface nWord {}
+
+interface nList {
+    tree: []; // listIds of the first level
+}
+
+interface newState {
+    id: string;
+    defaultListId: string;
+}
 
 /**
  * A result of the word lookup in the entire collection.
@@ -50,6 +69,23 @@ export interface LookupResult {
 }
 
 export type CollectionListMap = { [name: string]: CollectionList };
+
+export enum CollectionDisplay {
+    all = 0,
+    active = 1,
+    archived = 2,
+    mixed = -1
+}
+
+export enum CollectionSortBy {
+    name = 'name',
+    date = 'date'
+}
+
+export enum CollectionSortDirection {
+    ascending = 'asc',
+    descending = 'des'
+}
 
 export interface CollectionStateOptions {}
 
@@ -85,11 +121,11 @@ export class CollectionState {
     }
 
     // TODO: remove this function - move to the collection ADD_LIST function
-    addList(tree: CollectionTree, list: CollectionList): void {
-        tree.addList(list);
+    /* addList_(tree: CollectionTree, list: CollectionList): void {
+        tree.addList_(list);
         this.lists[list.id] = list;
         //this.lists.set(list.id, list);
-    }
+    } */
 }
 
 export interface CollectionIndexOptions {
@@ -103,10 +139,10 @@ export interface CollectionIndexOptions {
 
 export class CollectionIndex {
     readonly id: string;
-    protected _defaultListId: string | null;
+    defaultListId: string | null;
 
-    protected _tree: CollectionTree;
-    protected _words: CollectionWordMap;
+    tree: CollectionTree;
+    words: CollectionWordMap;
 
     readonly dateCreated: number;
     dateModified: number;
@@ -137,33 +173,33 @@ export class CollectionIndex {
         }, {}); */
     }
 
-    set tree(value: CollectionTree) {
+    /* set tree(value: CollectionTree) {
         this._tree = value;
         this.update();
     }
 
     get tree(): CollectionTree {
         return this._tree;
-    }
+    } */
 
-    set words(value: CollectionWordMap) {
+    /* set words(value: CollectionWordMap) {
         this._words = value;
         this.update();
     }
 
     get words(): CollectionWordMap {
         return this._words;
-    }
+    } */
 
-    deleteWord(word: CollectionWord): void {
+    /* deleteWord_(word: CollectionWord): void {
         delete this.words[word.id];
         this.update();
     }
 
-    addWord(word: CollectionWord): void {
+    addWord_(word: CollectionWord): void {
         this.words[word.id] = word;
         this.update();
-    }
+    } */
 
     /**
      * Checks if the word (by the text) already exist in the collection.
@@ -173,22 +209,22 @@ export class CollectionIndex {
      * @returns {boolean}
      * @memberof CollectionIndex
      */
-    hasWord(text: string): boolean {
+    /* hasWord_(text: string): boolean {
         return Object.values(this.words).some(word => word.text === text);
     }
 
-    getWord(text: string): CollectionWord | undefined {
+    getWord_(text: string): CollectionWord | undefined {
         return Object.values(this.words).find(word => word.text === text);
-    }
+    } */
 
-    set defaultListId(value: string | null) {
+    /* set defaultListId(value: string | null) {
         this._defaultListId = value;
         this.update();
     }
 
     get defaultListId(): string | null {
         return this._defaultListId;
-    }
+    } */
 
     /**
      * Returns a flattened collection tree.
@@ -247,9 +283,9 @@ export interface CollectionTreeOptions {
 }
 
 export class CollectionTree {
-    readonly listId: string;
-    readonly items: CollectionTree[];
-    _expanded: boolean;
+    listId: string;
+    items: CollectionTree[];
+    expanded: boolean;
 
     private root: CollectionIndex;
 
@@ -263,12 +299,12 @@ export class CollectionTree {
         this.root = root;
     }
 
-    addList(list: CollectionList): void {
+    /* addList_(list: CollectionList): void {
         this.items.push(new CollectionTree({ listId: list.id }, this.root));
         this.update();
-    }
+    } */
 
-    deleteList(list: CollectionList): void {
+    /* deleteList_(list: CollectionList): void {
         const index = this.items.findIndex(item => item.listId === list.id);
         if (index === -1) {
             return;
@@ -276,15 +312,15 @@ export class CollectionTree {
 
         this.items.splice(index, 1);
         this.update();
-    }
+    } */
 
-    get expanded(): boolean {
+    /* get expanded(): boolean {
         return this._expanded;
     }
 
     set expanded(value: boolean) {
         this._expanded = value;
-    }
+    } */
 
     update(): void {
         this.root.update();
@@ -299,26 +335,23 @@ export class CollectionTree {
     }
 }
 
-export type CollectionSortBy = 'name' | 'date';
-export enum CollectionSortBy_ {
-    name = 'name',
-    date = 'date'
-}
-
-export enum CollectionDisplay {
-    all = 0,
-    active = 1,
-    archived = 2,
-    mixed = -1
-}
-
-export enum CollectionSortDirection_ {
-    ascending = 'asc',
-    descending = 'des'
-}
-
-export type CollectionSortDirection = 'asc' | 'des';
 export type CollectionWordMap = { [name: string]: CollectionWord };
+
+export interface CollectionIndex_ {
+    id: string;
+    defaultListId: string | null; // TODO: should not be an undefined, maybe an explicit null value
+
+    tree: CollectionTree;
+    words: CollectionWordMap;
+
+    dateCreated: number;
+}
+
+export interface CollectionTree_ {
+    listId: string;
+    expanded: boolean;
+    items: CollectionTree_[];
+}
 
 /**
  * Represents a list in the collection.
@@ -427,10 +460,21 @@ export const collectionFactory = {
             display: CollectionDisplay.all,
             pinned: false,
             hidden: false,
-            sortBy: CollectionSortBy_.name,
-            sortDirection: CollectionSortDirection_.ascending,
+            sortBy: CollectionSortBy.name,
+            sortDirection: CollectionSortDirection.ascending,
             notes: '',
             dateCreated: moment.now()
         };
-    }
+    } /* ,
+
+    CollectionIndex(): CollectionIndex {
+        return {
+            id: uniqid.time(),
+
+            tree: {},
+            words: {},
+
+            dateCreated: moment.now()
+        };
+    } */
 };

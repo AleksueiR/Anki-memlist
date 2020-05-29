@@ -411,12 +411,12 @@ const actions = {
         texts.forEach(text => {
             let word;
 
-            if (!context.state.index.hasWord(text)) {
+            if (!hasWord(text)) {
                 // check if the world is already in the index and add if it's not there
                 word = collectionFactory.CollectionWord(text);
             } else {
                 // if the word is in the index, check if `allowDuplicates` is `true`
-                word = allowDuplicates ? collectionFactory.CollectionWord(text) : context.state.index.getWord(text)!;
+                word = allowDuplicates ? collectionFactory.CollectionWord(text) : getWord(text)!;
             }
 
             // if the words is already in this list, don't add it again
@@ -430,6 +430,18 @@ const actions = {
 
         actions.writeIndex(context);
         actions.writeList(context, list.id);
+
+        // TODO: temporary function
+        // TODO: use `doesExist` function in the collection instead, I think
+        function hasWord(text: string): boolean {
+            return Object.values(context.state.index.words).some(word => word.text === text);
+        }
+
+        // TODO: temporary function
+        // TODO: use `doesExist` function in the collection instead, I think
+        function getWord(text: string): CollectionWord | undefined {
+            return Object.values(context.state.index.words).find(word => word.text === text);
+        }
     },
 
     // TODO: if the defaultListId is invalid, reset the default list to the first list in the tree
@@ -682,7 +694,8 @@ const mutations = {
     },
 
     [Mutation.ADD_LIST](state: CollectionState, { tree, list }: { tree: CollectionTree; list: CollectionList }): void {
-        state.addList(tree, list);
+        tree.items.push(new CollectionTree({ listId: list.id }, state.index));
+        state.lists[list.id] = list;
     },
 
     [Mutation.SELECT_LIST](state: CollectionState, { list, value }: { list: CollectionList; value?: boolean }): void {
@@ -707,7 +720,8 @@ const mutations = {
     },
 
     [Mutation.DELETE_LIST](state: CollectionState, { list, tree }: { list: CollectionList; tree: CollectionTree }): void {
-        tree.deleteList(list);
+        const index = tree.items.findIndex(item => item.listId === list.id);
+        tree.items.splice(index, 1);
     },
 
     // #endregion EDIT INDEX
@@ -727,7 +741,7 @@ const mutations = {
     },
 
     [Mutation.ADD_WORD_TO_INDEX](state: CollectionState, { word }: { word: CollectionWord }): void {
-        state.index.addWord(word);
+        state.index.words[word.id] = word;
     },
 
     [Mutation.ADD_WORD_TO_LIST](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
@@ -735,7 +749,7 @@ const mutations = {
     },
 
     [Mutation.DELETE_WORD_FROM_INDEX](state: CollectionState, { word }: { word: CollectionWord }): void {
-        state.index.deleteWord(word);
+        state.index.words[word.id];
     },
 
     /**

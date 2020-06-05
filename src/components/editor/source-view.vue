@@ -143,7 +143,7 @@
 import Vue from 'vue';
 import { Component, Inject, Model, Prop, Watch, Emit } from 'vue-property-decorator';
 
-import { Word } from './../../store/modules/words';
+import { CollectionWord } from '@/store/modules/collection';
 
 import SourceExamples from './source-examples.vue';
 
@@ -161,7 +161,7 @@ axios.defaults.adapter = require('axios/lib/adapters/http');
 })
 export default class SourceViewV extends Vue {
     @Prop()
-    word: Word;
+    word: CollectionWord;
 
     @Prop()
     definition: Definition;

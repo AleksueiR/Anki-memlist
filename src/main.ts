@@ -19,6 +19,15 @@ Vue.use(VueRx, {
 Vue.use(Vuebar);
 
 const store: Store<RootState> = createStore();
+(window as any).store = store;
+
+store.subscribe((mutation, state) => {
+    console.log('mutation detected', mutation);
+
+    if (mutation.type === 'display/blah') {
+        console.log('-- sync to db', mutation.payload.path.split('.').shift());
+    }
+});
 
 import OctoIconV from '@/components/bits/octo-icon.vue';
 Vue.component('octo-icon', OctoIconV);

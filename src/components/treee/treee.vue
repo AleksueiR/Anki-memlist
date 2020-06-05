@@ -1,22 +1,18 @@
 <template>
-    <div class="treee-root" role="tree"
-        :class="{ dragging: dragItem }">
-
-            <!-- :renderer="renderer" -->
+    <div class="treee-root" role="tree" :class="{ dragging: dragItem }">
+        <!-- :renderer="renderer" -->
         <treee-node
             v-for="(item, index) in items"
             :item="item"
             :level="0"
             :index="index"
             :isLast="index === items.length - 1"
-            :key="`${index}-node`">
-
+            :key="`${index}-node`"
+        >
             <template slot-scope="{ item, level }">
                 <slot :item="item" :level="level"></slot>
             </template>
-
         </treee-node>
-
     </div>
 </template>
 
@@ -269,9 +265,7 @@ export default class Treee extends Vue {
             return false;
         }
 
-        return (<any[]>parent.items).find(
-            subItem => item[this.keyProp] === subItem[this.keyProp] || this.contains(item, subItem)
-        );
+        return (parent.items as any[]).find(subItem => item[this.keyProp] === subItem[this.keyProp] || this.contains(item, subItem));
     }
 }
 </script>

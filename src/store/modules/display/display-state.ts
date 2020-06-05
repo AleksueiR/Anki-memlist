@@ -25,4 +25,16 @@ export class DisplayState {
      * @memberof DisplayState
      */
     wordbooks: Wordbook[] = [];
+
+    blah: object = {
+        a1: {
+            b: 4
+        },
+        a2: {
+            b: 4
+        },
+        a3: {
+            b: 4
+        }
+    };
 }

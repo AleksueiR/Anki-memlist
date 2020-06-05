@@ -45,13 +45,7 @@ import AppStateMixin from '@/mixins/app-state-mixin';
 
 // import { areSettingsValid } from './../settings';
 
-import {
-    CollectionState,
-    CollectionIndex,
-    CollectionList,
-    CollectionListMap,
-    CollectionTree
-} from '../store/modules/collection/index';
+import { CollectionState, CollectionIndex, CollectionList, CollectionListMap, CollectionTree } from '../store/modules/collection/index';
 import { books, Wordbook } from '@/api/wordbook';
 
 const StateCL = namespace('collection', State);
@@ -112,7 +106,7 @@ export default class App extends mixins(AppStateMixin) {
 
     @display.Action setWordbooks: (payload: { value: Wordbook[] }) => void;
 
-    mounted(): void {
+    async mounted(): Promise<void> {
         // TODO: when should setting check happen
         // this.init();
 
@@ -120,6 +114,15 @@ export default class App extends mixins(AppStateMixin) {
         this.fetchIndex();
 
         this.setWordbooks({ value: books });
+
+        // const wordId = 'a2';
+        this.$store.set('display/blah@a2.b', 534);
+
+        /// --- ===
+        await this.$store.set('journals/fetch!');
+        await this.$store.set('groups/selectedIds', [2]);
+
+        await this.$store.set('groups/all@1.displayMode', 1);
     }
 
     init(): void {

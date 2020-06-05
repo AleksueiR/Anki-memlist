@@ -69,6 +69,8 @@ const getters = {
      * @returns {CollectionWord[]}
      */
     getPooledWords(state: CollectionState): CollectionWord[] {
+        console.log('getting pooled words');
+
         if (state.selectedLists.length === 0) {
             return [];
         }
@@ -121,6 +123,7 @@ const getters = {
      */
     countWords: (state: CollectionState) => (listId: string, mode: CollectionDisplay): number => {
         const l = state.lists[listId].index.map(id => state.index.words[id]);
+        console.log(`counting words for ${listId}`);
 
         switch (mode) {
             case CollectionDisplay.active:

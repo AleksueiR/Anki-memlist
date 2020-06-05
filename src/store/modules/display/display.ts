@@ -8,6 +8,8 @@ import { RootState } from '@/store/state';
 import { CollectionWord } from '../collection';
 import { Definition, Wordbook } from '@/api/wordbook';
 
+import { make } from 'vuex-pathify';
+
 type DisplayContext = ActionContext<DisplayState, RootState>;
 
 const state: DisplayState = new DisplayState();
@@ -72,6 +74,8 @@ const actions = {
 };
 
 const mutations = {
+    ...make.mutations(state),
+
     [Mutation.SET_WORD](state: DisplayState, { value }: { value: CollectionWord }): void {
         state.word = value;
     },

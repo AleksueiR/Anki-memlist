@@ -7,8 +7,10 @@
     // words - list of words to be always considered correct
     "words": [
         "anki",
+        "dexie",
         "favourite",
         "memlist",
+        "Pathify",
         "uniqid",
         "vuetify",
         "vuetype",

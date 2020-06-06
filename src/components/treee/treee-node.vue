@@ -1,23 +1,14 @@
 <template>
-    <div class="treee-node"
-        :class="{ 'no-drop': isDragSource }"
-        role="treeitem">
-
-        <div class="container"
-            :class="`level-${level}`"
-            @click="onClick"
-            @mousedown="mouseDown">
-
-            <span class="divider before"
+    <div class="treee-node" :class="{ 'no-drop': isDragSource }" role="treeitem">
+        <div class="container" :class="`level-${level}`" @click="onClick" @mousedown="mouseDown">
+            <span
+                class="divider before"
                 :class="{ double: index === 0 }"
                 @mouseover="mouseOver('before', $event)"
-                @mouseout="mouseOut"></span>
+                @mouseout="mouseOut"
+            ></span>
 
-            <div class="content"
-                ref="content"
-                @mouseover="mouseOver('middle', $event)"
-                @mouseout="mouseOut">
-
+            <div class="content" ref="content" @mouseover="mouseOver('middle', $event)" @mouseout="mouseOut">
                 <span class="highlight"></span>
 
                 <div ref="slot">
@@ -29,27 +20,14 @@
                     :class="`level-${level}`"
                     :is="renderer"
                     :item="item"></component> -->
-
             </div>
 
-            <span class="divider after"
-                v-if="!hasChildren"
-                @mouseover="mouseOver('after', $event)"
-                @mouseout="mouseOut"></span>
+            <span class="divider after" v-if="!hasChildren" @mouseover="mouseOver('after', $event)" @mouseout="mouseOut"></span>
         </div>
 
-        <div class="children" role="group"
-            v-if="item.expanded">
-
+        <div class="children" role="group" v-if="item.expanded">
             <!-- :renderer="renderer" -->
-            <treee-node
-                v-for="(subItem, index) in item.items"
-
-                :item="subItem"
-                :level="level + 1"
-                :index="index"
-                :key="`${index}-node`">
-
+            <treee-node v-for="(subItem, index) in item.items" :item="subItem" :level="level + 1" :index="index" :key="`${index}-node`">
                 <!-- slot-scope let's you pass `item` and `level` which are properties of the items being iterated on into the slot -->
                 <template slot-scope="{ item, level }">
                     <slot :item="item" :level="level"></slot>
@@ -58,10 +36,7 @@
         </div>
 
         <!-- the very last divider - needed to move items to the top level when the last item in the top level has children -->
-        <span class="divider before"
-            v-if="isLast && level === 0"
-            @mouseover="mouseOver('after', $event)"
-            @mouseout="mouseOut"></span>
+        <span class="divider before" v-if="isLast && level === 0" @mouseover="mouseOver('after', $event)" @mouseout="mouseOut"></span>
     </div>
 </template>
 
@@ -118,7 +93,7 @@ export default class TreeeNode extends Vue {
         this.treee.$on('start-drag', this.onDragStart);
         this.treee.$on('stop-drag', this.onDragStop);
 
-        console.log('parent tree', this.item.listId, this.level, this.hasChildren);
+        // console.log('parent tree', this.item.listId, this.level, this.hasChildren);
     }
 
     onDragStart(dragItem: TreeDragItem): void {

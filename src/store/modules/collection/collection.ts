@@ -123,7 +123,7 @@ const getters = {
      */
     countWords: (state: CollectionState) => (listId: string, mode: CollectionDisplay): number => {
         const l = state.lists[listId].index.map(id => state.index.words[id]);
-        console.log(`counting words for ${listId}`);
+        // console.log(`counting words for ${listId}`);
 
         switch (mode) {
             case CollectionDisplay.active:

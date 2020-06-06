@@ -45,7 +45,13 @@ import AppStateMixin from '@/mixins/app-state-mixin';
 
 // import { areSettingsValid } from './../settings';
 
-import { CollectionState, CollectionIndex, CollectionList, CollectionListMap, CollectionTree } from '../store/modules/collection/index';
+import {
+    CollectionState,
+    CollectionIndex,
+    CollectionList,
+    CollectionListMap,
+    CollectionTree
+} from '../store/modules/collection/index';
 import { books, Wordbook } from '@/api/wordbook';
 
 const StateCL = namespace('collection', State);
@@ -122,7 +128,13 @@ export default class App extends mixins(AppStateMixin) {
         await this.$store.set('journals/fetch!');
         await this.$store.set('groups/selectedIds', [2]);
 
-        await this.$store.set('groups/all@1.displayMode', 1);
+        await this.$store.set('groups/all@2.displayMode', 1);
+        await this.$store.set('groups/all@2.name', 'The Everted Group');
+
+        const groupId = await this.$store.set('groups/new!');
+        console.log('new group added', groupId);
+
+        console.log(`group 1 word count:`, this.$store.get('groups/wordCount@1'));
     }
 
     init(): void {

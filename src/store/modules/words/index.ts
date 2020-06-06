@@ -1,14 +1,11 @@
+import { RootState } from '@/store/state';
+import { reduceArrayToObject } from '@/util';
 import { Module } from 'vuex';
 import { make } from 'vuex-pathify';
+import db, { Group, Word } from './../journals/db';
 
-import to from 'await-to-js';
-
-import { RootState } from '@/store/state';
-
-import db, { IWord, IGroup, reduceArrayToObject } from './../journals/db';
-
-export type WordSet = { [name: number]: IWord };
-export type WordGroupCollection = { group: IGroup; words: IWord[] }[];
+export type WordSet = { [name: number]: Word };
+export type WordGroupCollection = { group: Group; words: Word[] }[];
 
 export class WordsState {
     all: WordSet = {};
@@ -33,15 +30,22 @@ words.getters = {
 };
 
 words.actions = {
-    async fetchGroupWords(context, selectedGroupIds: number[]): Promise<void> {
+    /**
+     * Fetches words belonging to the currently active groups.
+     *
+     * @returns {Promise<void>}
+     */
+    async fetchGroupWords(): Promise<void> {
         const words = await db.words
             .where('memberGroupIds')
-            .anyOf(selectedGroupIds)
+            .anyOf(this.get<number[]>('groups/selectedIds')!)
             .toArray();
 
         const wordSet = reduceArrayToObject(words);
 
         this.set('words/all', wordSet);
+
+        // TODO: check if the currently selected words need to be deselected
     },
 
     async fetchLookupWords(context): Promise<void> {

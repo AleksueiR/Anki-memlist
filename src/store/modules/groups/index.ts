@@ -1,15 +1,10 @@
-import { Module } from 'vuex';
-import { Payload, make } from 'vuex-pathify';
-
-import to from 'await-to-js';
-
 import { RootState } from '@/store/state';
+import { reduceArrayToObject, removeFromArrayByValue } from '@/util';
+import { Module } from 'vuex';
+import { make, Payload } from 'vuex-pathify';
+import db, { Group, GroupDisplayMode, Journal } from './../journals/db';
 
-import db, { IGroup, reduceArrayToObject, GroupDisplayMode } from './../journals/db';
-
-import { CollectionDisplay } from './../collection';
-
-export type GroupSet = { [name: number]: IGroup };
+export type GroupSet = { [name: number]: Group };
 export type GroupWordCountSet = { [name: number]: number };
 
 export class GroupsState {
@@ -36,18 +31,25 @@ const groups: Module<GroupsState, RootState> = {
 };
 
 groups.getters = {
-    selected(state): IGroup[] {
+    /**
+     * Returns a list of selected groups based on the list of selected group ids.
+     *
+     * @param {*} state
+     * @returns {Group[]}
+     */
+    selected(state): Group[] {
         return state.selectedIds.map(id => state.all[id]);
-    },
-
-    wordCount: state => (groupId: number, mode: CollectionDisplay) => {
-        const wordCount = db.words.where({ memberGroupIds: groupId }).count();
     }
 };
 
 groups.actions = {
-    async fetchJournalGroup({ state }, journalId: number): Promise<void> {
-        const groups = await db.groups.where({ journalId: journalId }).toArray();
+    /**
+     * Fetches groups belonging to the active journal.
+     *
+     * @returns {Promise<void>}
+     */
+    async fetchJournalGroups(): Promise<void> {
+        const groups = await db.groups.where({ journalId: this.get<number>('journals/activeId')! }).toArray();
 
         const groupSet = reduceArrayToObject(groups);
 
@@ -57,8 +59,10 @@ groups.actions = {
 
     /**
      * Count words in the provided groups using the group's `GroupDisplayMode`. If not words provided, count words in all the groups.
-     * - call this on the initial load and when a word is added, deleted, moved, or archived;
-     * - call this when the display mode of a group changes.
+     * Call this:
+     * - on the initial load and when a word is added, deleted, moved, or archived;
+     * - when the display mode of a group changes;
+     * - when a new list added.
      *
      * @param {*} { state }
      * @param {number[]} [groupIds]
@@ -71,35 +75,96 @@ groups.actions = {
             groups.map(async group => {
                 // include `isArchived` condition based on the `displayMode` if it's not set to `all`
                 const isArchivedClause =
-                    group.displayMode !== GroupDisplayMode.all ? { isArchived: group.displayMode === GroupDisplayMode.active } : {};
+                    group.displayMode !== GroupDisplayMode.all
+                        ? { isArchived: group.displayMode === GroupDisplayMode.active }
+                        : {};
 
+                // count the words and dispatch an action to update the state
                 await db.words
-                    .where({
-                        memberGroupIds: group.id,
-                        ...isArchivedClause
-                    })
+                    .where({ memberGroupIds: group.id, ...isArchivedClause })
                     .count()
                     .then(count => this.set(`groups/wordCount@${group.id}`, count));
             })
         ).then(() => void 0);
     },
 
-    async setSelectedIds(context, groupIds: number[]): Promise<void> {
-        // TODO: check if group belong to this journal
-        this.set('groups/selectedIds!', groupIds);
+    /**
+     * Create a new `Group` in the root group and return its id when finished.
+     *
+     * @param {*} { state }
+     * @returns {Promise<number>}
+     */
+    async new({ state }): Promise<number> {
+        const newGroup = await db.transaction('rw', db.groups, db.journals, async () => {
+            const { rootGroupId, id: activeJournalId } = this.get<Journal>('journals/active')!;
 
-        // TODO: clear existing lookup
-        await this.set('words/fetchGroupWords!', groupIds);
+            // create a new group entry
+            const newGroupId = await db.groups.put(new Group('New Group', activeJournalId));
+
+            // add it to the root group's subGroupIds
+            const rootGroupSubGroupIds = (await db.groups.get(rootGroupId))!.subGroupIds;
+            await this.set(`groups/all@${rootGroupId}.subGroupIds`, [...rootGroupSubGroupIds, newGroupId]);
+
+            // and return the newly created group
+            return (await db.groups.get(newGroupId))!;
+        });
+
+        // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
+        // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
+        this.set('groups/all', { ...state.all, ...{ [newGroup.id]: newGroup } });
+        this.set('groups/refreshWordCounts!', [newGroup.id]);
+
+        return newGroup.id;
     },
 
     /**
+     * Move a `Group` from one subgroup to another.
+     * Will remove from the current parent group as the same group cannot be in several subgroups.
      *
+     * @param {*} { state }
+     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId } move `groupId` to `targetGroupId` subGroups
+     * @returns {Promise<void>}
+     */
+    async move({ state }, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
+        return db.transaction('rw', db.groups, async () => {
+            // find the parent group and remove `groupId` from its subgroups
+            const parentGroup = (await db.groups.where({ subGroupIds: groupId }).first())!;
+            const newParentSubGroupIds = removeFromArrayByValue([...parentGroup.subGroupIds], groupId);
+
+            // dispatch an action to update the parent group state;
+            await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
+
+            // get the target group and add `groupId` to its subgroups
+            const targetGroup = (await db.groups.where({ subGroupIds: targetGroupId }).first())!;
+            await this.set(`groups/all@${targetGroupId}.subGroupsIds`, [...targetGroup.subGroupIds, groupId]);
+        });
+    },
+
+    /**
+     * Sets the selected group ids and dispatches the `fetchGroupWords` action.
      *
-     * @param {*} context
+     * @param {*} { state }
+     * @param {number[]} groupIds
+     * @returns {Promise<void>}
+     */
+    async setSelectedIds({ state }, groupIds: number[]): Promise<void> {
+        // TODO: check if group belong to this journal
+        // TODO: check if the group can be selected, as in if it's in the visible tree (do we assume if it belongs to journal, it's visible as we shouldn't have hidden groups)
+        this.set('groups/selectedIds!', groupIds);
+
+        // TODO: clear existing lookup
+        // when selected groups change, refresh the list of words
+        await this.set('words/fetchGroupWords!');
+    },
+
+    /**
+     * This is a "catch-all" action to intersect sub-properties writes to `state.all` by pathify and keep the db in sync.
+     *
+     * @param {*} { state }
      * @param {*} payload
      * @returns {Promise<void>}
      */
-    async setAll(context, payload): Promise<void> {
+    async setAll({ state }, payload): Promise<void> {
         // if not a Payload, call the default pathify mutation
         if (!(payload instanceof Payload)) {
             this.set('groups/all!', payload);
@@ -111,9 +176,9 @@ groups.actions = {
 
         const [id, field, ...rest] = payload.path.split('.');
 
+        // this check might not be needed if all call are proper
         if (rest.length > 0) {
             console.warn('Attempting to change a deep property');
-
             return;
         }
 

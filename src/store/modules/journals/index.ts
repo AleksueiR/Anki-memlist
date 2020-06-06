@@ -1,6 +1,7 @@
+import { handleActionPayload } from '@/store/common';
 import { RootState } from '@/store/state';
 import { Module } from 'vuex';
-import { make, Payload } from 'vuex-pathify';
+import { make } from 'vuex-pathify';
 import db, { Journal } from './db';
 
 export type JournalSet = { [name: number]: Journal };
@@ -49,33 +50,8 @@ journals.actions = {
         }
     },
 
-    async setAll(context, payload): Promise<void> {
-        // if not a Payload, call the default pathify mutation
-        if (!(payload instanceof Payload)) {
-            this.set('journals/all!', payload);
-            return;
-        }
-
-        // update the state using the payload function as expected and pass it to the default pathify mutation
-        this.set('journals/all!', payload.update(state.all));
-
-        const [id, field, ...rest] = payload.path.split('.');
-
-        // this check might not be needed if all call are proper
-        if (rest.length > 0) {
-            console.warn('Attempting to change a deep property');
-            return;
-        }
-
-        // update the corresponding db objects
-        await db.journals.update(+id, { [field]: payload.value });
-
-        // dispatch any related actions `after` the db has been updated
-        switch (field) {
-            case 'displayMode':
-                this.set('groups/refreshWordCounts!', [+id]);
-                break;
-        }
+    async setAll({ state }, payload): Promise<void> {
+        await handleActionPayload(this, db.journals, state.all, 'journals/all!', payload);
     }
 };
 

@@ -135,6 +135,8 @@ export default class App extends mixins(AppStateMixin) {
         console.log('new group added', groupId);
 
         console.log(`group 1 word count:`, this.$store.get('groups/wordCount@1'));
+
+        await this.$store.set('journals/all@1.defaultGroupId', 1);
     }
 
     init(): void {

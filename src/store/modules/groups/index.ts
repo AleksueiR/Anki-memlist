@@ -1,7 +1,8 @@
+import { handleActionPayload } from '@/store/common';
 import { RootState } from '@/store/state';
 import { reduceArrayToObject, removeFromArrayByValue } from '@/util';
 import { Module } from 'vuex';
-import { make, Payload } from 'vuex-pathify';
+import { make } from 'vuex-pathify';
 import db, { Group, GroupDisplayMode, Journal } from './../journals/db';
 
 export type GroupSet = { [name: number]: Group };
@@ -165,30 +166,16 @@ groups.actions = {
      * @returns {Promise<void>}
      */
     async setAll({ state }, payload): Promise<void> {
-        // if not a Payload, call the default pathify mutation
-        if (!(payload instanceof Payload)) {
-            this.set('groups/all!', payload);
+        const result = await handleActionPayload(this, db.groups, state.all, 'groups/all!', payload);
+
+        if (!result) {
             return;
         }
-
-        // update the state using the payload function as expected and pass it to the default pathify mutation
-        this.set('groups/all!', payload.update(state.all));
-
-        const [id, field, ...rest] = payload.path.split('.');
-
-        // this check might not be needed if all call are proper
-        if (rest.length > 0) {
-            console.warn('Attempting to change a deep property');
-            return;
-        }
-
-        // update the corresponding db objects
-        await db.groups.update(+id, { [field]: payload.value });
 
         // dispatch any related actions `after` the db has been updated
-        switch (field) {
+        switch (result.field) {
             case 'displayMode':
-                this.set('groups/refreshWordCounts!', [+id]);
+                this.set('groups/refreshWordCounts!', [result.id]);
                 break;
         }
     }

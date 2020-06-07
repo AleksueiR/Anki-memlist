@@ -7,14 +7,20 @@
     // words - list of words to be always considered correct
     "words": [
         "anki",
+        "artoo",
+        "deepmerge",
         "dexie",
         "endregion",
         "esnext",
         "favourite",
+        "loglevel",
         "memlist",
+        "octicons",
         "Pathify",
         "scripthost",
+        "uikit",
         "uniqid",
+        "vuebar",
         "vuetify",
         "vuetype",
         "vuex"

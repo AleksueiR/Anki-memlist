@@ -21,7 +21,7 @@ console.log('home dir', os.homedir());
 */
 
 // store words in the user folder
-jsonStorage.setDataPath(`${os.homedir()}/Documents/WordPouch/storage`);
+jsonStorage.setDataPath(`${os.homedir()}/Documents/WordPouch/storage_sand`);
 
 function indexFileName(): string {
     return 'index.json';
@@ -63,7 +63,9 @@ const local: Storage = {
             (list: CollectionList) => local.saveList(list)
         ); */
 
-        const promises: Promise<void>[] = Object.values(state.lists).map((list: CollectionList) => local.saveList(list));
+        const promises: Promise<void>[] = Object.values(state.lists).map((list: CollectionList) =>
+            local.saveList(list)
+        );
 
         promises.push(local.saveIndex(state.index));
 
@@ -103,7 +105,9 @@ const local: Storage = {
     loadIndex(): Promise<CollectionIndex> {
         // TODO: handle errors
         const promise = new Promise<CollectionIndex>((resolve, reject) => {
-            jsonStorage.get(indexFileName(), (error, data: CollectionIndexOptions) => resolve(new CollectionIndex(data)));
+            jsonStorage.get(indexFileName(), (error, data: CollectionIndexOptions) =>
+                resolve(new CollectionIndex(data))
+            );
         });
 
         return promise;

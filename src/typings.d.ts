@@ -5,7 +5,6 @@ declare module 'gists';
 declare module 'artoo-js';
 
 declare module 'uikit';
-declare module 'uikit/dist/js/uikit-icons';
 
 declare module 'octicons';
 

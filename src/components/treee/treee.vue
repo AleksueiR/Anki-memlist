@@ -249,7 +249,7 @@ export default class Treee extends Vue {
             }
 
             if (node.items.length !== 0) {
-                stack.push.apply(stack, node.items.slice());
+                stack.push(...node.items.slice());
             }
         }
 
@@ -265,7 +265,9 @@ export default class Treee extends Vue {
             return false;
         }
 
-        return (parent.items as any[]).find(subItem => item[this.keyProp] === subItem[this.keyProp] || this.contains(item, subItem));
+        return (parent.items as any[]).find(
+            subItem => item[this.keyProp] === subItem[this.keyProp] || this.contains(item, subItem)
+        );
     }
 }
 </script>
@@ -278,7 +280,7 @@ export default class Treee extends Vue {
     // user-select: none;
     position: relative;
 
-    &.dragging /deep/ {
+    &.dragging ::v-deep {
         .divider {
             display: block;
         }

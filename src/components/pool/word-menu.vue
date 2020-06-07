@@ -37,7 +37,7 @@ export default class WordMenu extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.trigger /deep/ .el-icon-setting {
+.trigger ::v-deep .el-icon-setting {
     // font-size: 1.5em;
 }
 </style>

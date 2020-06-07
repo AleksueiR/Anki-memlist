@@ -15,7 +15,9 @@
                 :allEntries="flattenedTreeItems"
                 @keydown.native.prevent.f2="startRename(focusedEntry)"
                 @keydown.native.prevent.enter="selectList({ listId: focusedEntry.listId, append: $event.ctrlKey })"
-                @keydown.native.prevent.space="setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })"
+                @keydown.native.prevent.space="
+                    setListPinned({ listId: focusedEntry.listId, value: !lists[focusedEntry.listId].pinned })
+                "
                 @keydown.native.prevent.right="setIndexExpandedTree({ listId: focusedEntry.listId, value: true })"
                 @keydown.native.prevent.left="setIndexExpandedTree({ listId: focusedEntry.listId, value: false })"
             >
@@ -153,7 +155,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
         const stack: CollectionTree[] = [];
         const array: CollectionTree[] = []; // output
 
-        stack.push.apply(stack, this.index.tree.items);
+        stack.push(...this.index.tree.items);
 
         while (stack.length !== 0) {
             const node = stack.shift()!;
@@ -164,7 +166,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
                 continue;
             }
             if (node.items.length !== 0) {
-                stack.unshift.apply(stack, node.items.slice());
+                stack.unshift(...node.items.slice());
             }
         }
 
@@ -181,7 +183,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
      * Specifies if the Treee can be reordered.
      * When a list is being renamed, this is set to false to prevent erroneous handling mouse events.
      */
-    isTreeDraggable: boolean = true;
+    isTreeDraggable = true;
 
     /**
      * Handles the click on a tree node.
@@ -246,7 +248,8 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
                             .replace(/[^a-z]/g, '') // remove non-characters
                 );
 
-            const cleanLines = [...new Set(allLines)]; // remove duplicates
+            // const cleanLines = [...new Set(allLines)]; // remove duplicates
+            const cleanLines = allLines;
 
             const newLines = cleanLines.filter(l => !this.doesExist(l, listId)); // filter out words already present in **this** list
 
@@ -353,7 +356,7 @@ export default class CollectionView extends mixins(CollectionStateMixin) {
 }
 
 .treee {
-    &.dragging /deep/ {
+    &.dragging ::v-deep {
         // hide icons while dragging collection items
         .collection-item .item-control {
             display: none;

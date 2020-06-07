@@ -5,9 +5,9 @@ import { gistTokenSetting } from './../settings';
 // import { CollectionState, WordList } from './../store/modules/collection';
 
 function gists(): any {
-    return new Gists({
+    /* return new Gists({
         token: gistTokenSetting.get()
-    });
+    }); */
 }
 
 export default {

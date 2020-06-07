@@ -26,15 +26,15 @@ const actions = {
     async fetchWords(context: WordsContext): Promise<void> {
         console.log('fetchwords');
 
-        try {
-            const fetchedState: WordsState = await gists.get<WordsState>(gistIdSetting.get(), gistFileNameSetting.get());
+        // try {
+        //     const fetchedState: WordsState = await gists.get<WordsState>(gistIdSetting.get(), gistFileNameSetting.get());
 
-            mutations.keepWords(context.state, {
-                items: fetchedState.items
-            });
-        } catch (error) {
-            console.log('error', error);
-        }
+        //     mutations.keepWords(context.state, {
+        //         items: fetchedState.items
+        //     });
+        // } catch (error) {
+        //     console.log('error', error);
+        // }
 
         /* cKeepWords(context, {
             items: (await gists.get<WordsState>(
@@ -42,11 +42,11 @@ const actions = {
                 gistFileNameSetting.get()
             )).items
         }); */
-    },
-
-    async syncWords(context: WordsContext): Promise<void> {
-        return await gists.post<WordsState>(state, gistIdSetting.get(), gistFileNameSetting.get());
     }
+
+    /* async syncWords(context: WordsContext): Promise<void> {
+        return await gists.post<WordsState>(state, gistIdSetting.get(), gistFileNameSetting.get());
+    } */
 };
 
 // mutations

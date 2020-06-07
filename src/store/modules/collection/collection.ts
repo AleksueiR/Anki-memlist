@@ -13,7 +13,6 @@ import {
     CollectionDisplay
 } from './collection-state';
 import { RootState } from '@/store/state';
-import { isArray } from 'util';
 
 import Fuse from 'fuse-js-latest';
 
@@ -98,7 +97,9 @@ const getters = {
         );
 
         // remove duplicates from the set
-        return [...new Set(pooledWords)];
+        return [];
+        // parse error
+        //return [...new Set(pooledWords)];
     },
 
     /**
@@ -141,6 +142,10 @@ const actions = {
     // #region EDIT INDEX
 
     async fetchIndex(context: CollectionContext): Promise<void> {
+        // NOTE: electron storage is no longer supported
+
+        return Promise.resolve();
+
         let index: CollectionIndex = state.index;
         let lists: CollectionListMap = state.lists;
 
@@ -174,7 +179,7 @@ const actions = {
         }
 
         //const defaultList = state.lists.get(state.index.defaultListId);
-        const defaultList = state.lists[state.index.defaultListId];
+        const defaultList = state.lists[state.index.defaultListId!];
         if (defaultList === undefined) {
             return;
         }
@@ -198,7 +203,7 @@ const actions = {
      * @param {boolean} [writeIndex=false] if `true`, the collection index will be written as well
      */
     writeList(context: CollectionContext, listId: string | string[]): void {
-        if (isArray(listId)) {
+        if (Array.isArray(listId)) {
             listId.forEach(lId => _writeList(lId));
         } else {
             _writeList(listId);
@@ -337,7 +342,10 @@ const actions = {
      * @param {{ listId: string; append: boolean }} {listId, append  = false}
      * @returns
      */
-    selectList(context: CollectionContext, { listId, append = false, value }: { listId: string; append: boolean; value?: boolean }) {
+    selectList(
+        context: CollectionContext,
+        { listId, append = false, value }: { listId: string; append: boolean; value?: boolean }
+    ) {
         if (!append) {
             context.commit('DESELECT_ALL_LISTS');
         }
@@ -370,7 +378,10 @@ const actions = {
         actions.writeList(context, list.id);
     },
 
-    [Action.setListDisplay](context: CollectionContext, { listId, value }: { listId: string; value: CollectionDisplay }): void {
+    [Action.setListDisplay](
+        context: CollectionContext,
+        { listId, value }: { listId: string; value: CollectionDisplay }
+    ): void {
         const list = state.lists[listId];
         if (list === undefined) {
             return;
@@ -546,7 +557,10 @@ const actions = {
      * @param {{ wordId: string; value: string }} { wordId, value }
      * @returns {void}
      */
-    setWordText(context: CollectionContext, { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }): void {
+    setWordText(
+        context: CollectionContext,
+        { wordId, value, searchAll }: { wordId: string; value: string; searchAll?: boolean }
+    ): void {
         const { word } = helpers.findWord(context.state, wordId, searchAll);
         if (!word) {
             return;
@@ -593,7 +607,12 @@ const actions = {
      */
     selectWord(
         context: CollectionContext,
-        { wordId, append = false, value, searchAll }: { wordId: string; append: boolean; value?: boolean; searchAll?: boolean }
+        {
+            wordId,
+            append = false,
+            value,
+            searchAll
+        }: { wordId: string; append: boolean; value?: boolean; searchAll?: boolean }
     ): void {
         if (!append) {
             context.commit(Mutation.DESELECT_ALL_WORDS);
@@ -657,7 +676,9 @@ const actions = {
                 const mappedWords = list.index.map(wordId => context.state.index.words[wordId]);
 
                 const fuse = new Fuse(mappedWords, fuseOptions);
-                const items = fuse.search<{ score: number; item: CollectionWord }>(value).map(r => ({ score: r.score, word: r.item }));
+                const items = fuse
+                    .search<{ score: number; item: CollectionWord }>(value)
+                    .map(r => ({ score: r.score, word: r.item }));
 
                 if (items.length === 0) {
                     return resultMap;
@@ -688,7 +709,10 @@ const mutations = {
         state.index.defaultListId = list.id;
     },
 
-    [Mutation.SET_INDEX_EXPANDED_TREE](state: CollectionState, { tree, value }: { tree: CollectionTree; value: boolean }): void {
+    [Mutation.SET_INDEX_EXPANDED_TREE](
+        state: CollectionState,
+        { tree, value }: { tree: CollectionTree; value: boolean }
+    ): void {
         tree.expanded = value;
     },
 
@@ -722,7 +746,10 @@ const mutations = {
         state.selectedLists.splice(0);
     },
 
-    [Mutation.DELETE_LIST](state: CollectionState, { list, tree }: { list: CollectionList; tree: CollectionTree }): void {
+    [Mutation.DELETE_LIST](
+        state: CollectionState,
+        { list, tree }: { list: CollectionList; tree: CollectionTree }
+    ): void {
         const index = tree.items.findIndex(item => item.listId === list.id);
         tree.items.splice(index, 1);
     },
@@ -735,11 +762,17 @@ const mutations = {
         list.name = value;
     },
 
-    [Mutation.SET_LIST_DISPLAY](state: CollectionState, { list, value }: { list: CollectionList; value: CollectionDisplay }): void {
+    [Mutation.SET_LIST_DISPLAY](
+        state: CollectionState,
+        { list, value }: { list: CollectionList; value: CollectionDisplay }
+    ): void {
         list.display = value;
     },
 
-    [Mutation.SET_LIST_PINNED](state: CollectionState, { list, value }: { list: CollectionList; value: boolean }): void {
+    [Mutation.SET_LIST_PINNED](
+        state: CollectionState,
+        { list, value }: { list: CollectionList; value: boolean }
+    ): void {
         list.pinned = value;
     },
 
@@ -747,7 +780,10 @@ const mutations = {
         state.index.words[word.id] = word;
     },
 
-    [Mutation.ADD_WORD_TO_LIST](state: CollectionState, { list, wordId }: { list: CollectionList; wordId: string }): void {
+    [Mutation.ADD_WORD_TO_LIST](
+        state: CollectionState,
+        { list, wordId }: { list: CollectionList; wordId: string }
+    ): void {
         list.index.push(wordId);
     },
 
@@ -776,11 +812,17 @@ const mutations = {
 
     // TODO: remove
     // [deprecated]
-    [Mutation.SET_WORD_FAVOURITE](state: CollectionState, { word, value }: { word: CollectionWord; value: boolean }): void {
+    [Mutation.SET_WORD_FAVOURITE](
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value: boolean }
+    ): void {
         //word.favourite = value;
     },
 
-    [Mutation.SET_WORD_ARCHIVED](state: CollectionState, { word, value }: { word: CollectionWord; value?: boolean }): void {
+    [Mutation.SET_WORD_ARCHIVED](
+        state: CollectionState,
+        { word, value }: { word: CollectionWord; value?: boolean }
+    ): void {
         // if no value specified, toggle the state of the archived flag
         if (value === undefined) {
             value = !word.archived;
@@ -834,7 +876,11 @@ const helpers = {
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {{ word?: CollectionWord; lists?: CollectionList[] }}
      */
-    findWord(state: CollectionState, wordId: string, searchAll: boolean = false): { word?: CollectionWord; lists: CollectionList[] } {
+    findWord(
+        state: CollectionState,
+        wordId: string,
+        searchAll: boolean = false
+    ): { word?: CollectionWord; lists: CollectionList[] } {
         const listToSearch = searchAll
             ? Object.values(state.lists) // get all the lists
             : state.selectedLists;
@@ -859,7 +905,11 @@ const helpers = {
      * @param {boolean} [searchAll=false] if true, search the whole collection; slower; defaults to false
      * @returns {({ word: CollectionWord?; list?: CollectionList })}
      */
-    _findWord(context: CollectionContext, wordId: string, searchAll: boolean = false): { word?: CollectionWord; list?: CollectionList } {
+    _findWord(
+        context: CollectionContext,
+        wordId: string,
+        searchAll: boolean = false
+    ): { word?: CollectionWord; list?: CollectionList } {
         throw new Error("deprecated, don't use");
 
         /* const listToSearch = searchAll

@@ -1,11 +1,5 @@
 <template>
-
-    <svg version="1.1"
-        :width="side"
-        :height="side"
-        :viewBox="box"
-        v-html="icon.path">
-    </svg>
+    <svg version="1.1" :width="side" :height="side" :viewBox="box" v-html="icon.path"></svg>
 
     <!-- :class="clazz"
         :role="label ? 'img' : 'presentation'"
@@ -13,11 +7,10 @@
         :x="x"
         :y="y"
         :style="style" -->
-
 </template>
 
 <script lang="ts">
-import octicons from 'octicons';
+import octicons from '@primer/octicons';
 
 import Vue from 'vue';
 import { Component, Prop, Emit } from 'vue-property-decorator';
@@ -68,7 +61,4 @@ export default class OctoIconV extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-</style>
-
-
+<style lang="scss" scoped></style>

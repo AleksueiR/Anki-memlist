@@ -12,15 +12,21 @@
                 <!-- header -->
                 <h3 class="group-title">
                     <span class="word"
-                        >{{ word.text }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span></span
+                        >{{ word.text
+                        }}<span class="sup" v-if="definition.groups.length > 1">{{ index + 1 }}</span></span
                     >
 
-                    <span v-for="(pronunciation, index) in group.pronunciations" :key="`pronunciation-${index}`" class="pronunciation">
+                    <span
+                        v-for="(pronunciation, index) in group.pronunciations"
+                        :key="`pronunciation-${index}`"
+                        class="pronunciation"
+                    >
                         <span v-if="pronunciation.part">{{ pronunciation.part }}.</span>
 
                         <span v-if="pronunciation.spellings.length > 0" class="spelling">
                             <span v-for="(spelling, index) in pronunciation.spellings" :key="`spelling-${index}`"
-                                ><span v-if="index !== 0">, </span><span class="spelling-item">{{ spelling }}</span></span
+                                ><span v-if="index !== 0">, </span
+                                ><span class="spelling-item">{{ spelling }}</span></span
                             >
                         </span>
 
@@ -31,7 +37,8 @@
                                 @click.stop.prevent="playSound"
                                 @click.right.stop.prevent="copySoundUrl(audio)"
                             >
-                                <audio ref="player" controls :src="audio"></audio> <octo-icon name="megaphone"></octo-icon>
+                                <audio ref="player" controls :src="audio"></audio>
+                                <octo-icon name="megaphone"></octo-icon>
                                 <!-- <i class="el-icon-service"></i> -->
                             </a>
                         </span>
@@ -48,8 +55,12 @@
 
                             <div class="sense-content">
                                 <p class="sense-definition-block">
-                                    <span v-if="sense.grammaticalNote" class="sense-gram-note">[{{ sense.grammaticalNote }}]</span>
-                                    <span v-if="sense.senseRegisters" class="sense-registers">[{{ sense.senseRegisters }}]</span>
+                                    <span v-if="sense.grammaticalNote" class="sense-gram-note"
+                                        >[{{ sense.grammaticalNote }}]</span
+                                    >
+                                    <span v-if="sense.senseRegisters" class="sense-registers"
+                                        >[{{ sense.senseRegisters }}]</span
+                                    >
                                     <span class="sense-definition">{{ sense.definition }}</span>
                                 </p>
 
@@ -82,7 +93,10 @@
                                                 <span class="sense-definition">{{ subsense.definition }}</span>
                                             </p>
 
-                                            <source-examples :collection="subsense.examples" class="source-examples"></source-examples>
+                                            <source-examples
+                                                :collection="subsense.examples"
+                                                class="source-examples"
+                                            ></source-examples>
 
                                             <!--
                                                 <div class="sense-example-list" v-if="subsense.examples.length > 0">
@@ -107,7 +121,8 @@
                         <h5 class="phrase-title">{{ phrase.text }}</h5>
 
                         <span class="phrase-definition"
-                            ><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span> {{ phrase.definition }}</span
+                            ><span v-if="phrase.senseRegisters">[{{ phrase.senseRegisters }}]</span>
+                            {{ phrase.definition }}</span
                         >
 
                         <source-examples :collection="phrase.examples" class="source-examples"></source-examples>
@@ -148,7 +163,7 @@ import { CollectionWord } from '@/store/modules/collection';
 import SourceExamples from './source-examples.vue';
 
 import axios from 'axios';
-import { clipboard } from 'electron';
+
 import { Definition, Wordbook } from '@/api/wordbook';
 
 // Axios defaults to the xhrAdapter (XMLHttpRequest) in Electron an no stream is available
@@ -181,7 +196,8 @@ export default class SourceViewV extends Vue {
      * Copy the sound url into the clipboard in the form that Anki understands.
      */
     copySoundUrl(url: string): void {
-        clipboard.writeText(`[sound:${url}]`);
+        // TODO: figure out clipboard thing without electonr
+        //clipboard.writeText(`[sound:${url}]`);
     }
 
     // TODO: what is this for?

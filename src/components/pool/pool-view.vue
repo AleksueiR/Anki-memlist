@@ -99,7 +99,8 @@
             <div class="status-bar-item uk-flex-1">
                 <button class="status-bar-item-handle">
                     <span
-                        >{{ getPooledWords.length }} <strong>{{ displayModeLabels[poolDisplayMode] }} </strong> words </span
+                        >{{ getPooledWords.length }}
+                        <strong>{{ displayModeLabels[poolDisplayMode] }} </strong> words </span
                     ><span v-if="selectedLists.length > 1"> in {{ selectedLists.length }} lists</span>
 
                     <template v-else></template>
@@ -163,7 +164,13 @@ const log: loglevel.Logger = loglevel.getLogger(`word-list`);
 
 /* import wordMenu from './word-menu.vue'; */
 
-import { collectionFactory, CollectionList, CollectionWord, CollectionDisplay, LookupResult } from '../../store/modules/collection/index';
+import {
+    collectionFactory,
+    CollectionList,
+    CollectionWord,
+    CollectionDisplay,
+    LookupResult
+} from '../../store/modules/collection/index';
 
 import CollectionStateMixin from '@/mixins/collection-state-mixin';
 
@@ -201,7 +208,10 @@ interface VueStream extends Vue {
         const vues: VueStream = this as VueStream;
 
         return {
-            lookupObservable: vues.lookupStream.pipe(debounceTime(300), pluck<Event, string>('event', 'target', 'value'))
+            lookupObservable: vues.lookupStream.pipe(
+                debounceTime(300),
+                pluck<Event, string>('event', 'target', 'value')
+            )
         };
     },
     directives: {
@@ -221,7 +231,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     @ActionCL addWord: (payload: { listId: string; text: string | string[] }) => void;
 
-    @ActionCL selectWord: (payload: { wordId: string; append?: Boolean; value?: boolean }) => void;
+    @ActionCL selectWord: (payload: { wordId: string; append?: boolean; value?: boolean }) => void;
 
     @ActionCL setWordText: (payload: { wordId: string; value: string; searchAll?: boolean }) => void;
 
@@ -296,10 +306,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
 
     // TODO: this should be moved to the store getters
     get poolDisplayCount(): number[] {
-
         const result = [CollectionDisplay.all, CollectionDisplay.active, CollectionDisplay.archived];
 
-        return result.map(mode => this.selectedLists.reduce<number>((count, l) => count + this.countWords(l.id, mode), 0));
+        return result.map(mode =>
+            this.selectedLists.reduce<number>((count, l) => count + this.countWords(l.id, mode), 0)
+        );
     }
 
     /**
@@ -404,7 +415,7 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
         outline: none;
     }
 
-    .list-content /deep/ {
+    .list-content ::v-deep {
         .perfect-match {
             background-color: rgba($color: green, $alpha: 0.1);
         }

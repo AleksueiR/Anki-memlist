@@ -9,7 +9,11 @@
     >
         <span class="highlight"></span>
 
-        <span class="uk-icon list-item-control first active" uk-tooltip="delay: 1500; title: Default list" v-if="isDefault">
+        <span
+            class="uk-icon list-item-control first active"
+            uk-tooltip="delay: 1500; title: Default list"
+            v-if="isDefault"
+        >
             <octo-icon name="bookmark-plain"></octo-icon>
         </span>
 
@@ -112,7 +116,13 @@ import { mixins } from 'vue-class-component';
 
 import UIkit from 'uikit';
 
-import { CollectionList, CollectionListMap, CollectionTree, CollectionState, CollectionDisplay } from '@/store/modules/collection/index';
+import {
+    CollectionList,
+    CollectionListMap,
+    CollectionTree,
+    CollectionState,
+    CollectionDisplay
+} from '@/store/modules/collection/index';
 import UkDropdownV, { UkDropdown } from './../bits/uk-dropdown.vue';
 
 const StateCL = namespace('collection', State);
@@ -219,8 +229,8 @@ export default class CollectionItemV extends Vue {
         return this.item.listId === this.defaultListId;
     }
 
-    isHovered: boolean = false;
-    isMenuOpened: boolean = false;
+    isHovered = false;
+    isMenuOpened = false;
     get isTargeted(): boolean {
         return this.isHovered || this.isMenuOpened;
     }

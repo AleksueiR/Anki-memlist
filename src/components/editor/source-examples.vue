@@ -13,7 +13,11 @@
         </div>
 
         <ul class="example-list" v-if="collection.length > 0">
-            <li v-for="(example, index) in sortedCollection.slice(from, to)" :key="`example-${index}`" class="example-item">
+            <li
+                v-for="(example, index) in sortedCollection.slice(from, to)"
+                :key="`example-${index}`"
+                class="example-item"
+            >
                 <p v-html="example"></p>
             </li>
         </ul>
@@ -32,7 +36,7 @@ export default class SourceView extends Vue {
     @Prop({ default: 3 })
     limit: number | null;
 
-    isEngaged: boolean = false;
+    isEngaged = false;
 
     @Watch('collection')
     onCollectionChange(): void {
@@ -47,7 +51,7 @@ export default class SourceView extends Vue {
         return this.collection.slice().sort((a, b) => (a.length < b.length ? -1 : 1));
     }
 
-    current: number = 0;
+    current = 0;
 
     get total(): number {
         return Math.ceil(this.collection.length / (this.limit || this.collection.length));

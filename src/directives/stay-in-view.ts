@@ -12,7 +12,7 @@ export const StayInView = {
         // console.log('update', getOffset(element, element.parentElement!));
 
         const { elementRect, containerRect, offset } = getOffset(element, element.parentElement!);
-        let offsetDelta: number = 0;
+        let offsetDelta = 0;
         if (offset.top < 0) {
             offsetDelta = offset.top;
         } else if (offset.top + elementRect.height > containerRect.height) {

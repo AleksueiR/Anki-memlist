@@ -1,27 +1,21 @@
 <template>
-
     <div class="rename-container">
         <input
             class="uk-input rename-input"
             type="text"
-
             :value="value"
-
             @keydown.stop.enter="complete($event.target.value)"
             @keydown.stop.escape="complete()"
-
             @keydown.stop.space="vnull"
             @keydown.stop.right="vnull"
             @keydown.stop.left="vnull"
-
             v-input-focus
             @focus.once="onFocus"
             @blur="complete()"
-
             @mousedown.stop="vnull"
-            @click.stop="vnull" />
+            @click.stop="vnull"
+        />
     </div>
-
 </template>
 
 <script lang="ts">
@@ -79,5 +73,3 @@ export default class RenameInputV extends Vue {
     margin-left: calc(0.5rem + 30px - 10px);
 }
 </style>
-
-

@@ -14,4 +14,4 @@ export default interface Storage {
     saveList(list: CollectionList): Promise<void>;
 
     deleteList(listId: string): Promise<void>;
-};
+}

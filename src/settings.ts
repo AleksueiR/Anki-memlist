@@ -1,8 +1,8 @@
 // import settings from 'electron-settings';
 
-const gistTokenKey: string = 'gist.token';
-const gistIdKey: string = 'gist.id';
-const gistFileNameKey: string = 'gist.fileName';
+const gistTokenKey = 'gist.token';
+const gistIdKey = 'gist.id';
+const gistFileNameKey = 'gist.fileName';
 
 export class Setting {
     constructor(private key: string, public defaultValue: string = '', public nullValue: string = '') {}

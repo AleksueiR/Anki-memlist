@@ -7,10 +7,10 @@
                         <el-input v-model="form.gist_token"></el-input>
                     </el-form-item>
                     <el-form-item label="Gist ID" prop="gist_id">
-                        <el-input v-model="form.gist_id" ></el-input>
+                        <el-input v-model="form.gist_id"></el-input>
                     </el-form-item>
                     <el-form-item label="File Name" prop="gist_fileName">
-                        <el-input v-model="form.gist_fileName" ></el-input>
+                        <el-input v-model="form.gist_fileName"></el-input>
                     </el-form-item>
 
                     <el-form-item>
@@ -153,6 +153,4 @@ export default class Settings extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>

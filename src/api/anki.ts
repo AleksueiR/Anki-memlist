@@ -21,11 +21,7 @@ export default {
         return response.data.result;
     },
 
-    async findNotes(
-        deckName: string,
-        fieldName: string,
-        word: string
-    ): Promise<number[]> {
+    async findNotes(deckName: string, fieldName: string, word: string): Promise<number[]> {
         const response = await axios.post(`${BASE_URL}`, {
             action: 'findNotes',
             version: 5,
@@ -69,10 +65,7 @@ export default {
         return response.data;
     },
 
-    async storeMediaFile(
-        fileName: string,
-        data: string
-    ): Promise<AnkiConnectResponse> {
+    async storeMediaFile(fileName: string, data: string): Promise<AnkiConnectResponse> {
         const response = await axios.post(`${BASE_URL}`, {
             action: 'storeMediaFile',
             version: 5,

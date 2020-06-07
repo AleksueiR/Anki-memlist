@@ -5,6 +5,6 @@ export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     return arrayClone;
 }
 
-export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key: string = 'id') {
+export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key = 'id') {
     return objects.reduce<Record<number, any>>((map, object) => ((map[object[key]] = object), map), {});
 }

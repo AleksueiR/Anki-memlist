@@ -22,12 +22,23 @@
                     :item="item"></component> -->
             </div>
 
-            <span class="divider after" v-if="!hasChildren" @mouseover="mouseOver('after', $event)" @mouseout="mouseOut"></span>
+            <span
+                class="divider after"
+                v-if="!hasChildren"
+                @mouseover="mouseOver('after', $event)"
+                @mouseout="mouseOut"
+            ></span>
         </div>
 
         <div class="children" role="group" v-if="item.expanded">
             <!-- :renderer="renderer" -->
-            <treee-node v-for="(subItem, index) in item.items" :item="subItem" :level="level + 1" :index="index" :key="`${index}-node`">
+            <treee-node
+                v-for="(subItem, index) in item.items"
+                :item="subItem"
+                :level="level + 1"
+                :index="index"
+                :key="`${index}-node`"
+            >
                 <!-- slot-scope let's you pass `item` and `level` which are properties of the items being iterated on into the slot -->
                 <template slot-scope="{ item, level }">
                     <slot :item="item" :level="level"></slot>
@@ -36,7 +47,12 @@
         </div>
 
         <!-- the very last divider - needed to move items to the top level when the last item in the top level has children -->
-        <span class="divider before" v-if="isLast && level === 0" @mouseover="mouseOver('after', $event)" @mouseout="mouseOut"></span>
+        <span
+            class="divider before"
+            v-if="isLast && level === 0"
+            @mouseover="mouseOver('after', $event)"
+            @mouseout="mouseOut"
+        ></span>
     </div>
 </template>
 
@@ -69,14 +85,14 @@ export default class TreeeNode extends Vue {
         console.log('item update', this.item.listId);
     }
 
-    isDragSource: boolean = false;
+    isDragSource = false;
 
-    hasChildren: boolean = false;
+    hasChildren = false;
 
     /**
      * Prevent next click when starting to drag an element, so if the drag is cancelled, the element will be automatically selected.
      */
-    preventNextClick: boolean = false;
+    preventNextClick = false;
 
     created(): void {
         // TODO: replace with inject/provide

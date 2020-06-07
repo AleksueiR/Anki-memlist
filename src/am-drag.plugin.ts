@@ -189,7 +189,7 @@ const plugin: PluginFunction<null> = (Vue: typeof _Vue) => {
 
                 const bbox = dragObject.node.getBoundingClientRect();
                 // offset from the left upper corner of the draggable element to the mouse cursor at the moment when the drag operation started
-                let dragObjectOffset: { left: number; top: number } = {
+                const dragObjectOffset: { left: number; top: number } = {
                     left: event.pageX - bbox.left,
                     top: event.pageY - bbox.top
                 };

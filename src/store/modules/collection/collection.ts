@@ -879,7 +879,7 @@ const helpers = {
     findWord(
         state: CollectionState,
         wordId: string,
-        searchAll: boolean = false
+        searchAll = false
     ): { word?: CollectionWord; lists: CollectionList[] } {
         const listToSearch = searchAll
             ? Object.values(state.lists) // get all the lists
@@ -908,7 +908,7 @@ const helpers = {
     _findWord(
         context: CollectionContext,
         wordId: string,
-        searchAll: boolean = false
+        searchAll = false
     ): { word?: CollectionWord; list?: CollectionList } {
         throw new Error("deprecated, don't use");
 
@@ -938,7 +938,7 @@ const helpers = {
     findTree(context: CollectionContext, listId: string): { parentTree?: CollectionTree; listTree?: CollectionTree } {
         // create a stack to search through recursively
         const stack: { parent: CollectionTree; list: CollectionTree }[] = [];
-        let root: CollectionTree = context.state.index.tree;
+        const root: CollectionTree = context.state.index.tree;
 
         // push to the stack item from the top level of the root tree
         stack.push.apply(

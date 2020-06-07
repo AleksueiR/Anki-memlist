@@ -57,7 +57,7 @@ export default class FocusableListV extends Vue {
     }
 
     previousEntry: any = null;
-    entryIndex: number = -1;
+    entryIndex = -1;
 
     listOnFocus(): void {
         if (this.entry) {
@@ -78,12 +78,12 @@ export default class FocusableListV extends Vue {
         this.change(null);
     }
 
-    listNext(step: number = 1): void {
+    listNext(step = 1): void {
         const targetIndex = Math.min(this.entryIndex! + step, this.allEntries.length - 1);
         this.change(this.allEntries[targetIndex]);
     }
 
-    listPrevious(step: number = 1): void {
+    listPrevious(step = 1): void {
         const targetIndex = Math.max(this.entryIndex! - step, 0);
         this.change(this.allEntries[targetIndex]);
     }

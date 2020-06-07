@@ -113,8 +113,8 @@ export default class ListEntryV extends Vue {
     @Prop()
     word: CollectionWord;
 
-    isHovered: boolean = false;
-    isMenuOpened: boolean = false;
+    isHovered = false;
+    isMenuOpened = false;
 
     /**
      * Indicates that this item is engaged: either is hovered or over its menu is opened.

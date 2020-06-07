@@ -110,7 +110,7 @@ export class CollectionState {
     readonly selectedLists: CollectionList[] = [];
     readonly selectedWords: CollectionWord[] = [];
 
-    lookupValue: string = '';
+    lookupValue = '';
     lookupResults: LookupResult[] = [];
 
     constructor(options: CollectionState.Untyped = {}) {

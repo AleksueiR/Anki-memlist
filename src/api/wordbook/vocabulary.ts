@@ -4,7 +4,15 @@ import cheerio from 'cheerio';
 import artoo from 'artoo-js';
 
 import { CollectionWord } from '@/store/modules/collection';
-import { Definition, DefinitionGroup, DefinitionPronunciation, DefinitionSense, DefinitionPart, Wordbook, formatExample } from './common';
+import {
+    Definition,
+    DefinitionGroup,
+    DefinitionPronunciation,
+    DefinitionSense,
+    DefinitionPart,
+    Wordbook,
+    formatExample
+} from './common';
 
 const scrapeConfig = {
     short: {
@@ -142,11 +150,15 @@ class VocabularyBook extends Wordbook {
 
         // try to fetch sample sentences
         const [samplesError, samplesResponse] = await to(
-            axios.get(`https://corpus.vocabulary.com/api/1.0/examples.json?query=${value.text}&domain=F&maxResults=25&filter=0`)
+            axios.get(
+                `https://corpus.vocabulary.com/api/1.0/examples.json?query=${value.text}&domain=F&maxResults=25&filter=0`
+            )
         );
 
         if (samplesResponse) {
-            vocabularyDefinition.examples = samplesResponse.data.result.sentences.map((s: { sentence: string }) => s.sentence);
+            vocabularyDefinition.examples = samplesResponse.data.result.sentences.map(
+                (s: { sentence: string }) => s.sentence
+            );
             // console.log(samplesResponse.data.result.sentences);
         } else {
             console.log('No `vocabularyDefinition` sample sentences found');

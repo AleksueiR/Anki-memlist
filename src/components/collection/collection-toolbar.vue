@@ -1,15 +1,15 @@
 <template>
     <section class="collection-toolbar">
         <nav class="toolbar uk-flex uk-flex-column">
-
-            <a href=""
-                v-drag-object="{ down: mouseDown, payload: {a: 1}, tags: { container: 'tree' } }"
+            <a
+                href=""
+                v-drag-object="{ down: mouseDown, payload: { a: 1 }, tags: { container: 'tree' } }"
                 class="toolbar-item uk-icon"
                 :class="{ selected: isCollectionViewOpen }"
-                @click.prevent="openCollectionView({ value: !isCollectionViewOpen })">
+                @click.prevent="openCollectionView({ value: !isCollectionViewOpen })"
+            >
                 <octo-icon name="repo" scale="2"></octo-icon>
             </a>
-
         </nav>
     </section>
 </template>
@@ -56,5 +56,3 @@ $item-side: 3rem;
     }
 }
 </style>
-
-

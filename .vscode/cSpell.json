@@ -13,6 +13,7 @@
         "endregion",
         "esnext",
         "favourite",
+        "indexeddb",
         "loglevel",
         "memlist",
         "octicons",

@@ -116,10 +116,10 @@ export default class App extends mixins(AppStateMixin) {
         // TODO: when should setting check happen
         // this.init();
 
-        console.log('fetch index');
+        /* console.log('fetch index');
         this.fetchIndex();
 
-        this.setWordbooks({ value: books });
+        this.setWordbooks({ value: books }); */
 
         // const wordId = 'a2';
         this.$store.set('display/blah@a2.b', 534);

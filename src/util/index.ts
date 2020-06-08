@@ -5,6 +5,7 @@ export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     return arrayClone;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key = 'id') {
-    return objects.reduce<Record<number, any>>((map, object) => ((map[object[key]] = object), map), {});
+    return objects.reduce<Record<string, T>>((map, object) => ((map[`${object[key]}`] = object), map), {});
 }

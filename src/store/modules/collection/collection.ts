@@ -70,6 +70,8 @@ const getters = {
     getPooledWords(state: CollectionState): CollectionWord[] {
         console.log('getting pooled words');
 
+        return [];
+
         if (state.selectedLists.length === 0) {
             return [];
         }

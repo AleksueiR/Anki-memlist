@@ -122,7 +122,7 @@ export default class App extends mixins(AppStateMixin) {
         this.setWordbooks({ value: books }); */
 
         // const wordId = 'a2';
-        this.$store.set('display/blah@a2.b', 534);
+        // this.$store.set('display/blah@a2.b', 534);
 
         /// --- ===
         await this.$store.set('journals/fetch!');

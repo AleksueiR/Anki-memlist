@@ -50,11 +50,12 @@ groups.actions = {
      * @returns {Promise<void>}
      */
     async fetchJournalGroups(): Promise<void> {
-        const groups = await db.groups.where({ journalId: this.get<number>('journals/activeId')! }).toArray();
+        const activeJournalId = this.get<number>('journals/activeId');
+        const groups = await db.groups.where({ journalId: activeJournalId }).toArray();
 
         const groupSet = reduceArrayToObject(groups);
 
-        this.set('groups/all', groupSet);
+        this.set('groups/all', groupSet); // this will replace all the previously fetched groups
         this.set('groups/refreshWordCounts!');
     },
 
@@ -84,7 +85,7 @@ groups.actions = {
                 await db.words
                     .where({ memberGroupIds: group.id, ...isArchivedClause })
                     .count()
-                    .then(count => this.set(`groups/wordCount@${group.id}`, count));
+                    .then(count => this.set(`groups/wordCount@${group.id}`, count)); // call mutation
             })
         ).then(() => void 0);
     },
@@ -96,18 +97,26 @@ groups.actions = {
      * @returns {Promise<number>}
      */
     async new({ state }): Promise<number> {
-        const newGroup = await db.transaction('rw', db.groups, db.journals, async () => {
-            const { rootGroupId, id: activeJournalId } = this.get<Journal>('journals/active')!;
+        const activeJournal = this.get<Journal | undefined>('journals/active');
+        if (!activeJournal) throw new Error('Cannot create a new group. Active Journal is not set.');
 
+        const newGroup = await db.transaction('rw', db.journals, db.groups, async () => {
             // create a new group entry
-            const newGroupId = await db.groups.put(new Group('New Group', activeJournalId));
+            const newGroupId = await db.groups.put(new Group('New Group', activeJournal.id));
+            const newGroup = await db.groups.get(newGroupId);
+            if (!newGroup) throw new Error('DB issue: Cannot load a Group record.');
 
             // add it to the root group's subGroupIds
-            const rootGroupSubGroupIds = (await db.groups.get(rootGroupId))!.subGroupIds;
-            await this.set(`groups/all@${rootGroupId}.subGroupIds`, [...rootGroupSubGroupIds, newGroupId]);
+            const rootGroup = await db.groups.get(activeJournal.rootGroupId);
+            if (!rootGroup) throw new Error('DB issue: Cannot load a Group record.');
+
+            await this.set(`groups/all@${activeJournal.rootGroupId}.subGroupIds`, [
+                ...rootGroup.subGroupIds,
+                newGroup.id
+            ]);
 
             // and return the newly created group
-            return (await db.groups.get(newGroupId))!;
+            return newGroup;
         });
 
         // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
@@ -122,35 +131,49 @@ groups.actions = {
      * Move a `Group` from one subgroup to another.
      * Will remove from the current parent group as the same group cannot be in several subgroups.
      *
-     * @param {*} { state }
-     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId } move `groupId` to `targetGroupId` subGroups
+     * @param {*} context
+     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
      * @returns {Promise<void>}
      */
-    async move({ state }, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
+    async move(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
         return db.transaction('rw', db.groups, async () => {
             // find the parent group and remove `groupId` from its subgroups
-            const parentGroup = (await db.groups.where({ subGroupIds: groupId }).first())!;
-            const newParentSubGroupIds = removeFromArrayByValue([...parentGroup.subGroupIds], groupId);
+            const parentGroup = await db.groups.where({ subGroupIds: groupId }).first();
+            if (!parentGroup) throw new Error('DB issue: Cannot load a Group record.');
+
+            const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
 
             // dispatch an action to update the parent group state;
             await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
 
             // get the target group and add `groupId` to its subgroups
-            const targetGroup = (await db.groups.where({ subGroupIds: targetGroupId }).first())!;
+            const targetGroup = await db.groups.where({ subGroupIds: targetGroupId }).first();
+            if (!targetGroup) throw new Error('DB issue: Cannot load a Group record.');
+
             await this.set(`groups/all@${targetGroupId}.subGroupsIds`, [...targetGroup.subGroupIds, groupId]);
         });
     },
 
+    // delete
+    // call words delete function with a list of words to remove from this groupId
+    // words function should process them in batch and only trigger the refresh afterwards
+    // after resolving, groups function deletes this group and removes it from its parent
+
     /**
      * Sets the selected group ids and dispatches the `fetchGroupWords` action.
      *
-     * @param {*} { state }
+     * @param {*} context
      * @param {number[]} groupIds
      * @returns {Promise<void>}
      */
     async setSelectedIds({ state }, groupIds: number[]): Promise<void> {
         // TODO: check if group belong to this journal
         // TODO: check if the group can be selected, as in if it's in the visible tree (do we assume if it belongs to journal, it's visible as we shouldn't have hidden groups)
+        // if (groupIds.some(groupId => !state.all[groupId]))
+
+        // TODO: append or not?
+        // also decide if fetching words in batches makes sense or re-fetch all every time
+
         this.set('groups/selectedIds!', groupIds);
 
         // TODO: clear existing lookup
@@ -175,14 +198,23 @@ groups.actions = {
         // dispatch any related actions `after` the db has been updated
         switch (result.field) {
             case 'displayMode':
-                this.set('groups/refreshWordCounts!', [result.id]);
+                await this.set('groups/refreshWordCounts!', [result.id]);
                 break;
         }
     }
 };
 
 groups.mutations = {
-    ...make.mutations(state)
+    ...make.mutations(state),
+
+    /**
+     * Reset the state to its defaults.
+     *
+     * @param {*} state
+     */
+    reset(state): void {
+        Object.assign(state, new GroupsState());
+    }
 };
 
 export { groups };

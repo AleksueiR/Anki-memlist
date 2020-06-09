@@ -23,7 +23,7 @@ const words: Module<WordsState, RootState> = {
 };
 
 words.getters = {
-    pooled(state): WordGroupCollection {
+    pooled(): WordGroupCollection {
         // return state.selectedIds.map(id => state.all[id]);
         return [];
     }
@@ -38,7 +38,7 @@ words.actions = {
     async fetchGroupWords(): Promise<void> {
         const words = await db.words
             .where('memberGroupIds')
-            .anyOf(this.get<number[]>('groups/selectedIds')!)
+            .anyOf(this.get<number[]>('groups/selectedIds'))
             .toArray();
 
         const wordSet = reduceArrayToObject(words);
@@ -48,11 +48,22 @@ words.actions = {
         // TODO: check if the currently selected words need to be deselected
     },
 
-    async fetchLookupWords(context): Promise<void> {
+    async fetchLookupWords(): Promise<void> {
         // TODO:
     }
 };
 
-words.mutations = { ...make.mutations(state) };
+words.mutations = {
+    ...make.mutations(state),
+
+    /**
+     * Reset the state to its defaults.
+     *
+     * @param {*} state
+     */
+    reset(state): void {
+        Object.assign(state, new WordsState());
+    }
+};
 
 export { words };

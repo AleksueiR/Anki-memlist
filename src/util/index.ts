@@ -1,7 +1,17 @@
+/**
+ * Clone the provided array, return the provided value from it and return the clone.
+ *
+ * @export
+ * @template T
+ * @param {T[]} array
+ * @param {T} value
+ * @returns {T[]}
+ */
 export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     const arrayClone = [...array];
     const index = arrayClone.indexOf(value);
     arrayClone.splice(index, 1);
+
     return arrayClone;
 }
 

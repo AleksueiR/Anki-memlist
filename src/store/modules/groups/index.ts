@@ -71,9 +71,10 @@ groups.actions = {
      * @returns {Promise<void>}
      */
     async refreshWordCounts({ state }, groupIds?: number[]): Promise<void> {
-        const groups = groupIds ? groupIds.map(id => state.all[id]) : Object.values(state.all);
+        // get groups from the provided groupIds and filter non-groups if some of the ids are phony
+        const groups = groupIds ? groupIds.map(id => state.all[id]).filter(a => a) : Object.values(state.all);
 
-        return Promise.all(
+        await Promise.all(
             groups.map(async group => {
                 // include `isArchived` condition based on the `displayMode` if it's not set to `all`
                 const isArchivedClause =
@@ -87,7 +88,7 @@ groups.actions = {
                     .count()
                     .then(count => this.set(`groups/wordCount@${group.id}`, count)); // call mutation
             })
-        ).then(() => void 0);
+        );
     },
 
     /**
@@ -97,23 +98,18 @@ groups.actions = {
      * @returns {Promise<number>}
      */
     async new({ state }): Promise<number> {
+        // get active journal
         const activeJournal = this.get<Journal | undefined>('journals/active');
-        if (!activeJournal) throw new Error('Cannot create a new group. Active Journal is not set.');
+        if (!activeJournal) throw new Error('groups/new: Cannot create new Group. Active Journal is not set.');
 
         const newGroup = await db.transaction('rw', db.journals, db.groups, async () => {
             // create a new group entry
             const newGroupId = await db.groups.put(new Group('New Group', activeJournal.id));
             const newGroup = await db.groups.get(newGroupId);
-            if (!newGroup) throw new Error('DB issue: Cannot load a Group record.');
+            if (!newGroup) throw new Error('groups/new: Cannot create and load a Group record.');
 
             // add it to the root group's subGroupIds
-            const rootGroup = await db.groups.get(activeJournal.rootGroupId);
-            if (!rootGroup) throw new Error('DB issue: Cannot load a Group record.');
-
-            await this.set(`groups/all@${activeJournal.rootGroupId}.subGroupIds`, [
-                ...rootGroup.subGroupIds,
-                newGroup.id
-            ]);
+            await this.set('groups/attach!', { groupId: newGroup.id, targetGroupId: activeJournal.rootGroupId });
 
             // and return the newly created group
             return newGroup;
@@ -136,22 +132,72 @@ groups.actions = {
      * @returns {Promise<void>}
      */
     async move(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
-        return db.transaction('rw', db.groups, async () => {
-            // find the parent group and remove `groupId` from its subgroups
-            const parentGroup = await db.groups.where({ subGroupIds: groupId }).first();
-            if (!parentGroup) throw new Error('DB issue: Cannot load a Group record.');
-
-            const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
-
-            // dispatch an action to update the parent group state;
-            await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
-
-            // get the target group and add `groupId` to its subgroups
-            const targetGroup = await db.groups.where({ subGroupIds: targetGroupId }).first();
-            if (!targetGroup) throw new Error('DB issue: Cannot load a Group record.');
-
-            await this.set(`groups/all@${targetGroupId}.subGroupsIds`, [...targetGroup.subGroupIds, groupId]);
+        await db.transaction('rw', db.groups, async () => {
+            await this.set('groups/detach!', groupId);
+            await this.set('groups/attach!', { groupId, targetGroupId });
         });
+    },
+
+    async delete({ state }, groupIds: number[]): Promise<void> {
+        groupIds = groupIds.filter(groupId => state.all[groupId]);
+        if (groupIds.length === 0) return; // if groupId is invalid, do nothing
+
+        await db.transaction('rw', db.groups, db.words, async () => {
+            await this.set('words/???', groupIds);
+
+            // remove groupIds from their parent groups
+            await Promise.all(groupIds.map(async groupId => await this.set('groups/detach!', groupId)));
+
+            // delete from the db
+            await db.groups.bulkDelete(groupIds);
+        });
+
+        this.set('groups/delete!', groupIds);
+    },
+
+    /**
+     * Attaches a specified groupId to the targetGroupId's subGroupsIds.
+     *
+     * @param {*} context
+     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
+     * @returns {Promise<void>}
+     */
+    async attach(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
+        const journalId = this.get<number>('journals/activeId');
+
+        const group = await db.groups.where({ id: groupId, journalId }).first();
+        if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
+
+        // get the target group and add `groupId` to its subgroups
+        const targetGroup = await db.groups.where({ id: targetGroupId, journalId }).first();
+        if (!targetGroup)
+            throw new Error(`groups/attach: Target group #${targetGroupId} doesn't exist in active journal.`);
+
+        await this.set(`groups/all@${targetGroupId}.subGroupIds`, [...targetGroup.subGroupIds, groupId]);
+    },
+
+    /**
+     * Detaches the specified groupId from it's parent.
+     *
+     * @param {*} content
+     * @param {*} groupId
+     * @returns {Promise<void>}
+     */
+    async detach(content, groupId): Promise<void> {
+        const journalId = this.get<number>('journals/activeId');
+
+        const group = await db.groups.where({ id: groupId, journalId }).first();
+        if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
+
+        // get parent group
+        const parentGroup = await db.groups.where({ subGroupIds: groupId, journalId }).first();
+        if (!parentGroup) throw new Error(`groups/detach: Group #${groupId} has no parent group in active journal.`);
+
+        // remove groupId from the parent's subgroupIds
+        const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
+
+        // dispatch an action to update the parent group state;
+        await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
     },
 
     // delete
@@ -214,6 +260,13 @@ groups.mutations = {
      */
     reset(state): void {
         Object.assign(state, new GroupsState());
+    },
+
+    delete(state, groupIds: number[]) {
+        groupIds.forEach(groupId => {
+            delete state.all[groupId];
+            delete state.wordCount[groupId];
+        });
     }
 };
 

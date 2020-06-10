@@ -1,3 +1,4 @@
+import { NON_ID } from '@/util';
 import Dexie from 'dexie';
 
 Dexie.delete('word-pouch');
@@ -41,8 +42,8 @@ export class Journal {
 
     constructor(
         public name: string = 'Default Journal',
-        public rootGroupId: number = -1,
-        public defaultGroupId: number = -1
+        public rootGroupId: number = NON_ID,
+        public defaultGroupId: number = NON_ID
     ) {}
 }
 

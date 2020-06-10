@@ -1,15 +1,15 @@
 import { handleActionPayload } from '@/store/common';
 import { RootState } from '@/store/state';
+import { NON_ID, reduceArrayToObject } from '@/util';
 import { Module } from 'vuex';
 import { make } from 'vuex-pathify';
-import db, { Journal, Group } from './db';
-import { reduceArrayToObject } from '@/util';
+import db, { Group, Journal } from './db';
 
 export type JournalSet = { [name: number]: Journal };
 
 export class JournalsState {
     all: JournalSet = {};
-    activeId: number | -1 = -1;
+    activeId: number = NON_ID;
 }
 
 const state = new JournalsState();
@@ -56,14 +56,14 @@ journals.actions = {
      * Create a new Journal and add it to the db.
      *
      * @param {*} { state }
-     * @returns {Promise<void>}
+     * @returns {Promise<number>}
      */
-    async new({ state }): Promise<void> {
+    async new({ state }): Promise<number> {
         // create and get a new journal
-        const journalId = await db.journals.add(new Journal('Default Journal'));
+        const newJournalId = await db.journals.add(new Journal('Default Journal'));
 
-        const journal = await db.journals.get(journalId);
-        if (!journal) throw new Error('DB issue: Cannot create and load a new Journal record.');
+        const journal = await db.journals.get(newJournalId);
+        if (!journal) throw new Error('journals/new: Cannot create and load a new Journal record.');
 
         // create a root group for this new journal, set its `journalId` and journal's `rootGroupId`
         const rootGroupId = await db.groups.add(new Group('Root group', journal.id));
@@ -72,6 +72,8 @@ journals.actions = {
         // add the newly created journal directly to the state
         // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
         this.set('journals/all', { ...state.all, ...{ [journal.id]: journal } });
+
+        return newJournalId;
     },
 
     /**
@@ -100,7 +102,7 @@ journals.actions = {
         });
 
         // delete journal from the state
-        delete state.all[journalId];
+        this.set('journals/delete!', journalId);
     },
 
     /**
@@ -108,19 +110,18 @@ journals.actions = {
      * Passing -1 as the id will deactivate the currently active journal.
      *
      * @param {*} { state }
-     * @param {(number | -1)} journalId
+     * @param {number} [journalId=NON_ID]
      * @returns {Promise<void>}
      */
-    async setActiveId({ state }, journalId: number | -1): Promise<void> {
-        if (journalId === state.activeId) return; // do nothing if trying the journal is already active
+    async setActiveId({ state }, journalId: number = NON_ID): Promise<void> {
+        if (journalId === state.activeId) return; // do nothing if specifying the journal that is already active
 
-        // ensure journalId exists or use -1
-        journalId = state.all[journalId] ? journalId : -1;
+        if (journalId !== NON_ID && !state.all[journalId]) return; // if the journal with this id doesn't exist, and id is not -1 do nothing
 
         this.set('journals/activeId!', journalId); // call `activeId` mutation directly
 
         // if the journalId ends up as -1, reset groups and words states and stop
-        if (!~journalId) {
+        if (journalId === NON_ID) {
             this.set('words/reset');
             this.set('groups/reset');
             return;
@@ -130,7 +131,7 @@ journals.actions = {
 
         // set the default group if specified
         const journal = state.all[journalId];
-        if (~journal.defaultGroupId) {
+        if (journal.defaultGroupId !== NON_ID) {
             this.set('groups/selectedIds', journal.defaultGroupId);
         }
     },
@@ -154,6 +155,12 @@ journals.actions = {
     }
 };
 
-journals.mutations = { ...make.mutations(state) };
+journals.mutations = {
+    ...make.mutations(state),
+
+    delete(state, journalId: number): void {
+        delete state.all[journalId];
+    }
+};
 
 export { journals };

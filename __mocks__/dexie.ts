@@ -6,6 +6,6 @@ import IDBKeyRange from 'fake-indexeddb/lib/FDBKeyRange';
 Dexie.dependencies.indexedDB = fakeIndexedDB;
 Dexie.dependencies.IDBKeyRange = IDBKeyRange;
 
-console.log('hah!!!');
+// this fake-indexeddb with Dexie when running tests
 
 export default Dexie;

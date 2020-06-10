@@ -1,4 +1,9 @@
 /**
+ * Represents a non id when no valid id is set.
+ */
+export const NON_ID = -1;
+
+/**
  * Clone the provided array, return the provided value from it and return the clone.
  *
  * @export

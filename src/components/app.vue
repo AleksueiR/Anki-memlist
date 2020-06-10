@@ -128,7 +128,7 @@ export default class App extends mixins(AppStateMixin) {
         await this.$store.set('journals/fetch!');
         await this.$store.set('groups/selectedIds', [2]);
 
-        await this.$store.set('groups/all@2.displayMode', 1);
+        await this.$store.set<number>('groups/all@2.displayMode', 1);
         await this.$store.set('groups/all@2.name', 'The Everted Group');
 
         const groupId = await this.$store.set('groups/new!');

@@ -5,7 +5,7 @@ import { app } from './modules/app';
 import { collection } from './modules/collection';
 import { display } from './modules/display';
 import { groups } from './modules/groups';
-import { journals } from './modules/journals';
+import { journals, JournalSet } from './modules/journals';
 import { words } from './modules/words';
 import { RootState } from './state';
 
@@ -31,8 +31,11 @@ export const createStore = () =>
 declare module 'vuex' {
     // declare augmentation for Vuex store for Pathify
     interface Store<S> {
-        set: <T = void>(path: string, value?: any) => Promise<T>;
+        // set<T = void>(path: 'journals/all' | 'journals/activeId', value: any): Promise<T>;
+        set<K = any>(path: string, value?: K): Promise<void>;
+
         get: <T>(path: string, ...args: any) => T;
+
         copy: <T>(path: string, ...args: any) => T | undefined;
     }
 }

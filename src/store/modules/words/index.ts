@@ -2,7 +2,7 @@ import { RootState } from '@/store/state';
 import { reduceArrayToObject } from '@/util';
 import { Module } from 'vuex';
 import { make } from 'vuex-pathify';
-import db, { Group, Word } from './../journals/db';
+import { db, Group, Word } from '@/api/db';
 
 export type WordSet = { [name: number]: Word };
 export type WordGroupCollection = { group: Group; words: Word[] }[];

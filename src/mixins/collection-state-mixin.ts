@@ -18,6 +18,10 @@ const collection = namespace(STORE_MODULE_NAME);
  */
 @Component
 export default class CollectionStateMixin extends Vue {
+    /* get $stash2() {
+        return this.stash;
+    } */
+
     // #region State
 
     @collection.State

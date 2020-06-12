@@ -5,7 +5,7 @@ import { app } from './modules/app';
 import { collection } from './modules/collection';
 import { display } from './modules/display';
 import { groups } from './modules/groups';
-import { journals, JournalSet } from './modules/journals';
+import { journals } from './modules/journals';
 import { words } from './modules/words';
 import { RootState } from './state';
 
@@ -39,3 +39,18 @@ declare module 'vuex' {
         copy: <T>(path: string, ...args: any) => T | undefined;
     }
 }
+
+/* export const storeX = {
+    debug: true,
+    state: {
+        message: 'Hello!'
+    },
+    setMessageAction(newValue: any) {
+        if (this.debug) console.log('setMessageAction triggered with', newValue);
+        this.state.message = newValue;
+    },
+    clearMessageAction() {
+        if (this.debug) console.log('clearMessageAction triggered');
+        this.state.message = '';
+    }
+}; */

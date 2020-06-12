@@ -1,5 +1,7 @@
 <template>
     <section class="collection-view uk-flex uk-flex-column uk-flex-none">
+        <!-- -{{ $stash2.journals.activeId || 45 }}- -{{ $stash2.journals.active ? $stash2.journals.active.name : 45 }}- -->
+
         <div class="collection-header uk-flex">
             <span class="title uk-flex-1">Collections</span>
 

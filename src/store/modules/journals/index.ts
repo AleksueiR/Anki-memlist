@@ -3,7 +3,7 @@ import { RootState } from '@/store/state';
 import { NON_ID, reduceArrayToObject } from '@/util';
 import { Module } from 'vuex';
 import { make } from 'vuex-pathify';
-import db, { Group, Journal } from './db';
+import { db, Group, Journal } from '@/api/db';
 
 export type JournalSet = { [name: number]: Journal };
 

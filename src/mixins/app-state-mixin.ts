@@ -1,6 +1,7 @@
 import { Vue, Component, Emit } from 'vue-property-decorator';
 
 import { State, Getter, Action, Mutation, namespace } from 'vuex-class';
+import { Stash } from '@/stash';
 
 const STORE = 'app';
 
@@ -15,6 +16,10 @@ const ActionAP = namespace(STORE, Action);
  */
 @Component
 export default class AppStateMixin extends Vue {
+    /* get $stash2() {
+        return this.stash;
+    } */
+
     @StateAP isCollectionViewOpen: boolean;
 
     @ActionAP openCollectionView: (value: { value: boolean }) => {};

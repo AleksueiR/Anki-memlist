@@ -3,7 +3,7 @@ import { RootState } from '@/store/state';
 import { reduceArrayToObject, removeFromArrayByValue } from '@/util';
 import { Module } from 'vuex';
 import { make } from 'vuex-pathify';
-import db, { Group, GroupDisplayMode, Journal } from './../journals/db';
+import { db, Group, GroupDisplayMode, Journal } from '@/api/db';
 
 export type GroupSet = { [name: number]: Group };
 export type GroupWordCountSet = { [name: number]: number };
@@ -71,6 +71,7 @@ groups.actions = {
      * @returns {Promise<void>}
      */
     async refreshWordCounts({ state }, groupIds?: number[]): Promise<void> {
+        // TODO: check with DB if groupIds exist?
         // get groups from the provided groupIds and filter non-groups if some of the ids are phony
         const groups = groupIds ? groupIds.map(id => state.all[id]).filter(a => a) : Object.values(state.all);
 

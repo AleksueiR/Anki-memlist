@@ -9,6 +9,8 @@ import app from './components/app.vue';
 import { createStore } from './store';
 import { RootState } from './store/state';
 
+import { Stash } from '@/stash';
+
 Vue.use(Vuex);
 Vue.use(VueRx, {
     Observable,
@@ -20,15 +22,6 @@ Vue.use(Vuebar);
 
 const store: Store<RootState> = createStore();
 (window as any).store = store;
-
-// intercepting mutations
-/* store.subscribe((mutation, state) => {
-    console.log('mutation detected', mutation);
-
-    if (mutation.type === 'display/blah') {
-        console.log('-- sync to db', mutation.payload.path.split('.').shift());
-    }
-}); */
 
 import OctoIconV from '@/components/bits/octo-icon.vue';
 Vue.component('octo-icon', OctoIconV);
@@ -57,8 +50,13 @@ declare module 'vue/types/vue' {
     }
 }
 
+const stash = new Stash();
+
+(window as any).stash = stash;
+
 new Vue({
     el: '#app',
     store,
+    stash,
     render: h => h(app)
 });

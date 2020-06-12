@@ -3,16 +3,6 @@ import Dexie from 'dexie';
 
 Dexie.delete('word-pouch');
 
-// pack, deck, collection, list, trove, stash, lexicon, dictionary, wordstock, diction, journal, binder
-
-// base, hub, site,
-
-// lexicon
-// journal/bundle/section?/story/branch?/bough
-// word
-
-// journals/groups/words
-
 export class WordPouch extends Dexie {
     // Declare implicit table properties.
     // (just to inform Typescript. Instantiated by Dexie in stores() method)
@@ -42,8 +32,8 @@ export class Journal {
 
     constructor(
         public name: string = 'Default Journal',
-        public rootGroupId: number = NON_ID,
-        public defaultGroupId: number = NON_ID
+        public rootGroupId: number | null = null,
+        public defaultGroupId: number | null = null
     ) {}
 }
 
@@ -77,7 +67,16 @@ export enum GroupDisplayMode {
 
 const db = new WordPouch();
 
-export default db;
+export { db };
+
+// TODO: move setup somewhere else
+
+// pack, deck, collection, list, trove, stash, lexicon, dictionary, wordstock, diction, journal, binder
+// base, hub, site,
+// lexicon
+// journal/bundle/section?/story/branch?/bough
+// word
+// journals/groups/words
 
 db.on('populate', async () => {
     const journalId = await db.journals.add(new Journal('Default Journal'));

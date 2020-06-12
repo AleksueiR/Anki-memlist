@@ -4,6 +4,32 @@
 
         <span class="divider-right"></span>
 
+        <div style="display: flex; flex-direction: column;">
+            {{ $stash.journals.activeId || 13 }}
+
+            {{ defaultName }}
+
+            <!-- {{ $stash.journals.activeId || 12 }}
+
+
+
+            {{ message }}
+
+
+            {{ $stash2.journals.activeId || 13 }} -->
+            {{ a }}
+
+            <!-- {{ $stash.vm._b }} -->
+
+            <!-- {{ $stash.vm.$data._journals.activeId || 34 }} -->
+
+            <hr />
+
+            <p>sfsdf</p>
+
+            <!-- {{ vm }} -->
+        </div>
+
         <!-- hide/show `collection-view` and its separator -->
         <!-- cannot use v-show in `template` as it rendered only once -->
         <collection-view v-show="isCollectionViewOpen"></collection-view>
@@ -53,6 +79,7 @@ import {
     CollectionTree
 } from '../store/modules/collection/index';
 import { books, Wordbook } from '@/api/wordbook';
+import { log } from 'util';
 
 const StateCL = namespace('collection', State);
 const ActionCL = namespace('collection', Action);
@@ -112,31 +139,66 @@ export default class App extends mixins(AppStateMixin) {
 
     @display.Action setWordbooks: (payload: { value: Wordbook[] }) => void;
 
+    get defaultName(): string | undefined {
+        // return this.$stash2.journals.active.name;
+        return this.$stash.journals.active ? this.$stash.journals.active.name : 'sdfs';
+    }
+
+    get a() {
+        return '';
+        // return this.$stash.vm.$data.a;
+    }
+
     async mounted(): Promise<void> {
+        // console.log('this.$stash.vm.$data', this.$stash.vm.$data);
+        // this.$stash.journals.fetch();
+        /* await this.$stash2.journals.fetch();
+
+        console.log('bah', (this as any).$blah);
+
+        console.log('vm', this.$vm); */
+
+        setTimeout(() => {
+            this.$stash.journals.fetch();
+        }, 1000);
+
+        setTimeout(() => {
+            this.$stash.journals.setName(this.$stash.journals.activeId!, 'new blah');
+        }, 1500);
+
+        setTimeout(() => {
+            this.$stash.journals.reset();
+        }, 3000);
+        /* this.$root.$data;
+
+        this.$vm.$data; */
+        /* const a = { b: { b: 'c' } };
+        const q = a.b?.b;
+
+        const z = 2 ?? 1; */
         // TODO: when should setting check happen
         // this.init();
+        /*         setTimeout(() => {
+            // this.$storeX.setMessageAction('blah');
+        }, 3000);
 
+
+        this.$storeX.journals; */
         /* console.log('fetch index');
         this.fetchIndex();
 
         this.setWordbooks({ value: books }); */
-
         // const wordId = 'a2';
         // this.$store.set('display/blah@a2.b', 534);
-
         /// --- ===
-        await this.$store.set('journals/fetch!');
-        await this.$store.set('groups/selectedIds', [2]);
-
-        await this.$store.set<number>('groups/all@2.displayMode', 1);
-        await this.$store.set('groups/all@2.name', 'The Everted Group');
-
-        const groupId = await this.$store.set('groups/new!');
-        console.log('new group added', groupId);
-
-        console.log(`group 1 word count:`, this.$store.get('groups/wordCount@1'));
-
-        await this.$store.set('journals/all@1.defaultGroupId', 1);
+        // await this.$store.set('journals/fetch!');
+        // await this.$store.set('groups/selectedIds', [2]);
+        // await this.$store.set<number>('groups/all@2.displayMode', 1);
+        // await this.$store.set('groups/all@2.name', 'The Everted Group');
+        // const groupId = await this.$store.set('groups/new!');
+        // console.log('new group added', groupId);
+        // console.log(`group 1 word count:`, this.$store.get('groups/wordCount@1'));
+        // await this.$store.set('journals/all@1.defaultGroupId', 1);
     }
 
     init(): void {

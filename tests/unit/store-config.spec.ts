@@ -8,12 +8,37 @@ import { createLocalVue } from '@vue/test-utils';
 import Vuex from 'vuex';
 import { createStore } from './store-config';
 
+import { Stash } from '@/stash';
+import { db } from '@/api/db';
+
 /* beforeEach(() => {
     // Clear all instances and calls to constructor and all methods:
     (db as any).mockClear();
 }); */
 
 test('increments "count" value when "increment" is committed', async () => {
+    //(db as any).mockImplementation(() => console.log('blah'));
+
+    const { journals } = new Stash();
+
+    await journals.fetch();
+    const journal = await journals.active!;
+
+    expect(journal.rootGroupId).toBe(1);
+    expect(journals.activeId).toBe(1);
+
+    const newJournalId = await journals.new('test');
+
+    const newJournal = await db.journals.get(newJournalId);
+
+    expect(newJournal).not.toBeUndefined();
+    expect(newJournal!.name).toBe('test');
+    expect(newJournal!.id).toBe(newJournalId);
+
+    expect(newJournal).toEqual(journals.all[newJournalId]);
+});
+
+/* test('increments "count" value when "increment" is committed', async () => {
     //(db as any).mockImplementation(() => console.log('blah'));
 
     const localVue = createLocalVue();
@@ -26,7 +51,7 @@ test('increments "count" value when "increment" is committed', async () => {
 
     expect(journal.rootGroupId).toBe(1);
     expect(store.state.journals.activeId).toBe(1);
-});
+}); */
 
 /* test('updates "evenOrOdd" getter when "increment" is committed', () => {
     const localVue = createLocalVue();

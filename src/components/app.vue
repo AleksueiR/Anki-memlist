@@ -141,6 +141,7 @@ export default class App extends mixins(AppStateMixin) {
 
     get defaultName(): string | undefined {
         // return this.$stash2.journals.active.name;
+
         return this.$stash.journals.active ? this.$stash.journals.active.name : 'sdfs';
     }
 

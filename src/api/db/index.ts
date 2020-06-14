@@ -27,6 +27,10 @@ export class WordPouch extends Dexie {
     }
 }
 
+export class JBase {
+    qaq: number = 1;
+}
+
 export class Journal {
     readonly id: number;
 

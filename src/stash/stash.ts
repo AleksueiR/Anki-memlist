@@ -4,6 +4,13 @@ import { JournalsModule } from './internal';
 export class Stash {
     $vm: Vue;
 
+    /**
+     * Journals stash module.
+     *
+     * @readonly
+     * @type {JournalsModule}
+     * @memberof Stash
+     */
     get journals(): JournalsModule {
         return this.$vm.$data.journals;
     }

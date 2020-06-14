@@ -1,19 +1,16 @@
 import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
-import { $updateGenericStateAndDb, SpecificUpdater, StashModule } from '../common';
+import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
-export type JournalSet = Record<number, Journal>;
+export type JournalSet = EntrySet<Journal>;
 
-export class JournalsState {
-    all: JournalSet = {};
+export class JournalsState extends StashModuleState<Journal> {
     activeId: number | null = null;
 }
 
-export class JournalsModule extends StashModule {
-    protected $state: JournalsState = new JournalsState();
-
-    get all(): JournalSet {
-        return this.$state.all;
+export class JournalsModule extends StashModule<Journal, JournalsState> {
+    constructor(stash: Stash) {
+        super(stash, db.journals, JournalsState);
     }
 
     get activeId(): number | null {
@@ -41,18 +38,12 @@ export class JournalsModule extends StashModule {
         this.setActiveId(journal.id); // loading the first journal by default for now
     }
 
-    protected async getFromDb(journalId: number): Promise<Journal> {
-        const journal = await db.journals.get(journalId);
-        if (!journal) throw new Error('journals/getFromDb: Cannot load a Journal record.');
-
-        return journal;
-    }
-
     /**
-     * Create a new Journal and add it to the db.
+     * Create a new Journal with the name provided, and add it to the state and db.
      *
-     * @param {*} { state }
+     * @param {string} [name='Default Journal']
      * @returns {Promise<number>}
+     * @memberof JournalsModule
      */
     async new(name = 'Default Journal'): Promise<number> {
         // create and get a new journal
@@ -70,20 +61,32 @@ export class JournalsModule extends StashModule {
         return newJournalId;
     }
 
-    protected setAll(value: JournalSet): void {
-        this.$state.all = value;
-    }
-
     setActiveId(value: number | null): void {
         this.$state.activeId = value;
+
+        // TODO: moar
     }
 
+    /**
+     * Set name of the specified Journal.
+     *
+     * @param {number} journalId
+     * @param {string} name
+     * @memberof JournalsModule
+     */
     setName(journalId: number, name: string): void {
         this.$state.all[journalId].name = name;
 
         this.updateStateAndDb(journalId, 'name', name);
     }
 
+    /**
+     * Set rootGroupId of the specified Journal
+     *
+     * @param {number} journalId
+     * @param {(number | null)} rootGroupId
+     * @memberof JournalsModule
+     */
     setRootGroupId(journalId: number, rootGroupId: number | null): void {
         this.updateStateAndDb(journalId, 'rootGroupId', rootGroupId);
     }
@@ -91,12 +94,4 @@ export class JournalsModule extends StashModule {
     setDefaultGroupId(journalId: number, defaultGroupId: number | null): void {
         this.updateStateAndDb(journalId, 'defaultGroupId', defaultGroupId);
     }
-
-    reset(): void {
-        Object.assign(this.$state, new JournalsState());
-    }
-
-    protected updateStateAndDb: SpecificUpdater<Journal> = async (...args): Promise<void> => {
-        $updateGenericStateAndDb(this.$state.all, db.journals, ...args);
-    };
 }

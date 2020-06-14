@@ -40,7 +40,7 @@ journals.actions = {
      *
      * @returns {Promise<void>}
      */
-    async fetch(): Promise<void> {
+    /* async fetch(): Promise<void> {
         const journals = await db.journals.toArray();
 
         const journalSet = reduceArrayToObject(journals);
@@ -50,7 +50,7 @@ journals.actions = {
 
         this.set('journals/all', journalSet);
         this.set('journals/activeId', journal.id); // loading the first journal by default for now
-    },
+    }, */
 
     /**
      * Create a new Journal and add it to the db.
@@ -58,7 +58,7 @@ journals.actions = {
      * @param {*} { state }
      * @returns {Promise<number>}
      */
-    async new({ state }): Promise<number> {
+    /* async new({ state }): Promise<number> {
         // create and get a new journal
         const newJournalId = await db.journals.add(new Journal('Default Journal'));
 
@@ -74,7 +74,7 @@ journals.actions = {
         this.set('journals/all', { ...state.all, ...{ [journal.id]: journal } });
 
         return newJournalId;
-    },
+    }, */
 
     /**
      * Delete a specified journal with all its groups and words.
@@ -134,7 +134,7 @@ journals.actions = {
         if (journal.defaultGroupId !== NON_ID) {
             this.set('groups/selectedIds', journal.defaultGroupId);
         }
-    },
+    }
 
     /**
      * This is a "catch-all" action to intersect sub-properties writes to `state.all` by pathify and keep the db in sync.
@@ -143,7 +143,7 @@ journals.actions = {
      * @param {*} payload
      * @returns {Promise<void>}
      */
-    async setAll({ state }, payload): Promise<void> {
+    /* async setAll({ state }, payload): Promise<void> {
         const result = await handleActionPayload(this, db.journals, state.all, 'journals/all!', payload);
         if (!result) return;
 
@@ -152,15 +152,15 @@ journals.actions = {
             case 'blah':
                 break;
         }
-    }
+    } */
 };
 
 journals.mutations = {
-    ...make.mutations(state),
+    ...make.mutations(state)
 
-    delete(state, journalId: number): void {
+    /* delete(state, journalId: number): void {
         delete state.all[journalId];
-    }
+    } */
 };
 
 export { journals };

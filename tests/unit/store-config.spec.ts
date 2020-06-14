@@ -36,6 +36,10 @@ test('increments "count" value when "increment" is committed', async () => {
     expect(newJournal!.id).toBe(newJournalId);
 
     expect(newJournal).toEqual(journals.all[newJournalId]);
+
+    journals.reset();
+
+    expect(Object.entries(journals.all).length).toBe(0);
 });
 
 /* test('increments "count" value when "increment" is committed', async () => {

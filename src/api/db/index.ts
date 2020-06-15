@@ -59,7 +59,7 @@ export class Word implements DBEntry {
         public text: string,
         public journalId: number,
         public memberGroupIds: number[] = [],
-        public isArchived: WordArchived = WordArchived.No
+        public isArchived: WordArchived = GroupDisplayMode.Active
     ) {}
 }
 
@@ -69,10 +69,7 @@ export enum GroupDisplayMode {
     All = 2
 }
 
-export enum WordArchived {
-    No = 0,
-    Yes = 1
-}
+export type WordArchived = GroupDisplayMode.Active | GroupDisplayMode.Archived;
 
 const db = new WordPouch();
 
@@ -110,7 +107,7 @@ db.on('populate', async () => {
         new Word('wonder', journalId, [3, 4]),
         new Word('queen', journalId, [2]),
         new Word('king', journalId, [3]),
-        new Word('treasure', journalId, [3], 1)
+        new Word('treasure', journalId, [3], GroupDisplayMode.Archived)
     ]);
 });
 

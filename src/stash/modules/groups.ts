@@ -1,4 +1,4 @@
-import { db, Group, GroupDisplayMode } from '@/api/db';
+import { db, Group, GroupDisplayMode, WordArchived } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
@@ -86,15 +86,12 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         await Promise.all(
             groups.map(async group => {
                 // include `isArchived` condition based on the `displayMode` if it's not set to `all`
-                const isArchivedClause =
-                    group.displayMode !== GroupDisplayMode.All ? { isArchived: group.displayMode } : {};
+                const isArchivedClause = group.displayMode !== GroupDisplayMode.All ? group.displayMode : void 0;
 
                 // count the words and dispatch an action to update the state
                 // TODO: move this function to words module as modules should only touch their own tables
-                await db.words
-                    .where({ memberGroupIds: group.id, ...isArchivedClause })
-                    .count()
-                    .then(count => this.setWordCount(group.id, count)); // call mutation
+                const count = await this.$stash.words.countWordsInAGroup(group.id, isArchivedClause);
+                this.setWordCount(group.id, count);
             })
         );
     }

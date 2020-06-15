@@ -1,4 +1,4 @@
-import { db, Word, GroupDisplayMode } from '@/api/db';
+import { db, Word, GroupDisplayMode, WordArchived } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
@@ -29,5 +29,20 @@ export class WordsModule extends StashModule<Word, WordsState> {
         this.setAll(wordSet);
 
         // TODO: check if the currently selected words need to be deselected
+    }
+
+    /**
+     * Count words in the specified group. Return the word count.
+     *
+     * @protected
+     * @param {number} groupId
+     * @param {WordArchived} [isArchived]
+     * @returns {Promise<number>}
+     * @memberof WordsModule
+     */
+    async countWordsInAGroup(groupId: number, isArchived?: WordArchived): Promise<number> {
+        const isArchivedClause = isArchived !== undefined ? { isArchived } : {};
+
+        return await this.table.where({ memberGroupIds: groupId, ...isArchivedClause }).count();
     }
 }

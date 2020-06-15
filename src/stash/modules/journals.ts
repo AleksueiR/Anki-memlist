@@ -14,7 +14,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     }
 
     get activeId(): number | null {
-        return this.$state.activeId;
+        return this.state.activeId;
     }
 
     get active(): Journal | null {
@@ -27,7 +27,9 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @returns {Promise<void>}
      */
     async fetch(): Promise<void> {
-        const journals = await db.journals.toArray();
+        console.log('rere');
+
+        const journals = await this.table.toArray();
 
         const journalSet = reduceArrayToObject(journals);
 
@@ -52,7 +54,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
         // add the newly created journal directly to the state
         // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-        this.setAll({ ...this.$state.all, ...{ [journal.id]: journal } });
+        this.setAll({ ...this.all, ...{ [journal.id]: journal } });
 
         // create a root group for this new journal, set its `journalId` and journal's `rootGroupId`
         const rootGroupId = await db.groups.add(new Group('Root group', journal.id));
@@ -62,7 +64,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     }
 
     setActiveId(value: number | null): void {
-        this.$state.activeId = value;
+        this.state.activeId = value;
 
         // TODO: moar
     }
@@ -75,7 +77,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     setName(journalId: number, name: string): void {
-        this.$state.all[journalId].name = name;
+        this.all[journalId].name = name;
 
         this.updateStateAndDb(journalId, 'name', name);
     }

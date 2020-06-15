@@ -24,7 +24,7 @@ export class StashModuleState<K> {
  * @template K
  * @template T
  */
-export interface IStashModuleStateClass<K, T extends StashModuleState<K>> {
+export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
     new (): T;
 }
 
@@ -38,13 +38,14 @@ export interface IStashModuleStateClass<K, T extends StashModuleState<K>> {
  */
 export class StashModule<K, T extends StashModuleState<K>> {
     protected readonly $stash: Stash;
-    protected readonly $table: Table;
-    protected readonly $state: T;
 
-    private readonly $StateClass: IStashModuleStateClass<K, T>;
+    protected readonly table: Table<K, number>;
+    protected readonly state: T;
 
-    constructor(stash: Stash, table: Table, StateClass: IStashModuleStateClass<K, T>) {
-        const map = { $stash: stash, $table: table, $state: new StateClass(), $StateClass: StateClass };
+    private readonly StateClass: StashModuleStateClass<K, T>;
+
+    constructor(stash: Stash, table: Table, StateClass: StashModuleStateClass<K, T>) {
+        const map = { $stash: stash, table, StateClass };
 
         // mark $stash as not enumerable so Vue doesn't make it reactive
         Object.entries(map).forEach(([key, value]) =>
@@ -54,6 +55,8 @@ export class StashModule<K, T extends StashModuleState<K>> {
                 writable: false
             })
         );
+
+        this.state = new StateClass();
     }
 
     /**
@@ -64,7 +67,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     get all(): EntrySet<K> {
-        return this.$state.all;
+        return this.state.all;
     }
 
     /**
@@ -75,7 +78,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     protected setAll(value: EntrySet<K>): void {
-        this.$state.all = value;
+        this.state.all = value;
     }
 
     /**
@@ -87,7 +90,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     protected async getFromDb(id: number): Promise<K> {
-        const record = await this.$table.get(id);
+        const record = await this.table.get(id);
         if (!record) throw new Error('record/getFromDb: Cannot load record.');
 
         return record;
@@ -102,7 +105,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
      * @returns {Promise<void>}
      */
     updateStateAndDb: SpecificUpdater<K> = async (id, key, value): Promise<void> => {
-        const all = this.$state.all;
+        const all = this.state.all;
 
         // check that id is valid
         if (!all[id]) {
@@ -119,7 +122,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
         all[id][key] = value;
 
         // update the db
-        return this.$table.update(id, { [key]: value }).then(result => {
+        return this.table.update(id, { [key]: value }).then(result => {
             // if result === 0, either the id is wrong or the value is already set
             if (result === 0) {
                 console.error(`${id} failed to update db: id doesn't exist or value is already set`);
@@ -133,7 +136,7 @@ export class StashModule<K, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     reset(): void {
-        Object.assign(this.$state, new this.$StateClass());
+        Object.assign(this.state, new this.StateClass());
     }
 }
 

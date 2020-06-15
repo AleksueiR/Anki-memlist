@@ -3,3 +3,4 @@
 export * from './common'; // common and stash should be the first two imports, otherwise you hit the circular dependency wall
 export * from './stash';
 export * from './modules/journals';
+export * from './modules/groups';

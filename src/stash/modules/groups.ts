@@ -1,4 +1,4 @@
-import { db, Group, Journal } from '@/api/db';
+import { db, Group, GroupDisplayMode } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
@@ -15,6 +15,10 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         super(stash, db.groups, GroupsState);
     }
 
+    get wordCount(): GroupWordCountSet {
+        return this.state.wordCount;
+    }
+
     /**
      * Fetches groups belonging to the active journal.
      *
@@ -24,11 +28,60 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         const activeJournalId = this.$stash.journals.activeId;
         if (!activeJournalId) return; // active journal is not set
 
-        const groups = await db.groups.where({ journalId: activeJournalId }).toArray();
+        const groups = await this.table.where({ journalId: activeJournalId }).toArray();
 
         const groupSet = reduceArrayToObject(groups);
 
-        // this.set('groups/all', groupSet); // this will replace all the previously fetched groups
-        // this.set('groups/refreshWordCounts!');
+        this.setAll(groupSet); // this will replace all the previously fetched groups
+        this.refreshWordCounts();
+    }
+
+    /**
+     * Count words in the provided groups using the group's `GroupDisplayMode`. If not words provided, count words in all the groups.
+     * Call this:
+     * - on the initial load and when a word is added, deleted, moved, or archived;
+     * - when the display mode of a group changes;
+     * - when a new list added.
+     *
+     * @param {number[]} [groupIds]
+     * @returns {Promise<void>}
+     * @memberof GroupsModule
+     */
+    protected async refreshWordCounts(groupIds?: number[]): Promise<void> {
+        // get groups from the provided groupIds and filter non-groups if some of the ids are phony
+        groupIds = groupIds ?? Object.keys(this.all).map(k => +k);
+        const groups = await this.table
+            .where('id')
+            .anyOf(groupIds)
+            .toArray();
+
+        console.log(db.words);
+
+        await Promise.all(
+            groups.map(async group => {
+                // include `isArchived` condition based on the `displayMode` if it's not set to `all`
+                const isArchivedClause =
+                    group.displayMode !== GroupDisplayMode.all
+                        ? { isArchived: group.displayMode === GroupDisplayMode.archived }
+                        : {};
+                // count the words and dispatch an action to update the state
+                // TODO: move this function to words module as modules should only touch their own tables
+                await db.words
+                    .where({ memberGroupIds: group.id, ...isArchivedClause })
+                    .count()
+                    .then(count => this.setWordCount(group.id, count)); // call mutation
+            })
+        );
+    }
+
+    /**
+     * Set word count for the specified group.
+     *
+     * @param {number} groupId
+     * @param {number} count
+     * @memberof GroupsModule
+     */
+    protected setWordCount(groupId: number, count: number): void {
+        this.state.wordCount[groupId] = count;
     }
 }

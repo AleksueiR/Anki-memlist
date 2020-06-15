@@ -27,10 +27,6 @@ export class WordPouch extends Dexie {
     }
 }
 
-export class JBase {
-    qaq: number = 1;
-}
-
 export class Journal {
     readonly id: number;
 
@@ -100,11 +96,12 @@ db.on('populate', async () => {
     await db.groups.update(rootGroupId, { subGroupIds: groupIds });
 
     db.words.bulkAdd([
-        new Word('foo', journalId, [1, 2]),
-        new Word('bar', journalId, [1, 3]),
-        new Word('wonder', journalId, [2, 3]),
-        new Word('queen', journalId, [1]),
-        new Word('king', journalId, [2])
+        new Word('foo', journalId, [2, 3]),
+        new Word('bar', journalId, [2, 4]),
+        new Word('wonder', journalId, [3, 4]),
+        new Word('queen', journalId, [2]),
+        new Word('king', journalId, [3]),
+        new Word('treasure', journalId, [3], true)
     ]);
 });
 

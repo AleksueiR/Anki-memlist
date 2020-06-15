@@ -49,15 +49,15 @@ groups.actions = {
      *
      * @returns {Promise<void>}
      */
-    async fetchJournalGroups(): Promise<void> {
-        const activeJournalId = this.get<number>('journals/activeId');
-        const groups = await db.groups.where({ journalId: activeJournalId }).toArray();
+    // async fetchJournalGroups(): Promise<void> {
+    //     const activeJournalId = this.get<number>('journals/activeId');
+    //     const groups = await db.groups.where({ journalId: activeJournalId }).toArray();
 
-        const groupSet = reduceArrayToObject(groups);
+    //     const groupSet = reduceArrayToObject(groups);
 
-        this.set('groups/all', groupSet); // this will replace all the previously fetched groups
-        this.set('groups/refreshWordCounts!');
-    },
+    //     this.set('groups/all', groupSet); // this will replace all the previously fetched groups
+    //     this.set('groups/refreshWordCounts!');
+    // },
 
     /**
      * Count words in the provided groups using the group's `GroupDisplayMode`. If not words provided, count words in all the groups.
@@ -70,27 +70,27 @@ groups.actions = {
      * @param {number[]} [groupIds]
      * @returns {Promise<void>}
      */
-    async refreshWordCounts({ state }, groupIds?: number[]): Promise<void> {
-        // TODO: check with DB if groupIds exist?
-        // get groups from the provided groupIds and filter non-groups if some of the ids are phony
-        const groups = groupIds ? groupIds.map(id => state.all[id]).filter(a => a) : Object.values(state.all);
+    // async refreshWordCounts({ state }, groupIds?: number[]): Promise<void> {
+    //     // TODO: check with DB if groupIds exist?
+    //     // get groups from the provided groupIds and filter non-groups if some of the ids are phony
+    //     const groups = groupIds ? groupIds.map(id => state.all[id]).filter(a => a) : Object.values(state.all);
 
-        await Promise.all(
-            groups.map(async group => {
-                // include `isArchived` condition based on the `displayMode` if it's not set to `all`
-                const isArchivedClause =
-                    group.displayMode !== GroupDisplayMode.all
-                        ? { isArchived: group.displayMode === GroupDisplayMode.active }
-                        : {};
+    //     await Promise.all(
+    //         groups.map(async group => {
+    //             // include `isArchived` condition based on the `displayMode` if it's not set to `all`
+    //             const isArchivedClause =
+    //                 group.displayMode !== GroupDisplayMode.all
+    //                     ? { isArchived: group.displayMode === GroupDisplayMode.archived }
+    //                     : {};
 
-                // count the words and dispatch an action to update the state
-                await db.words
-                    .where({ memberGroupIds: group.id, ...isArchivedClause })
-                    .count()
-                    .then(count => this.set(`groups/wordCount@${group.id}`, count)); // call mutation
-            })
-        );
-    },
+    //             // count the words and dispatch an action to update the state
+    //             await db.words
+    //                 .where({ memberGroupIds: group.id, ...isArchivedClause })
+    //                 .count()
+    //                 .then(count => this.set(`groups/wordCount@${group.id}`, count)); // call mutation
+    //         })
+    //     );
+    // },
 
     /**
      * Create a new `Group` in the root group and return its id when finished.

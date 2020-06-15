@@ -163,13 +163,13 @@ export default class App extends mixins(AppStateMixin) {
             this.$stash.journals.fetch();
         }, 1000);
 
-        setTimeout(() => {
-            this.$stash.journals.setName(this.$stash.journals.activeId!, 'new blah');
-        }, 1500);
+        // setTimeout(() => {
+        //     this.$stash.journals.setName(this.$stash.journals.activeId!, 'new blah');
+        // }, 1500);
 
-        setTimeout(() => {
-            this.$stash.journals.reset();
-        }, 3000);
+        // setTimeout(() => {
+        //     this.$stash.journals.reset();
+        // }, 3000);
         /* this.$root.$data;
 
         this.$vm.$data; */

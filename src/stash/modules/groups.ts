@@ -83,15 +83,12 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
             .anyOf(groupIds)
             .toArray();
 
-        console.log(db.words);
-
         await Promise.all(
             groups.map(async group => {
                 // include `isArchived` condition based on the `displayMode` if it's not set to `all`
                 const isArchivedClause =
-                    group.displayMode !== GroupDisplayMode.all
-                        ? { isArchived: group.displayMode === GroupDisplayMode.archived }
-                        : {};
+                    group.displayMode !== GroupDisplayMode.All ? { isArchived: group.displayMode } : {};
+
                 // count the words and dispatch an action to update the state
                 // TODO: move this function to words module as modules should only touch their own tables
                 await db.words

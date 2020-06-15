@@ -47,7 +47,7 @@ export class Group implements DBEntry {
     constructor(
         public name: string,
         public journalId: number,
-        public displayMode: GroupDisplayMode = GroupDisplayMode.all,
+        public displayMode: GroupDisplayMode = GroupDisplayMode.All,
         public subGroupIds: number[] = []
     ) {}
 }
@@ -59,14 +59,19 @@ export class Word implements DBEntry {
         public text: string,
         public journalId: number,
         public memberGroupIds: number[] = [],
-        public isArchived: boolean = false
+        public isArchived: WordArchived = WordArchived.No
     ) {}
 }
 
 export enum GroupDisplayMode {
-    all = 0,
-    active = 1,
-    archived = 2
+    Active = 0,
+    Archived = 1,
+    All = 2
+}
+
+export enum WordArchived {
+    No = 0,
+    Yes = 1
 }
 
 const db = new WordPouch();
@@ -91,7 +96,7 @@ db.on('populate', async () => {
     const groupIds = await db.groups.bulkAdd(
         [
             new Group('list one', journalId),
-            new Group('list two', journalId, GroupDisplayMode.archived),
+            new Group('list two', journalId, GroupDisplayMode.Archived),
             new Group('list three', journalId)
         ],
         { allKeys: true }
@@ -105,7 +110,7 @@ db.on('populate', async () => {
         new Word('wonder', journalId, [3, 4]),
         new Word('queen', journalId, [2]),
         new Word('king', journalId, [3]),
-        new Word('treasure', journalId, [3], true)
+        new Word('treasure', journalId, [3], 1)
     ]);
 });
 

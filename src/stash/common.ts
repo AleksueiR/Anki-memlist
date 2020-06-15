@@ -1,3 +1,4 @@
+import { DBEntry } from '@/api/db';
 import { Table } from 'dexie';
 import { Stash } from './internal';
 
@@ -36,7 +37,7 @@ export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
  * @template K entry class
  * @template T state class
  */
-export class StashModule<K, T extends StashModuleState<K>> {
+export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     protected readonly $stash: Stash;
 
     protected readonly table: Table<K, number>;
@@ -79,6 +80,17 @@ export class StashModule<K, T extends StashModuleState<K>> {
      */
     protected setAll(value: EntrySet<K>): void {
         this.state.all = value;
+    }
+
+    /**
+     * Add the provided value to the `state.all` set.
+     *
+     * @protected
+     * @param {K} value
+     * @memberof StashModule
+     */
+    protected addToAll(value: K): void {
+        this.setAll({ ...this.all, ...{ [value.id]: value } });
     }
 
     /**

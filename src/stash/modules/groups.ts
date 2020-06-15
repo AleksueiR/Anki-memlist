@@ -37,6 +37,30 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
     }
 
     /**
+     * Create a Root Group for the active journal and add it to the state. Return group id.
+     *
+     * @param {string} [name='Root group']
+     * @returns {Promise<number>}
+     * @memberof GroupsModule
+     */
+    async createRootGroup(name: string = 'Root group'): Promise<number> {
+        const activeJournal = this.$stash.journals.active;
+        if (!activeJournal) throw new Error('groups/createRootGroup: Active journal is not set');
+
+        if (activeJournal.rootGroupId) return activeJournal.rootGroupId; // root group is already set;
+
+        // create a new group
+        const rootGroupId = await this.table.add(new Group(name, activeJournal.id));
+        const rootGroup = await this.getFromDb(rootGroupId);
+
+        // add it directly to the state
+        this.addToAll(rootGroup);
+
+        // and return its id
+        return rootGroupId;
+    }
+
+    /**
      * Count words in the provided groups using the group's `GroupDisplayMode`. If not words provided, count words in all the groups.
      * Call this:
      * - on the initial load and when a word is added, deleted, moved, or archived;

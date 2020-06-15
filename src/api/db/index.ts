@@ -27,7 +27,11 @@ export class WordPouch extends Dexie {
     }
 }
 
-export class Journal {
+export interface DBEntry {
+    readonly id: number;
+}
+
+export class Journal implements DBEntry {
     readonly id: number;
 
     constructor(
@@ -37,7 +41,7 @@ export class Journal {
     ) {}
 }
 
-export class Group {
+export class Group implements DBEntry {
     readonly id: number;
 
     constructor(
@@ -48,7 +52,7 @@ export class Group {
     ) {}
 }
 
-export class Word {
+export class Word implements DBEntry {
     readonly id: number;
 
     constructor(

@@ -1,4 +1,4 @@
-import { db, Group, Journal } from '@/api/db';
+import { db, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
@@ -50,15 +50,17 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     async new(name = 'Default Journal'): Promise<number> {
         // create and get a new journal
         const newJournalId = await db.journals.add(new Journal(name));
-        const journal = await this.getFromDb(newJournalId);
+        const newJournal = await this.getFromDb(newJournalId);
 
         // add the newly created journal directly to the state
         // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-        this.setAll({ ...this.all, ...{ [journal.id]: journal } });
+        this.addToAll(newJournal);
+
+        this.setActiveId(newJournal.id);
 
         // create a root group for this new journal, set its `journalId` and journal's `rootGroupId`
-        const rootGroupId = await db.groups.add(new Group('Root group', journal.id));
-        await this.updateStateAndDb(journal.id, 'rootGroupId', rootGroupId);
+        const rootGroupId = await this.$stash.groups.createRootGroup();
+        await this.updateStateAndDb(newJournal.id, 'rootGroupId', rootGroupId);
 
         return newJournalId;
     }

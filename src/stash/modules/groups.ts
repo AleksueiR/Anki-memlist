@@ -15,6 +15,10 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         super(stash, db.groups, GroupsState);
     }
 
+    get selectedIds(): number[] {
+        return this.state.selectedIds;
+    }
+
     get wordCount(): GroupWordCountSet {
         return this.state.wordCount;
     }

@@ -1,5 +1,5 @@
 import { Vue } from 'vue-property-decorator';
-import { JournalsModule, GroupsModule } from './internal';
+import { JournalsModule, GroupsModule, WordsModule } from './internal';
 
 export class Stash {
     $vm: Vue;
@@ -19,16 +19,22 @@ export class Stash {
         return this.$vm.$data.groups;
     }
 
+    get words(): WordsModule {
+        return this.$vm.$data.words;
+    }
+
     constructor() {
         interface VMData {
             journals: JournalsModule;
             groups: GroupsModule;
+            words: WordsModule;
         }
 
         this.$vm = new Vue<VMData>({
             data: {
                 journals: new JournalsModule(this),
-                groups: new GroupsModule(this)
+                groups: new GroupsModule(this),
+                words: new WordsModule(this)
             }
         });
     }

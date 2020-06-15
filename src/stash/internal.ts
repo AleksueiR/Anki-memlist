@@ -4,3 +4,4 @@ export * from './common'; // common and stash should be the first two imports, o
 export * from './stash';
 export * from './modules/journals';
 export * from './modules/groups';
+export * from './modules/words';

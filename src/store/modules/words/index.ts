@@ -30,23 +30,23 @@ words.getters = {
 };
 
 words.actions = {
-    /**
-     * Fetches words belonging to the currently active groups.
-     *
-     * @returns {Promise<void>}
-     */
-    async fetchGroupWords(): Promise<void> {
-        const words = await db.words
-            .where('memberGroupIds')
-            .anyOf(this.get<number[]>('groups/selectedIds'))
-            .toArray();
+    // /**
+    //  * Fetches words belonging to the currently active groups.
+    //  *
+    //  * @returns {Promise<void>}
+    //  */
+    // async fetchGroupWords(): Promise<void> {
+    //     const words = await db.words
+    //         .where('memberGroupIds')
+    //         .anyOf(this.get<number[]>('groups/selectedIds'))
+    //         .toArray();
 
-        const wordSet = reduceArrayToObject(words);
+    //     const wordSet = reduceArrayToObject(words);
 
-        this.set('words/all', wordSet);
+    //     this.set('words/all', wordSet);
 
-        // TODO: check if the currently selected words need to be deselected
-    },
+    //     // TODO: check if the currently selected words need to be deselected
+    // },
 
     async fetchLookupWords(): Promise<void> {
         // TODO:
@@ -54,16 +54,16 @@ words.actions = {
 };
 
 words.mutations = {
-    ...make.mutations(state),
+    ...make.mutations(state)
 
     /**
      * Reset the state to its defaults.
      *
      * @param {*} state
      */
-    reset(state): void {
-        Object.assign(state, new WordsState());
-    }
+    // reset(state): void {
+    //     Object.assign(state, new WordsState());
+    // }
 };
 
 export { words };

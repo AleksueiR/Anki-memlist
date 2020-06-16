@@ -53,7 +53,7 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
 
         if (activeJournal.rootGroupId) return activeJournal.rootGroupId; // root group is already set;
 
-        // create a new group
+        // create a new group and get it from db
         const rootGroupId = await this.table.add(new Group(name, activeJournal.id));
         const rootGroup = await this.getFromDb(rootGroupId);
 

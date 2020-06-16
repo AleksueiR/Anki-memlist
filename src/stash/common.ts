@@ -109,6 +109,17 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 
     /**
+     * Get an Entry with the id specified from the state. Return `undefined` if the id is not valid.
+     *
+     * @param {number} id
+     * @returns {K | undefined}
+     * @memberof StashModule
+     */
+    get(id: number): K | undefined {
+        return this.state.all[id];
+    }
+
+    /**
      * Update a specified record in the entry set and update the corresponding record in the db.
      *
      * @param {*} id
@@ -117,21 +128,22 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {Promise<void>}
      */
     updateStateAndDb: SpecificUpdater<K> = async (id, key, value): Promise<void> => {
-        const all = this.state.all;
+        const entry = this.get(id);
 
         // check that id is valid
-        if (!all[id]) {
+        if (!entry) {
             console.error(`${id} doest exist`);
             return;
         }
 
         // value is already set
-        if (all[id][key] === value) {
+        if (entry[key] === value) {
+            console.log(`${id}.${key} already has value ${value}`);
             return;
         }
 
         // set the value in the state
-        all[id][key] = value;
+        entry[key] = value;
 
         // update the db
         return this.table.update(id, { [key]: value }).then(result => {

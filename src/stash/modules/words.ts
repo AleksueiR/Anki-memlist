@@ -19,9 +19,10 @@ export class WordsModule extends StashModule<Word, WordsState> {
      * @returns {Promise<void>}
      */
     async fetchGroupWords(): Promise<void> {
+        const selectedGroupIds = this.$stash.groups.selectedIds;
         const words = await this.table
             .where('memberGroupIds')
-            .anyOf(this.$stash.groups.selectedIds)
+            .anyOf(selectedGroupIds)
             .toArray();
 
         const wordSet = reduceArrayToObject(words);

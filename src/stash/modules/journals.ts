@@ -27,8 +27,6 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @returns {Promise<void>}
      */
     async fetch(): Promise<void> {
-        console.log('rere');
-
         const journals = await this.table.toArray();
 
         const journalSet = reduceArrayToObject(journals);
@@ -49,7 +47,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      */
     async new(name = 'Default Journal'): Promise<number> {
         // create and get a new journal
-        const newJournalId = await db.journals.add(new Journal(name));
+        const newJournalId = await this.table.add(new Journal(name));
         const newJournal = await this.getFromDb(newJournalId);
 
         // add the newly created journal directly to the state
@@ -79,8 +77,6 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     setName(journalId: number, name: string): void {
-        this.all[journalId].name = name;
-
         this.updateStateAndDb(journalId, 'name', name);
     }
 

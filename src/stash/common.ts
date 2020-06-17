@@ -1,8 +1,14 @@
 import { DBEntry } from '@/api/db';
+import { notEmptyFilter } from '@/util';
 import { Table } from 'dexie';
+import log from 'loglevel';
 import { Stash } from './internal';
 
-export type SpecificUpdater<K> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(id: number, key: T, value: S) => void;
+export type SpecificUpdater<K> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(
+    id: number,
+    key: T,
+    value: S
+) => Promise<void | 0>;
 
 export type EntrySet<K> = Record<number, K>;
 
@@ -90,33 +96,62 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     protected addToAll(value: K): void {
+        if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`);
+
         this.setAll({ ...this.all, ...{ [value.id]: value } });
     }
 
     /**
      * Get an Entry with the id specified directly from the db.
+     * Throws an error if the id is not valid.
      *
      * @protected
      * @param {number} id
      * @returns {Promise<K>}
      * @memberof StashModule
      */
-    protected async getFromDb(id: number): Promise<K> {
+    protected async getFromDb(id: number): Promise<K | undefined> {
         const record = await this.table.get(id);
-        if (!record) throw new Error('record/getFromDb: Cannot load record.');
+        if (!record) log.warn(`record/getFromDb: Cannot load or record ${id} doesn't exist.`);
 
         return record;
     }
 
     /**
-     * Get an Entry with the id specified from the state. Return `undefined` if the id is not valid.
+     * Get an Entry (or a list of Entries) with the id specified from the state.
+     * Throws an error if the id is not valid.
      *
      * @param {number} id
      * @returns {K | undefined}
      * @memberof StashModule
      */
-    get(id: number): K | undefined {
-        return this.state.all[id];
+    get(id: number): K | undefined;
+    get(ids: number[]): K[];
+    get(value: number | number[]): K | undefined | K[] {
+        if (Array.isArray(value)) {
+            return value.map(id => this.get(id)).filter(notEmptyFilter);
+        }
+
+        const entry = this.state.all[value];
+        if (!entry) log.warn(`record/get: Cannot load or record ${value} doesn't exist.`);
+
+        return this.state.all[value];
+    }
+
+    /**
+     * Vet a list of supplied ids against the loaded entries.
+     *
+     * @protected
+     * @param {number[]} [ids]
+     * @returns {number[]}
+     * @memberof StashModule
+     */
+    protected vetIds(ids?: number[]): number[] {
+        // get all ids
+        const allIds = Object.keys(this.all).map(k => +k);
+
+        // either filter the the provided list to make sure there are no phony ids or return all of them if `ids` is not provided.
+        return ids ? allIds.filter(id => ids.includes(id)) : allIds;
     }
 
     /**
@@ -127,19 +162,13 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @param {*} value
      * @returns {Promise<void>}
      */
-    updateStateAndDb: SpecificUpdater<K> = async (id, key, value): Promise<void> => {
+    updateStateAndDb: SpecificUpdater<K> = async (id, key, value) => {
         const entry = this.get(id);
-
-        // check that id is valid
-        if (!entry) {
-            console.error(`${id} doest exist`);
-            return;
-        }
+        if (!entry) return 0;
 
         // value is already set
         if (entry[key] === value) {
-            console.log(`${id}.${key} already has value ${value}`);
-            return;
+            return log.info(`record/updateStateAndDb: ${id}.${key} already has value ${value}`), 0;
         }
 
         // set the value in the state
@@ -149,7 +178,9 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         return this.table.update(id, { [key]: value }).then(result => {
             // if result === 0, either the id is wrong or the value is already set
             if (result === 0) {
-                console.error(`${id} failed to update db: id doesn't exist or value is already set`);
+                log.error(`${id} failed to update db: id doesn't exist or value is already set`);
+
+                return 0;
             }
         });
     };

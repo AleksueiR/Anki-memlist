@@ -24,3 +24,16 @@ export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
 export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key = 'id') {
     return objects.reduce<Record<string, T>>((map, object) => ((map[`${object[key]}`] = object), map), {});
 }
+
+/**
+ * Filter out null/undefined from an array.
+ * https://stackoverflow.com/a/46700791
+ *
+ * @export
+ * @template TValue
+ * @param {(TValue | null | undefined)} value
+ * @returns {value is TValue}
+ */
+export function notEmptyFilter<TValue>(value: TValue | null | undefined): value is TValue {
+    return value !== null && value !== undefined;
+}

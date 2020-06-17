@@ -156,50 +156,50 @@ groups.actions = {
         this.set('groups/delete!', groupIds);
     },
 
-    /**
-     * Attaches a specified groupId to the targetGroupId's subGroupsIds.
-     *
-     * @param {*} context
-     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
-     * @returns {Promise<void>}
-     */
-    async attach(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
-        const journalId = this.get<number>('journals/activeId');
+    // /**
+    //  * Attaches a specified groupId to the targetGroupId's subGroupsIds.
+    //  *
+    //  * @param {*} context
+    //  * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
+    //  * @returns {Promise<void>}
+    //  */
+    // async attach(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
+    //     const journalId = this.get<number>('journals/activeId');
 
-        const group = await db.groups.where({ id: groupId, journalId }).first();
-        if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
+    //     const group = await db.groups.where({ id: groupId, journalId }).first();
+    //     if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
 
-        // get the target group and add `groupId` to its subgroups
-        const targetGroup = await db.groups.where({ id: targetGroupId, journalId }).first();
-        if (!targetGroup)
-            throw new Error(`groups/attach: Target group #${targetGroupId} doesn't exist in active journal.`);
+    //     // get the target group and add `groupId` to its subgroups
+    //     const targetGroup = await db.groups.where({ id: targetGroupId, journalId }).first();
+    //     if (!targetGroup)
+    //         throw new Error(`groups/attach: Target group #${targetGroupId} doesn't exist in active journal.`);
 
-        await this.set(`groups/all@${targetGroupId}.subGroupIds`, [...targetGroup.subGroupIds, groupId]);
-    },
+    //     await this.set(`groups/all@${targetGroupId}.subGroupIds`, [...targetGroup.subGroupIds, groupId]);
+    // },
 
-    /**
-     * Detaches the specified groupId from it's parent.
-     *
-     * @param {*} content
-     * @param {*} groupId
-     * @returns {Promise<void>}
-     */
-    async detach(content, groupId): Promise<void> {
-        const journalId = this.get<number>('journals/activeId');
+    // /**
+    //  * Detaches the specified groupId from it's parent.
+    //  *
+    //  * @param {*} content
+    //  * @param {*} groupId
+    //  * @returns {Promise<void>}
+    //  */
+    // async detach(content, groupId): Promise<void> {
+    //     const journalId = this.get<number>('journals/activeId');
 
-        const group = await db.groups.where({ id: groupId, journalId }).first();
-        if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
+    //     const group = await db.groups.where({ id: groupId, journalId }).first();
+    //     if (!group) throw new Error(`groups/attach: Group #${groupId} doesn't exist in active journal.`);
 
-        // get parent group
-        const parentGroup = await db.groups.where({ subGroupIds: groupId, journalId }).first();
-        if (!parentGroup) throw new Error(`groups/detach: Group #${groupId} has no parent group in active journal.`);
+    //     // get parent group
+    //     const parentGroup = await db.groups.where({ subGroupIds: groupId, journalId }).first();
+    //     if (!parentGroup) throw new Error(`groups/detach: Group #${groupId} has no parent group in active journal.`);
 
-        // remove groupId from the parent's subgroupIds
-        const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
+    //     // remove groupId from the parent's subgroupIds
+    //     const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
 
-        // dispatch an action to update the parent group state;
-        await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
-    },
+    //     // dispatch an action to update the parent group state;
+    //     await this.set(`groups/all@${parentGroup.id}.subGroupIds`, newParentSubGroupIds);
+    // },
 
     // delete
     // call words delete function with a list of words to remove from this groupId

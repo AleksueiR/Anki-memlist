@@ -5,7 +5,6 @@ import { DisplayState } from '@/store/modules/display';
 
 import { JournalsState } from '@/store/modules/journals';
 import { GroupsState } from '@/store/modules/groups';
-import { WordsState } from '@/store/modules/words';
 
 export interface RootState {
     app: AppState;
@@ -14,5 +13,4 @@ export interface RootState {
 
     journals: JournalsState;
     groups: GroupsState;
-    words: WordsState;
 }

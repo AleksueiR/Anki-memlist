@@ -6,7 +6,6 @@ import { collection } from './modules/collection';
 import { display } from './modules/display';
 import { groups } from './modules/groups';
 import { journals } from './modules/journals';
-import { words } from './modules/words';
 import { RootState } from './state';
 
 Vue.use(Vuex);
@@ -22,8 +21,7 @@ export const createStore = () =>
             collection,
             display,
             journals,
-            groups,
-            words
+            groups
         }
     });
 

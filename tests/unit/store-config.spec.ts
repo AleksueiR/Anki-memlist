@@ -1,28 +1,48 @@
-/* import db from '@/store/modules/journals/db';
-jest.mock('@/store/modules/journals/db');
- */
-
-// jest.mock('@/store/modules/journals/db');
-
-import { createLocalVue } from '@vue/test-utils';
-import Vuex from 'vuex';
-import { createStore } from './store-config';
-
-import { Stash } from '@/stash';
 import { db } from '@/api/db';
+import { Stash } from '@/stash';
+import { rePopulate } from './dummy-data';
 
-/* beforeEach(() => {
-    // Clear all instances and calls to constructor and all methods:
-    (db as any).mockClear();
-}); */
+beforeEach(() => {
+    return rePopulate(db);
+});
+
+test('', async () => {
+    const { journals, groups } = new Stash();
+
+    await journals.fetch();
+    expect(journals.activeId).toBe(1);
+
+    const journal = journals.active!;
+
+    expect(journal.rootGroupId).toBe(1);
+    expect(journal.defaultGroupId).toBe(null);
+
+    await journals.setDefaultGroupId(2);
+    expect(journal.defaultGroupId).toBe(2);
+
+    // create a new journal
+    const newJournalId = await journals.new('new journal');
+    expect(newJournalId).toBe(2);
+    expect(Object.entries(journals.all).length).toBe(2);
+
+    // check journal values
+    const newJournal = journals.get(newJournalId)!;
+    expect(newJournal.id).toBe(2);
+    expect(newJournal.defaultGroupId).toBe(null);
+    expect(newJournal.rootGroupId).toBe(7);
+    expect(newJournal.name).toBe('new journal');
+
+    // set it to active
+    await journals.setActiveId(newJournalId);
+    expect(journals.active).toBe(newJournal);
+});
 
 test('increments "count" value when "increment" is committed', async () => {
-    //(db as any).mockImplementation(() => console.log('blah'));
-
     const { journals } = new Stash();
 
     await journals.fetch();
-    const journal = await journals.active!;
+
+    const journal = journals.active!;
 
     expect(journal.rootGroupId).toBe(1);
     expect(journals.activeId).toBe(1);

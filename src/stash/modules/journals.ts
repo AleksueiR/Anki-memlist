@@ -33,10 +33,11 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         const journalSet = reduceArrayToObject(journals);
 
         // TODO: pick a journal to load somehow (a setting/option/user?)
+
         const journal = journals[0];
 
         this.setAll(journalSet);
-        this.setActiveId(journal.id); // loading the first journal by default for now
+        await this.setActiveId(journal.id); // loading the first journal by default for now
     }
 
     /**
@@ -68,12 +69,12 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         return newJournalId;
     }
 
-    setActiveId(value: number | null): void {
+    async setActiveId(value: number | null): Promise<void> {
         this.state.activeId = value;
 
         // TODO: moar
 
-        this.$stash.groups.fetchJournalGroups();
+        await this.$stash.groups.fetchJournalGroups();
     }
 
     /**

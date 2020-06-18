@@ -74,79 +74,9 @@ const db = new WordPouch();
 
 export { db };
 
-// TODO: move setup somewhere else
-
 // pack, deck, collection, list, trove, stash, lexicon, dictionary, wordstock, diction, journal, binder
 // base, hub, site,
 // lexicon
 // journal/bundle/section?/story/branch?/bough
 // word
 // journals/groups/words
-
-db.on('populate', async () => {
-    const journalId = await db.journals.add(new Journal('Default Journal'));
-
-    const rootGroupId = await db.groups.add(new Group('Root group', journalId));
-    await db.journals.update(journalId, { rootGroupId: rootGroupId });
-
-    const groupIds = await db.groups.bulkAdd(
-        [
-            new Group('list one', journalId),
-            new Group('list two', journalId, GroupDisplayMode.Archived),
-            new Group('list three', journalId)
-        ],
-        { allKeys: true }
-    );
-
-    await db.groups.update(rootGroupId, { subGroupIds: groupIds });
-
-    db.words.bulkAdd([
-        new Word('foo', journalId, [2, 3]),
-        new Word('bar', journalId, [2, 4]),
-        new Word('wonder', journalId, [3, 4]),
-        new Word('queen', journalId, [2]),
-        new Word('king', journalId, [3]),
-        new Word('treasure', journalId, [3], GroupDisplayMode.Archived)
-    ]);
-});
-
-db.open();
-
-b();
-
-async function b() {
-    const a = await db.words
-        .where('memberGroupIds')
-        .equals(1)
-        .toArray();
-
-    // console.log('words', a);
-
-    db.words.get(1).then(async word => {
-        const lists = await db.groups
-            .where('id')
-            .anyOf(word!.memberGroupIds)
-            .toArray();
-        // console.log('lists', lists);
-    });
-
-    // const b = await db.words.orderBy('text').keys();
-    const b = await db.words
-        .where('text')
-        .startsWith('f')
-        .keys();
-    // console.log('keys', b);
-
-    const c = await db.words.orderBy('text').toArray();
-    // console.log(c);
-
-    const d = await db.words
-        .filter(word => {
-            return word.text === 'foo';
-        })
-        .toArray();
-
-    // console.log('d', d);
-
-    db.groups.where('subGroupIds').equals(1);
-}

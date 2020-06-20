@@ -43,6 +43,38 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
     }
 
     /**
+     * Create a new `Group` in the root group and return its id when finished.
+     * Return 0 on failure.
+     *
+     * @param {string} [name="New Group"]
+     * @param {GroupDisplayMode} [displayMode=GroupDisplayMode.All]
+     * @returns {Promise<number | 0>} Return 0 on failure or return the id of the new group
+     * @memberof GroupsModule
+     */
+    async new(name: string = 'New Group', displayMode: GroupDisplayMode = GroupDisplayMode.All): Promise<number | 0> {
+        const activeJournal = this.getActiveJournal();
+        if (!activeJournal) return 0;
+
+        if (activeJournal.rootGroupId === null)
+            return log.info(`groups/new: Root group of the active journal ${activeJournal.id} is not set.`), 0;
+
+        // create a new group entry
+        const newGroupId = await this.table.add(new Group(name, activeJournal.id, displayMode));
+        const newGroup = await this.getFromDb(newGroupId);
+        if (!newGroup) return 0;
+
+        // add it to the root group's subGroupIds
+        if ((await this.attach(newGroup.id, activeJournal.rootGroupId)) === 0) return 0;
+
+        // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
+        // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
+        this.addToAll(newGroup);
+        this.refreshWordCounts(newGroup.id);
+
+        return newGroup.id;
+    }
+
+    /**
      * Create a Root Group for the active journal and add it to the state. Return group id.
      * Returns the id of the root group or 0 on failure.
      *
@@ -69,6 +101,32 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
     }
 
     /**
+     *
+     *
+     * @param {number[]} groupIds
+     * @returns {(Promise<void | 0>)}
+     * @memberof GroupsModule
+     */
+    async delete(groupIds: number[]): Promise<void | 0> {
+        const groups = this.get(this.vetIds(groupIds));
+        if (groups.length === 0) return;
+
+        await db.transaction('rw', this.table, async () => {
+            // remove groupIds from their parent groups
+            await Promise.all(groups.map(async ({ id }) => await this.detach(id)));
+
+            // delete from the db
+            await db.groups.bulkDelete(groups.map(({ id }) => id));
+
+            // delete from state
+            groups.forEach(group => {
+                this.removeFromAll(group);
+                delete this.wordCount[group.id];
+            });
+        });
+    }
+
+    /**
      * Count words in the provided groups using the group's `GroupDisplayMode`. If not words provided, count words in all the groups.
      * Call this:
      * - on the initial load and when a word is added, deleted, moved, or archived;
@@ -78,11 +136,13 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
      * Return 0 if the active journal is not set or the number of groups counts updated (if no groups have been updated, also return 0).
      *
      * @protected
-     * @param {number[]} [groupIds]
-     * @returns {(Promise<void | 0>)}
+     * @param {(number | number[])} [value]
+     * @returns {(Promise<number | 0>)}
      * @memberof GroupsModule
      */
-    protected async refreshWordCounts(groupIds?: number[]): Promise<number | 0> {
+    protected async refreshWordCounts(value?: number | number[]): Promise<number | 0> {
+        const groupIds = Array.isArray(value) || value === undefined ? value : [value];
+
         const activeJournal = this.getActiveJournal();
         if (!activeJournal) return 0;
 
@@ -117,16 +177,16 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         const targetGroup = this.get(targetGroupId);
         if (!targetGroup) return 0;
 
-        await this.updateStateAndDb(targetGroupId, 'subGroupIds', [...targetGroup.subGroupIds, groupId]);
+        return this.updateStateAndDb(targetGroupId, 'subGroupIds', [...targetGroup.subGroupIds, groupId]);
     }
 
     /**
      * Detach the specified groupId from it's parent.
      * Return 0 on failure.
      *
-     * @param {*} content
-     * @param {*} groupId
-     * @returns {Promise<void>}
+     * @param {number} groupId
+     * @returns {(Promise<void | 0>)}
+     * @memberof GroupsModule
      */
     async detach(groupId: number): Promise<void | 0> {
         if (!this.isValid(groupId)) return 0;
@@ -139,11 +199,45 @@ export class GroupsModule extends StashModule<Group, GroupsState> {
         // remove groupId from the parent's subgroupIds
         const newParentSubGroupIds = removeFromArrayByValue(parentGroup.subGroupIds, groupId);
 
-        await this.updateStateAndDb(parentGroup.id, 'subGroupIds', newParentSubGroupIds);
+        return this.updateStateAndDb(parentGroup.id, 'subGroupIds', newParentSubGroupIds);
+    }
+
+    /**
+     * Move a `Group` from one subgroup to another.
+     * Will remove from the current parent group as the same group cannot be in several subgroups.
+     *
+     * @param {number} groupId
+     * @param {number} targetGroupId
+     * @returns {(Promise<void | 0>)}
+     * @memberof GroupsModule
+     */
+    async move(groupId: number, targetGroupId: number): Promise<void | 0> {
+        return db.transaction('rw', this.table, async () => {
+            if ((await this.detach(groupId)) === 0) return 0;
+            if ((await this.attach(groupId, targetGroupId)) === 0) return 0;
+        });
+    }
+
+    async setName(groupId: number, name: string): Promise<void | 0> {
+        return this.updateStateAndDb(groupId, 'name', name);
+    }
+
+    /**
+     * Set the display mode of a given group.
+     *
+     * @param {number} groupId
+     * @param {GroupDisplayMode} displayMode
+     * @returns {(Promise<void | 0>)}
+     * @memberof GroupsModule
+     */
+    async setDisplayMode(groupId: number, displayMode: GroupDisplayMode): Promise<void | 0> {
+        if ((await this.updateStateAndDb(groupId, 'displayMode', displayMode)) === 0) return 0;
+        if ((await this.refreshWordCounts(groupId)) === 0) return 0;
     }
 
     /**
      * Return an active journal or undefined if the active journal is not set.
+     * Return 0 on failure.
      *
      * @protected
      * @returns {(Journal | undefined)}

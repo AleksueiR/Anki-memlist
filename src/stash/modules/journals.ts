@@ -66,7 +66,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
         await this.setRootGroupId(rootGroupId);
 
-        return newJournalId;
+        return newJournal.id;
     }
 
     async setActiveId(value: number | null): Promise<void> {

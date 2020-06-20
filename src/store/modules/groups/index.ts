@@ -92,69 +92,69 @@ groups.actions = {
     //     );
     // },
 
-    /**
-     * Create a new `Group` in the root group and return its id when finished.
-     *
-     * @param {*} { state }
-     * @returns {Promise<number>}
-     */
-    async new({ state }): Promise<number> {
-        // get active journal
-        const activeJournal = this.get<Journal | undefined>('journals/active');
-        if (!activeJournal) throw new Error('groups/new: Cannot create new Group. Active Journal is not set.');
+    // /**
+    //  * Create a new `Group` in the root group and return its id when finished.
+    //  *
+    //  * @param {*} { state }
+    //  * @returns {Promise<number>}
+    //  */
+    // async new({ state }): Promise<number> {
+    //     // get active journal
+    //     const activeJournal = this.get<Journal | undefined>('journals/active');
+    //     if (!activeJournal) throw new Error('groups/new: Cannot create new Group. Active Journal is not set.');
 
-        const newGroup = await db.transaction('rw', db.journals, db.groups, async () => {
-            // create a new group entry
-            const newGroupId = await db.groups.put(new Group('New Group', activeJournal.id));
-            const newGroup = await db.groups.get(newGroupId);
-            if (!newGroup) throw new Error('groups/new: Cannot create and load a Group record.');
+    //     const newGroup = await db.transaction('rw', db.journals, db.groups, async () => {
+    //         // create a new group entry
+    //         const newGroupId = await db.groups.put(new Group('New Group', activeJournal.id));
+    //         const newGroup = await db.groups.get(newGroupId);
+    //         if (!newGroup) throw new Error('groups/new: Cannot create and load a Group record.');
 
-            // add it to the root group's subGroupIds
-            await this.set('groups/attach!', { groupId: newGroup.id, targetGroupId: activeJournal.rootGroupId });
+    //         // add it to the root group's subGroupIds
+    //         await this.set('groups/attach!', { groupId: newGroup.id, targetGroupId: activeJournal.rootGroupId });
 
-            // and return the newly created group
-            return newGroup;
-        });
+    //         // and return the newly created group
+    //         return newGroup;
+    //     });
 
-        // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
-        // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
-        this.set('groups/all', { ...state.all, ...{ [newGroup.id]: newGroup } });
-        this.set('groups/refreshWordCounts!', [newGroup.id]);
+    //     // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
+    //     // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
+    //     this.set('groups/all', { ...state.all, ...{ [newGroup.id]: newGroup } });
+    //     this.set('groups/refreshWordCounts!', [newGroup.id]);
 
-        return newGroup.id;
-    },
+    //     return newGroup.id;
+    // },
 
-    /**
-     * Move a `Group` from one subgroup to another.
-     * Will remove from the current parent group as the same group cannot be in several subgroups.
-     *
-     * @param {*} context
-     * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
-     * @returns {Promise<void>}
-     */
-    async move(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
-        await db.transaction('rw', db.groups, async () => {
-            await this.set('groups/detach!', groupId);
-            await this.set('groups/attach!', { groupId, targetGroupId });
-        });
-    },
+    // /**
+    //  * Move a `Group` from one subgroup to another.
+    //  * Will remove from the current parent group as the same group cannot be in several subgroups.
+    //  *
+    //  * @param {*} context
+    //  * @param {{ groupId: number; targetGroupId: number }} { groupId, targetGroupId }
+    //  * @returns {Promise<void>}
+    //  */
+    // async move(context, { groupId, targetGroupId }: { groupId: number; targetGroupId: number }): Promise<void> {
+    //     await db.transaction('rw', db.groups, async () => {
+    //         await this.set('groups/detach!', groupId);
+    //         await this.set('groups/attach!', { groupId, targetGroupId });
+    //     });
+    // },
 
-    async delete({ state }, groupIds: number[]): Promise<void> {
-        groupIds = groupIds.filter(groupId => state.all[groupId]);
-        if (groupIds.length === 0) return; // if groupId is invalid, do nothing
+    // async delete({ state }, groupIds: number[]): Promise<void> {
+    //     groupIds = groupIds.filter(groupId => state.all[groupId]);
+    //     if (groupIds.length === 0) return; // if groupId is invalid, do nothing
 
-        await db.transaction('rw', db.groups, db.words, async () => {
-            await this.set('words/???', groupIds);
+    //     await db.transaction('rw', db.groups, db.words, async () => {
+    //         await this.set('words/???', groupIds);
 
-            // remove groupIds from their parent groups
-            await Promise.all(groupIds.map(async groupId => await this.set('groups/detach!', groupId)));
+    //         // remove groupIds from their parent groups
+    //         await Promise.all(groupIds.map(async groupId => await this.set('groups/detach!', groupId)));
 
-            // delete from the db
-            await db.groups.bulkDelete(groupIds);
-        });
+    //         // delete from the db
+    //         await db.groups.bulkDelete(groupIds);
+    //     });
 
-        this.set('groups/delete!', groupIds);
-    },
+    //     this.set('groups/delete!', groupIds);
+    // },
 
     // /**
     //  * Attaches a specified groupId to the targetGroupId's subGroupsIds.
@@ -226,7 +226,7 @@ groups.actions = {
         // TODO: clear existing lookup
         // when selected groups change, refresh the list of words
         await this.set('words/fetchGroupWords!');
-    },
+    }
 
     /**
      * This is a "catch-all" action to intersect sub-properties writes to `state.all` by pathify and keep the db in sync.
@@ -235,40 +235,40 @@ groups.actions = {
      * @param {*} payload
      * @returns {Promise<void>}
      */
-    async setAll({ state }, payload): Promise<void> {
-        const result = await handleActionPayload(this, db.groups, state.all, 'groups/all!', payload);
+    // async setAll({ state }, payload): Promise<void> {
+    //     const result = await handleActionPayload(this, db.groups, state.all, 'groups/all!', payload);
 
-        if (!result) {
-            return;
-        }
+    //     if (!result) {
+    //         return;
+    //     }
 
-        // dispatch any related actions `after` the db has been updated
-        switch (result.field) {
-            case 'displayMode':
-                await this.set('groups/refreshWordCounts!', [result.id]);
-                break;
-        }
-    }
+    //     // dispatch any related actions `after` the db has been updated
+    //     switch (result.field) {
+    //         case 'displayMode':
+    //             await this.set('groups/refreshWordCounts!', [result.id]);
+    //             break;
+    //     }
+    // }
 };
 
 groups.mutations = {
-    ...make.mutations(state),
+    ...make.mutations(state)
 
     /**
      * Reset the state to its defaults.
      *
      * @param {*} state
      */
-    reset(state): void {
-        Object.assign(state, new GroupsState());
-    },
+    // reset(state): void {
+    //     Object.assign(state, new GroupsState());
+    // },
 
-    delete(state, groupIds: number[]) {
-        groupIds.forEach(groupId => {
-            delete state.all[groupId];
-            delete state.wordCount[groupId];
-        });
-    }
+    // delete(state, groupIds: number[]) {
+    //     groupIds.forEach(groupId => {
+    //         delete state.all[groupId];
+    //         delete state.wordCount[groupId];
+    //     });
+    // }
 };
 
 export { groups };

@@ -90,15 +90,28 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 
     /**
      * Add the provided value to the `state.all` set.
+     * Return 0 on failure.
+     *
+     * @protected
+     * @param {K} value
+     * @returns {(void | 0)}
+     * @memberof StashModule
+     */
+    protected addToAll(value: K): void | 0 {
+        if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`), 0;
+
+        this.setAll({ ...this.all, ...{ [value.id]: value } });
+    }
+
+    /**
+     * Remove the provided value from the `state.all` set.
      *
      * @protected
      * @param {K} value
      * @memberof StashModule
      */
-    protected addToAll(value: K): void {
-        if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`);
-
-        this.setAll({ ...this.all, ...{ [value.id]: value } });
+    protected removeFromAll(value: K): void {
+        delete this.all[value.id];
     }
 
     /**

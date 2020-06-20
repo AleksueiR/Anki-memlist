@@ -55,7 +55,6 @@ export class WordsModule extends StashModule<Word, WordsState> {
         if (!activeJournal) return 0;
 
         return await this.table
-            // .where({ journalId: activeJournal.id, memberGroupIds: groupId, ...isArchivedClause })
             .where({ memberGroupIds: groupId })
             .filter(word => {
                 if (word.journalId !== activeJournal.id) return false;

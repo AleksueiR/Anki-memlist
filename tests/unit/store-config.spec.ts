@@ -1,4 +1,4 @@
-import { db } from '@/api/db';
+import { db, Group } from '@/api/db';
 import { Stash } from '@/stash';
 import { rePopulate } from './dummy-data';
 
@@ -6,7 +6,7 @@ beforeEach(() => {
     return rePopulate(db);
 });
 
-test('', async () => {
+test('creates journals', async () => {
     const { journals, groups } = new Stash();
 
     await journals.fetch();
@@ -35,6 +35,65 @@ test('', async () => {
     // set it to active
     await journals.setActiveId(newJournalId);
     expect(journals.active).toBe(newJournal);
+});
+
+test('moves groups', async () => {
+    const { journals, groups } = new Stash();
+
+    await journals.fetch();
+
+    const rootGroup = groups.get(1)!;
+
+    // check default subgroups
+    expect(rootGroup.subGroupIds).toEqual([2, 3, 4, 5, 6]);
+    expect(groups.get(2)?.subGroupIds).toEqual([]);
+
+    // move things around
+    await groups.move(6, 2);
+
+    expect(groups.get(2)?.subGroupIds).toEqual([6]);
+    expect(rootGroup.subGroupIds).toEqual([2, 3, 4, 5]);
+
+    // create a new group
+    const newGroupId = await groups.new('new group');
+    expect(newGroupId).toBe(7);
+
+    expect(rootGroup.subGroupIds).toEqual([2, 3, 4, 5, 7]);
+
+    // move it
+    await groups.move(7, 6);
+
+    expect(rootGroup.subGroupIds).toEqual([2, 3, 4, 5]);
+    expect(groups.get(2)?.subGroupIds).toEqual([6]);
+    expect(groups.get(6)?.subGroupIds).toEqual([7]);
+
+    // move everything to 2
+    await groups.move(5, 2);
+    await groups.move(4, 2);
+    await groups.move(3, 2);
+    await groups.move(7, 2);
+
+    // try silly things
+    await groups.move(2, 2);
+
+    expect(rootGroup.subGroupIds).toEqual([2]);
+    expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
+    expect(groups.get(6)?.subGroupIds).toEqual([]);
+
+    // try moving the root group
+    await groups.move(1, 2);
+    expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
+
+    const err = await groups.detach(1);
+    expect(err).toBe(0);
+
+    const err2 = await groups.attach(1, 2);
+    expect(err).toBe(0);
+    expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
+
+    const err3 = await groups.attach(2, 3);
+    expect(err).toBe(0);
+    expect(groups.get(3)?.subGroupIds.sort()).toEqual([]);
 });
 
 test('increments "count" value when "increment" is committed', async () => {

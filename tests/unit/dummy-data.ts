@@ -16,11 +16,11 @@ export async function rePopulate(db: WordPouch): Promise<void> {
 
     const groupIds = await db.groups.bulkAdd(
         [
-            new Group('List Two', journalId),
-            new Group('List Three', journalId),
-            new Group('List Four', journalId),
-            new Group('List Five', journalId, GroupDisplayMode.Archived),
-            new Group('List Six', journalId, GroupDisplayMode.Active)
+            new Group('Group Two', journalId),
+            new Group('Group Three', journalId),
+            new Group('Group Four', journalId),
+            new Group('Group Five', journalId, GroupDisplayMode.Archived),
+            new Group('Group Six', journalId, GroupDisplayMode.Active)
         ],
         { allKeys: true }
     );

@@ -14,17 +14,23 @@ export interface DBEntry {
     readonly id: number;
 }
 
-export class Journal implements DBEntry {
+export interface DBJournalEntry extends DBEntry {}
+
+export interface DBNonJournalEntry extends DBEntry {
+    readonly journalId?: number;
+}
+
+export class Journal implements DBJournalEntry {
     readonly id: number;
 
     constructor(
         public name: string = 'Default Journal',
-        public rootGroupId: number | null = null,
+        public rootGroupId: number = -1,
         public defaultGroupId: number | null = null
     ) {}
 }
 
-export class Group implements DBEntry {
+export class Group implements DBNonJournalEntry {
     readonly id: number;
 
     constructor(
@@ -35,7 +41,7 @@ export class Group implements DBEntry {
     ) {}
 }
 
-export class Word implements DBEntry {
+export class Word implements DBNonJournalEntry {
     readonly id: number;
 
     constructor(

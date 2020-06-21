@@ -15,6 +15,8 @@ export const NON_ID = -1;
 export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     const arrayClone = [...array];
     const index = arrayClone.indexOf(value);
+    if (index === -1) return arrayClone;
+
     arrayClone.splice(index, 1);
 
     return arrayClone;
@@ -36,4 +38,8 @@ export function reduceArrayToObject<T extends { [name: string]: any }>(objects: 
  */
 export function notEmptyFilter<TValue>(value: TValue | null | undefined): value is TValue {
     return value !== null && value !== undefined;
+}
+
+export function wrapInArray<K>(groupIds: K | K[]): K[] {
+    return Array.isArray(groupIds) ? groupIds : [groupIds];
 }

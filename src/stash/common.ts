@@ -1,5 +1,5 @@
-import { DBEntry } from '@/api/db';
-import { notEmptyFilter } from '@/util';
+import { DBEntry, DBNonJournalEntry, Journal } from '@/api/db';
+import { notEmptyFilter, wrapInArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
@@ -89,15 +89,21 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 
     /**
-     * Add the provided value to the `state.all` set.
-     * Return 0 on failure.
+     * Add the provided value or a list of values to the `state.all` set.
+     * Return 0 on failure; returns void on success.
      *
      * @protected
-     * @param {K} value
-     * @returns {(void | 0)}
+     * @param {(K | K[])} values
+     * @returns {(void | 0 | (void | 0)[])}
      * @memberof StashModule
      */
-    protected addToAll(value: K): void | 0 {
+    protected addToAll(value: K): void | 0;
+    protected addToAll(values: K[]): (void | 0)[];
+    protected addToAll(value: K | K[]): void | 0 | (void | 0)[] {
+        if (Array.isArray(value)) {
+            return value.map(value => this.addToAll(value));
+        }
+
         if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`), 0;
 
         this.setAll({ ...this.all, ...{ [value.id]: value } });
@@ -107,11 +113,28 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * Remove the provided value from the `state.all` set.
      *
      * @protected
-     * @param {K} value
+     * @param {(K | K[])} values
+     * @returns {void}
      * @memberof StashModule
      */
-    protected removeFromAll(value: K): void {
+    protected removeFromAll(value: K): void;
+    protected removeFromAll(values: K[]): void;
+    protected removeFromAll(value: K | K[]): void {
+        if (Array.isArray(value)) {
+            return value.forEach(this.removeFromAll);
+        }
+
         delete this.all[value.id];
+    }
+
+    /**
+     * Return ids of the `all` collection.
+     *
+     * @returns {number[]}
+     * @memberof StashModule
+     */
+    protected getAllIds(): number[] {
+        return Object.keys(this.all).map(k => +k);
     }
 
     /**
@@ -134,8 +157,8 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * Get an Entry (or a list of Entries) with the id specified from the state.
      * Throws an error if the id is not valid.
      *
-     * @param {number} id
-     * @returns {K | undefined}
+     * @param {(number | number[])} value
+     * @returns {(K | undefined | K[])}
      * @memberof StashModule
      */
     get(id: number): K | undefined;
@@ -155,16 +178,17 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * Vet a list of supplied ids against the loaded entries.
      *
      * @protected
-     * @param {number[]} [ids]
+     * @param {number[]} [value]
      * @returns {number[]}
      * @memberof StashModule
      */
-    protected vetIds(ids?: number[]): number[] {
-        // get all ids
-        const allIds = Object.keys(this.all).map(k => +k);
+    protected vetIds(value: number | number[]): number[] {
+        const ids = wrapInArray(value);
+        const allIds = this.getAllIds();
 
         // either filter the the provided list to make sure there are no phony ids or return all of them if `ids` is not provided.
-        return ids ? allIds.filter(id => ids.includes(id)) : allIds;
+        // this also filters out duplicates
+        return allIds.filter(id => ids.includes(id));
     }
 
     /**
@@ -205,6 +229,54 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      */
     reset(): void {
         Object.assign(this.state, new this.StateClass());
+    }
+}
+
+export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashModuleState<K>> extends StashModule<
+    K,
+    T
+> {
+    /**
+     * Return an active journal or undefined if the active journal is not set.
+     *
+     * @protected
+     * @returns {(Journal | undefined)}
+     * @memberof WordsModule
+     */
+    protected getActiveJournal(): Journal | undefined {
+        const activeJournal = this.$stash.journals.active;
+        if (!activeJournal) return log.warn('record/getActiveJournal: Active journal is not set'), undefined;
+
+        if (activeJournal.rootGroupId <= 0) log.warn('record: Root Group of the Active journal is not set'), undefined;
+
+        return activeJournal;
+    }
+
+    /**
+     * Check if the supplied non-journal entry id is valid and belongs to the active journal.
+     * If at least one id is not valid, return `false`.
+     *
+     * @param {number} id
+     * @returns {boolean}
+     * @memberof WordsModule
+     */
+    isValid(value: number | number[]): boolean {
+        if (Array.isArray(value)) {
+            return value.every(id => this.isValid(id));
+        }
+
+        const activeJournal = this.getActiveJournal();
+        if (!activeJournal) return false;
+
+        const entry = this.get(value);
+        if (!entry) return false;
+
+        if (entry.journalId !== activeJournal.id) {
+            log.warn(`record/isValid: Word ${value} doesn't belong to Journal ${activeJournal.id}.`);
+            return false;
+        }
+
+        return true;
     }
 }
 

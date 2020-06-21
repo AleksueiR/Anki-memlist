@@ -1,7 +1,9 @@
-import { db, Journal, Word, WordArchived } from '@/api/db';
-import { reduceArrayToObject } from '@/util';
+import { db, Word, WordArchived } from '@/api/db';
+import { notEmptyFilter, reduceArrayToObject, wrapInArray } from '@/util';
 import log from 'loglevel';
-import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
+import { NonJournalStashModule } from '../common';
+import { EntrySet, Stash, StashModuleState } from '../internal';
+import { SelectionMode } from './groups';
 
 export type WordSet = EntrySet<Word>;
 
@@ -9,7 +11,7 @@ export class WordsState extends StashModuleState<Word> {
     selectedIds: number[] = [];
 }
 
-export class WordsModule extends StashModule<Word, WordsState> {
+export class WordsModule extends NonJournalStashModule<Word, WordsState> {
     constructor(stash: Stash) {
         super(stash, db.words, WordsState);
     }
@@ -41,6 +43,86 @@ export class WordsModule extends StashModule<Word, WordsState> {
     }
 
     /**
+     * Add a new word to the selected groups.
+     * If nothing was added/linked, return 0;
+     * If a single text was provided and added/linked, return the id of the word.
+     * If several text were provided and added/linked, return an array of words ids.
+     *
+     * @param {string} text
+     * @returns {(Promise<number | 0>)}
+     * @memberof WordsModule
+     */
+    async new(text: string): Promise<number | 0>;
+    async new(texts: string[]): Promise<(number | void)[] | 0>;
+    async new(value: string | string[]): Promise<number | (number | void)[] | 0> {
+        const activeJournal = this.getActiveJournal();
+        if (!activeJournal) return 0;
+
+        // remove empty lines, trim space
+        let values = wrapInArray(value)
+            .map(text => text.trim().toLocaleLowerCase())
+            .filter(notEmptyFilter)
+            .filter(text => text !== '');
+
+        values = [...new Set(values)]; // remove duplicates
+
+        const selectedGroupIds = this.$stash.groups.selectedIds; // assume these ids are valid and no Root Group
+        if (selectedGroupIds.length === 0) return log.warn('words/new: No groups are selected'), 0;
+
+        return db
+            .transaction('rw', this.table, async () => {
+                // find existing words
+                const existingWords = await this.table
+                    .where('text')
+                    .anyOf(values)
+                    .filter(word => word.journalId === activeJournal.id) // filter by active journal
+                    .toArray();
+
+                const setMemberGroupIdsResult = await Promise.all(
+                    existingWords.map(word => this.setMemberGroupIds(word, selectedGroupIds, SelectionMode.Add))
+                );
+                if (setMemberGroupIdsResult.includes(0)) return 0; // something broke
+                console.log('setMemberGroupIdsResult ', setMemberGroupIdsResult);
+
+                // filter down to new words
+                const existingWordsTexts = existingWords.map(word => word.text);
+                const newTexts = values.filter(text => !existingWordsTexts.includes(text));
+
+                let newWordIds: number[] = [];
+                let newWords: Word[] = [];
+
+                if (newTexts.length > 0) {
+                    // write new words to the db
+                    newWordIds = await this.table.bulkAdd(
+                        newTexts.map(text => new Word(text, activeJournal.id, selectedGroupIds)),
+                        { allKeys: true }
+                    );
+
+                    // check that new words have been written correctly
+                    newWords = await this.table.bulkGet(newWordIds);
+                    if (newWordIds.length !== newTexts.length)
+                        return log.warn('words/new: Cannot write words to the db.'), 0;
+
+                    this.addToAll(newWords);
+                }
+
+                await this.fetchGroupWords();
+                await this.$stash.groups.refreshWordCounts(selectedGroupIds);
+
+                const allModifiedWords = [...newWords, ...existingWords];
+
+                if (!Array.isArray(value)) {
+                    if (allModifiedWords.length > 1) log.warn('words/new: Something is wrong.'), 0;
+
+                    return allModifiedWords[0].id;
+                } else {
+                    return value.map(text => allModifiedWords.find(word => word.text === text)?.id);
+                }
+            })
+            .catch(() => Promise.resolve(0));
+    }
+
+    /**
      * Count words in the specified group. Return the word count.
      * Return 0 if the active journal is not set or the group doesn't exist or the group has 0 words.
      *
@@ -66,45 +148,30 @@ export class WordsModule extends StashModule<Word, WordsState> {
             .count();
     }
 
-    /**
-     * Return an active journal or undefined if the active journal is not set.
-     *
-     * @protected
-     * @returns {(Journal | undefined)}
-     * @memberof WordsModule
-     */
-    protected getActiveJournal(): Journal | undefined {
-        const activeJournal = this.$stash.journals.active;
-        if (!activeJournal) return log.warn('words: Active journal is not set'), undefined;
+    protected async setMemberGroupIds(
+        word: Word,
+        groupIds: number[],
+        selectionMode: SelectionMode = SelectionMode.Replace
+    ): Promise<number> {
+        let newMemberGroupIds;
 
-        return activeJournal;
-    }
+        switch (selectionMode) {
+            case SelectionMode.Replace:
+                newMemberGroupIds = groupIds;
+                break;
 
-    /**
-     * Check if the supplied word id is valid and belongs to the active journal.
-     *
-     * @param {number} id
-     * @returns {boolean}
-     * @memberof WordsModule
-     */
-    isValid(id: number): boolean;
-    isValid(ids: number[]): boolean;
-    isValid(value: number | number[]): boolean {
-        if (Array.isArray(value)) {
-            return value.every(id => this.isValid(id));
+            case SelectionMode.Add:
+                newMemberGroupIds = [...new Set([...word.memberGroupIds, ...groupIds])];
+
+                console.log('newMemberGroupIds a', newMemberGroupIds);
+
+                break;
+
+            case SelectionMode.Remove:
+                newMemberGroupIds = word.memberGroupIds.filter(id => !groupIds.includes(id));
+                break;
         }
 
-        const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return false;
-
-        const word = this.get(value);
-        if (!word) return false;
-
-        if (word.journalId !== activeJournal.id) {
-            log.warn(`words/isValid: Word ${value} doesn't belong to Journal ${activeJournal.id}.`);
-            return false;
-        }
-
-        return true;
+        return this.table.update(word.id, { memberGroupIds: newMemberGroupIds });
     }
 }

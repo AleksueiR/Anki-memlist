@@ -1,4 +1,4 @@
-import { db, Journal } from '@/api/db';
+import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import log from 'loglevel';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
@@ -52,24 +52,26 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         // create and get a new journal
         const newJournalId = await this.table.add(new Journal(name));
         const newJournal = await this.getFromDb(newJournalId);
-        if (!newJournal) return 0;
+        if (!newJournal) return log.warn('journals/new: Cannot create a new journal.'), 0;
+
+        // create a Root Group directly from here as it's done only during the initial set up and cannot be changed later
+        const rootGroupId = await db.groups.add(new Group('Root group', newJournal.id));
+        const rootGroup = await db.groups.get(rootGroupId);
+        if (!rootGroup) return log.warn('journals/new: Cannot create a Root Group.'), 0;
 
         // add the newly created journal directly to the state
         // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
         this.addToAll(newJournal);
 
-        this.setActiveId(newJournal.id);
-
-        // create a root group for this new journal, set its `journalId` and journal's `rootGroupId`
-        const rootGroupId = await this.$stash.groups.createRootGroup();
-        if (rootGroupId === 0) return 0;
-
-        await this.setRootGroupId(rootGroupId);
+        // set rootGroupId of the active Journal;
+        // rootGroupId cannot be changed after a journal is created
+        await this.updateStateAndDb(newJournal.id, 'rootGroupId', rootGroupId);
+        await this.setActiveId(newJournal.id);
 
         return newJournal.id;
     }
 
-    async setActiveId(value: number | null): Promise<void> {
+    async setActiveId(value: number | null = null): Promise<void> {
         this.state.activeId = value;
 
         // TODO: moar
@@ -88,22 +90,6 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      */
     async setName(journalId: number, name: string): Promise<void | 0> {
         return this.updateStateAndDb(journalId, 'name', name);
-    }
-
-    /**
-     * Set rootGroupId of the active Journal.
-     * Returns 0 if the operation doesn't succeed.
-     *
-     * @protected
-     * @param {(number | null)} rootGroupId
-     * @returns {(Promise<void | 0>)}
-     * @memberof JournalsModule
-     */
-    protected async setRootGroupId(rootGroupId: number | null): Promise<void | 0> {
-        if (!this.activeId) return log.warn('journals/setRootGroupId: Active journal is not set.'), 0;
-        if (rootGroupId && !this.$stash.groups.isValid(rootGroupId)) return 0;
-
-        return this.updateStateAndDb(this.activeId, 'rootGroupId', rootGroupId);
     }
 
     /**

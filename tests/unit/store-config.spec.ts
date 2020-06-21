@@ -1,15 +1,19 @@
-import { db, Group } from '@/api/db';
-import { Stash } from '@/stash';
+import { db } from '@/api/db';
+import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
 import { rePopulate } from './dummy-data';
 
-beforeEach(() => {
-    return rePopulate(db);
+let journals: JournalsModule;
+let groups: GroupsModule;
+let words: WordsModule;
+
+beforeEach(async () => {
+    ({ journals, groups, words } = new Stash());
+
+    await rePopulate(db);
+    return journals.fetch();
 });
 
 test('creates journals', async () => {
-    const { journals, groups } = new Stash();
-
-    await journals.fetch();
     expect(journals.activeId).toBe(1);
 
     const journal = journals.active!;
@@ -38,10 +42,6 @@ test('creates journals', async () => {
 });
 
 test('moves groups', async () => {
-    const { journals, groups } = new Stash();
-
-    await journals.fetch();
-
     const rootGroup = groups.get(1)!;
 
     // check default subgroups
@@ -81,26 +81,155 @@ test('moves groups', async () => {
     expect(groups.get(6)?.subGroupIds).toEqual([]);
 
     // try moving the root group
-    await groups.move(1, 2);
+    const err0 = await groups.move(1, 2);
+    expect(err0).toBe(0);
     expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
 
-    const err = await groups.detach(1);
-    expect(err).toBe(0);
-
-    const err2 = await groups.attach(1, 2);
-    expect(err).toBe(0);
-    expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
-
-    const err3 = await groups.attach(2, 3);
-    expect(err).toBe(0);
+    const err1 = await groups.move(2, 3); // move a group inside its child
+    expect(err1).toBe(0);
     expect(groups.get(3)?.subGroupIds.sort()).toEqual([]);
+
+    // TODO: try moving groups between journals and root groups too
 });
 
+test('selects groups with no active journal', async () => {
+    journals.setActiveId();
+
+    const err0 = await groups.setSelectedIds(2);
+    expect(err0).toBe(0);
+});
+
+test('selects Root Groups', async () => {
+    await groups.setSelectedIds(1);
+    expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
+
+    await groups.setSelectedIds([2, 1, 3]);
+    expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
+    expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
+});
+
+describe('creating new words', () => {
+    test('adds words when not groups are selected', async () => {
+        const err0 = await words.new('test1');
+        expect(err0).toBe(0); // no groups selected
+
+        const err1 = await words.new(['test1', 'test2']);
+        expect(err1).toBe(0); // no groups selected
+    });
+
+    test('adds a new word to a single group', async () => {
+        const group2WordCount = groups.wordCount[2];
+
+        await groups.setSelectedIds(2);
+
+        const result0 = await words.new('test1');
+
+        expect(result0).not.toBe(0);
+        expect(words.get(result0)?.memberGroupIds).toEqual([2]);
+        expect(groups.wordCount[2]).toBe(group2WordCount + 1);
+    });
+
+    test('adds several new words to a single group', async () => {
+        const group2WordCount = groups.wordCount[2];
+
+        await groups.setSelectedIds(2);
+        const [result0, result1] = (await words.new(['test1', 'test2'])) as number[];
+
+        console.log(result0, result1);
+
+        expect(words.get(result0)?.memberGroupIds).toEqual([2]);
+        expect(words.get(result1)?.memberGroupIds).toEqual([2]);
+        expect(groups.wordCount[2]).toBe(group2WordCount + 2);
+    });
+
+    test('adds a new word to several groups', async () => {
+        const group2WordCount = groups.wordCount[2];
+        const group3WordCount = groups.wordCount[3];
+
+        await groups.setSelectedIds([2, 3]);
+        const result0 = await words.new('test1');
+
+        expect(result0).not.toBe(0);
+        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
+        expect(groups.wordCount[2]).toBe(group2WordCount + 1);
+        expect(groups.wordCount[3]).toBe(group3WordCount + 1);
+    });
+
+    test('adds several new words to several groups', async () => {
+        const group2WordCount = groups.wordCount[2];
+        const group3WordCount = groups.wordCount[3];
+
+        await groups.setSelectedIds([2, 3]);
+
+        const [result0, result1] = (await words.new(['test1', 'test2'])) as number[];
+        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
+        expect(words.get(result1)?.memberGroupIds).toEqual([2, 3]);
+
+        expect(groups.wordCount[2]).toBe(group2WordCount + 2);
+        expect(groups.wordCount[3]).toBe(group3WordCount + 2);
+    });
+
+    test('adds an existing word to its parent group', async () => {
+        await groups.setSelectedIds(2);
+
+        const totalWordCount = Object.keys(words.all).length;
+
+        const result1 = await words.new('steep');
+        expect(result1).toBe(1);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        expect(groups.wordCount[2]).toBe(7);
+        expect(Object.keys(words.all).length).toBe(totalWordCount);
+    });
+
+    test('adds an existing word to a different group', async () => {
+        await groups.setSelectedIds(3);
+
+        const wordCount = Object.keys(words.all).length;
+
+        const result0 = await words.new('steep');
+        console.log('result0', result0, words.get(result0), words.all);
+
+        expect(result0).toBe(1);
+        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
+        expect(groups.wordCount[3]).toBe(10);
+        expect(Object.keys(words.all).length).toBe(wordCount + 1); // "steep" was not in group 3
+    });
+
+    test('adds an existing word to several groups', async () => {
+        await groups.setSelectedIds([2, 3, 4]);
+
+        const wordCount = Object.keys(words.all).length;
+
+        const result0 = await words.new('steep');
+        expect(result0).toBe(1);
+        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3, 4]);
+        expect(groups.wordCount[2]).toBe(7);
+        expect(groups.wordCount[3]).toBe(10);
+        expect(groups.wordCount[4]).toBe(8);
+        expect(Object.keys(words.all).length).toBe(wordCount);
+    });
+
+    test('adds an existing and a new word to a single group', async () => {
+        await groups.setSelectedIds(3);
+
+        const wordCount = Object.keys(words.all).length;
+
+        const [result0, result1] = (await words.new(['steep', 'test1'])) as number[];
+        expect(result0).not.toBe(0);
+        expect(result1).not.toBe(0);
+        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
+        expect(words.get(result1)?.memberGroupIds).toEqual([3]);
+        expect(groups.wordCount[3]).toBe(11);
+        expect(Object.keys(words.all).length).toBe(wordCount + 2); // "steep" was not in group 3
+    });
+});
+
+// more tests
+// - selectedIds([2,2])
+// - try to link a word from another journal
+// - try some garbage input instead of words
+
 test('increments "count" value when "increment" is committed', async () => {
-    const { journals } = new Stash();
-
-    await journals.fetch();
-
     const journal = journals.active!;
 
     expect(journal.rootGroupId).toBe(1);
@@ -120,41 +249,3 @@ test('increments "count" value when "increment" is committed', async () => {
 
     expect(Object.entries(journals.all).length).toBe(0);
 });
-
-/* test('increments "count" value when "increment" is committed', async () => {
-    //(db as any).mockImplementation(() => console.log('blah'));
-
-    const localVue = createLocalVue();
-    localVue.use(Vuex);
-    // const store = new Vuex.Store(createStore());
-    const store = createStore();
-
-    await store.set('journals/fetch!');
-    const journal = await store.get<any>('journals/active');
-
-    expect(journal.rootGroupId).toBe(1);
-    expect(store.state.journals.activeId).toBe(1);
-}); */
-
-/* test('updates "evenOrOdd" getter when "increment" is committed', () => {
-    const localVue = createLocalVue();
-    localVue.use(Vuex);
-    const store = new Vuex.Store(createStore());
-    expect(store.getters.evenOrOdd).toBe('even');
-    store.commit('increment');
-    expect(store.getters.evenOrOdd).toBe('odd');
-}); */
-
-/* import { shallowMount } from '@vue/test-utils';
-import HelloWorld from '@/components/HelloWorld.vue';
-
-describe('HelloWorld.vue', () => {
-    it('renders props.msg when passed', () => {
-        const msg = 'new message';
-        const wrapper = shallowMount(HelloWorld, {
-            propsData: { msg }
-        });
-        expect(wrapper.text()).toMatch(msg);
-    });
-});
- */

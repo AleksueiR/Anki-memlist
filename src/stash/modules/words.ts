@@ -44,7 +44,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
 
     /**
      * Add a new word to the selected groups.
-     * If nothing was added/linked, return 0;
+     * If adding fails, return 0;
      * If a single text was provided and added/linked, return the id of the word.
      * If several text were provided and added/linked, return an array of words ids.
      *
@@ -61,7 +61,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         // remove empty lines, trim space
         let values = wrapInArray(value)
             .map(text => text.trim().toLocaleLowerCase())
-            .filter(notEmptyFilter)
             .filter(text => text !== '');
 
         values = [...new Set(values)]; // remove duplicates

@@ -13,7 +13,7 @@ beforeEach(async () => {
     return journals.fetch();
 });
 
-test('creates journals', async () => {
+test.skip('creates journals', async () => {
     expect(journals.activeId).toBe(1);
 
     const journal = journals.active!;
@@ -41,7 +41,7 @@ test('creates journals', async () => {
     expect(journals.active).toBe(newJournal);
 });
 
-test('moves groups', async () => {
+test.skip('moves groups', async () => {
     const rootGroup = groups.get(1)!;
 
     // check default subgroups
@@ -108,7 +108,20 @@ test('selects Root Groups', async () => {
     expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
 });
 
+describe('moving groups', async () => {});
+
 describe('creating new words', () => {
+    test('adds words with garbage input', async () => {
+        await groups.setSelectedIds(2);
+        const totalWordCount = await db.words.count();
+
+        const result0 = await words.new(['', '    ']);
+        expect(result0).toEqual([void 0, void 0]);
+
+        const result1 = await words.new(['', '    ', 'hallo']);
+        expect(result1).toEqual([void 0, void 0, totalWordCount + 1]);
+    });
+
     test('adds words when not groups are selected', async () => {
         const err0 = await words.new('test1');
         expect(err0).toBe(0); // no groups selected
@@ -134,8 +147,6 @@ describe('creating new words', () => {
 
         await groups.setSelectedIds(2);
         const [result0, result1] = (await words.new(['test1', 'test2'])) as number[];
-
-        console.log(result0, result1);
 
         expect(words.get(result0)?.memberGroupIds).toEqual([2]);
         expect(words.get(result1)?.memberGroupIds).toEqual([2]);
@@ -172,13 +183,13 @@ describe('creating new words', () => {
     test('adds an existing word to its parent group', async () => {
         await groups.setSelectedIds(2);
 
-        const totalWordCount = Object.keys(words.all).length;
+        const group2WordCount = groups.wordCount[2];
 
         const result1 = await words.new('steep');
         expect(result1).toBe(1);
         expect(words.get(1)?.memberGroupIds).toEqual([2]);
         expect(groups.wordCount[2]).toBe(7);
-        expect(Object.keys(words.all).length).toBe(totalWordCount);
+        expect(Object.keys(words.all).length).toBe(group2WordCount);
     });
 
     test('adds an existing word to a different group', async () => {
@@ -187,7 +198,6 @@ describe('creating new words', () => {
         const wordCount = Object.keys(words.all).length;
 
         const result0 = await words.new('steep');
-        console.log('result0', result0, words.get(result0), words.all);
 
         expect(result0).toBe(1);
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);

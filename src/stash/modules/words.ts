@@ -82,7 +82,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                     existingWords.map(word => this.setMemberGroupIds(word, selectedGroupIds, SelectionMode.Add))
                 );
                 if (setMemberGroupIdsResult.includes(0)) return 0; // something broke
-                console.log('setMemberGroupIdsResult ', setMemberGroupIdsResult);
 
                 // filter down to new words
                 const existingWordsTexts = existingWords.map(word => word.text);
@@ -162,9 +161,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
 
             case SelectionMode.Add:
                 newMemberGroupIds = [...new Set([...word.memberGroupIds, ...groupIds])];
-
-                console.log('newMemberGroupIds a', newMemberGroupIds);
-
                 break;
 
             case SelectionMode.Remove:

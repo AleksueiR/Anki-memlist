@@ -197,12 +197,16 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         const activeJournal = this.getActiveJournal();
         if (!activeJournal) return 0;
 
-        if (activeJournal.rootGroupId === groupId) return log.warn(`groups/move: Cannot move Root Group.`), 0;
+        if (activeJournal.rootGroupId === groupId) return log.warn(`groups/move: Cannot move the Root Group.`), 0;
 
         // check that both group and targetGroup exist
         if (!this.isValid([groupId, targetGroupId])) return 0;
 
         if (groupId === targetGroupId) return; // done! :)
+
+        // check if targetGroupId is a descendant of the groupId
+        if (this.hasDescendant(groupId, targetGroupId))
+            return log.warn(`groups/move: Cannot move a Group into one of its descendent subgroups.`), 0;
 
         return db.transaction(
             'rw',
@@ -212,6 +216,26 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
                 if ((await this.attach(groupId, targetGroupId)) === 0) return 0;
             }
         );
+    }
+
+    /**
+     * Checks if the provided subGroupId is a descendent subgroup of the parentGroupId.
+     *
+     * @protected
+     * @param {number} parentGroupId
+     * @param {number} subGroupId
+     * @returns {boolean}
+     * @memberof GroupsModule
+     */
+    protected hasDescendant(parentGroupId: number, subGroupId: number): boolean {
+        const parentGroup = this.get(parentGroupId);
+        if (!parentGroup) return false;
+
+        if (parentGroup.subGroupIds.includes(subGroupId)) return true;
+
+        return parentGroup.subGroupIds
+            .map(subGroupId => this.hasDescendant(subGroupId, subGroupId))
+            .some(value => value);
     }
 
     /**

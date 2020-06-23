@@ -202,10 +202,13 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         // check that both group and targetGroup exist
         if (!this.isValid([groupId, targetGroupId])) return 0;
 
-        if (groupId === targetGroupId) return; // done! :)
+        if (this.get(targetGroupId)?.subGroupIds.includes(groupId))
+            return log.warn(`groups/move: Group ${groupId} is already a direct subgroup of ${targetGroupId}.`), 0;
+
+        if (groupId === targetGroupId) return log.warn(`groups/move: Cannot move into itself.`), 0;
 
         // check if targetGroupId is a descendant of the groupId
-        if (this.hasDescendant(groupId, targetGroupId))
+        if (this.isDescendant(groupId, targetGroupId))
             return log.warn(`groups/move: Cannot move a Group into one of its descendent subgroups.`), 0;
 
         return db.transaction(
@@ -222,20 +225,18 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      * Checks if the provided subGroupId is a descendent subgroup of the parentGroupId.
      *
      * @protected
-     * @param {number} parentGroupId
-     * @param {number} subGroupId
+     * @param {number} groupAId
+     * @param {number} groupBId
      * @returns {boolean}
      * @memberof GroupsModule
      */
-    protected hasDescendant(parentGroupId: number, subGroupId: number): boolean {
-        const parentGroup = this.get(parentGroupId);
+    protected isDescendant(groupAId: number, groupBId: number): boolean {
+        const parentGroup = this.get(groupAId);
         if (!parentGroup) return false;
 
-        if (parentGroup.subGroupIds.includes(subGroupId)) return true;
+        if (parentGroup.subGroupIds.includes(groupBId)) return true;
 
-        return parentGroup.subGroupIds
-            .map(subGroupId => this.hasDescendant(subGroupId, subGroupId))
-            .some(value => value);
+        return parentGroup.subGroupIds.map(subGroupId => this.isDescendant(subGroupId, groupBId)).some(value => value);
     }
 
     /**

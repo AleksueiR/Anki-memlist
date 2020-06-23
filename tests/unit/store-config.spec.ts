@@ -73,22 +73,9 @@ test.skip('moves groups', async () => {
     await groups.move(3, 2);
     await groups.move(7, 2);
 
-    // try silly things
-    await groups.move(2, 2);
-
     expect(rootGroup.subGroupIds).toEqual([2]);
     expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
     expect(groups.get(6)?.subGroupIds).toEqual([]);
-
-    // try moving the root group
-    const err0 = await groups.move(1, 2);
-    expect(err0).toBe(0);
-    expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4, 5, 6, 7]);
-
-    const err1 = await groups.move(2, 3); // move a group inside its child
-    expect(err1).toBe(0);
-    expect(groups.get(3)?.subGroupIds.sort()).toEqual([]);
-
     // TODO: try moving groups between journals and root groups too
 });
 
@@ -108,7 +95,45 @@ test('selects Root Groups', async () => {
     expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
 });
 
-describe('moving groups', async () => {});
+describe('moving groups', async () => {
+    test('moves a group to a different journal', async () => {
+        // try silly things
+        const err0 = await groups.move(2, 7);
+        expect(err0).toBe(0);
+    });
+
+    test('moves a group into the same parent', async () => {
+        // try silly things
+        const err0 = await groups.move(3, 2);
+        expect(err0).toBe(0);
+        expect(groups.get(2)?.subGroupIds.includes(3)).toBe(true);
+    });
+
+    test('moves a group into itself', async () => {
+        // try silly things
+        const err0 = await groups.move(2, 2);
+        expect(err0).toBe(0);
+        expect(!groups.get(2)?.subGroupIds.includes(2)).toBe(true);
+    });
+
+    test('moves a group into one of its descendent subgroups', async () => {
+        // try silly things
+        const err0 = await groups.move(2, 3);
+        expect(err0).toBe(0);
+        expect(!groups.get(3)?.subGroupIds.includes(2)).toBe(true);
+
+        const err1 = await groups.move(2, 6);
+        expect(err1).toBe(0);
+        expect(!groups.get(6)?.subGroupIds.includes(2)).toBe(true);
+    });
+
+    test('moves Root Group', async () => {
+        // try moving the root group
+        const err0 = await groups.move(1, 2);
+        expect(err0).toBe(0);
+        expect(groups.get(2)?.subGroupIds.sort()).toEqual([3, 4]);
+    });
+});
 
 describe('creating new words', () => {
     test('adds words with garbage input', async () => {

@@ -95,7 +95,7 @@ test('selects Root Groups', async () => {
     expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
 });
 
-describe('moving groups', async () => {
+describe('moving groups', () => {
     test('moves a group to a different journal', async () => {
         // try silly things
         const err0 = await groups.move(2, 7);
@@ -266,6 +266,95 @@ describe('creating new words', () => {
         expect(words.get(result1)?.memberGroupIds).toEqual([3]);
         expect(groups.wordCount[3]).toBe(11);
         expect(Object.keys(words.all).length).toBe(wordCount + 2); // "steep" was not in group 3
+    });
+});
+
+describe('moving words', () => {
+    test('moves a single word', async () => {
+        await groups.setSelectedIds([2, 3]);
+
+        const group3WordCount = groups.wordCount[3];
+
+        const result0 = await words.move(1, 2, 3);
+
+        expect(result0).not.toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([3]);
+        expect(groups.wordCount[3]).toBe(group3WordCount + 1);
+    });
+
+    test('moves a single word to the same group', async () => {
+        await groups.setSelectedIds(2);
+
+        const group2WordCount = groups.wordCount[2];
+
+        const result0 = await words.move(1, 2, 2);
+        expect(result0).not.toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        expect(groups.wordCount[2]).toBe(group2WordCount);
+    });
+
+    test('moves a single word to a non-existent group', async () => {
+        await groups.setSelectedIds(2);
+
+        const result0 = await words.move(1, 2, 395);
+        expect(result0).toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+    });
+
+    test('moves a single word from a non-selected group', async () => {
+        await groups.setSelectedIds(3);
+
+        const result0 = await words.move(1, 2, 3);
+        expect(result0).toBe(0);
+    });
+
+    test('moves a single word from a non-existent group', async () => {
+        await groups.setSelectedIds(2);
+
+        const result0 = await words.move(1, 234, 3);
+        expect(result0).toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+    });
+
+    test('moves several words', async () => {
+        await groups.setSelectedIds([2, 3]);
+
+        const group2WordCount = groups.wordCount[2];
+        const group3WordCount = groups.wordCount[3];
+        const result0 = await words.move([1, 2, 3], 2, 3);
+
+        expect(result0).not.toBe(0);
+        expect(groups.wordCount[2]).toBe(group2WordCount - 3);
+        expect(groups.wordCount[3]).toBe(group3WordCount + 3);
+    });
+
+    test('moves all group words', async () => {
+        await groups.setSelectedIds([2, 3]);
+
+        const group3WordCount = groups.wordCount[3];
+        const result0 = await words.move([1, 2, 3, 4, 5, 6, 18], 2, 3);
+
+        expect(result0).not.toBe(0);
+        expect(groups.wordCount[2]).toBe(0);
+        // words 5 and 6 belong to group 3 already
+        expect(groups.wordCount[3]).toBe(group3WordCount + 5);
+    });
+
+    test('moves a single word to the Root Group', async () => {
+        await groups.setSelectedIds(2);
+
+        const result0 = await words.move(1, 2, 0);
+        expect(result0).toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+    });
+
+    test('moves a single word to another Journal', async () => {
+        await groups.setSelectedIds([2]);
+
+        const result0 = await words.move(1, 2, 7);
+
+        expect(result0).toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([2]);
     });
 });
 

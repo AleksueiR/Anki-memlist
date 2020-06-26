@@ -22,6 +22,18 @@ export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     return arrayClone;
 }
 
+export function unionArrays<K>(array1: K[], array2: K[]): K[] {
+    return [...new Set([...array1, ...array2])];
+}
+
+export function intersectArrays<K>(array1: K[], array2: K[]): K[] {
+    return array1.filter(id => array2.includes(id));
+}
+
+export function exceptArray<K>(array1: K[], array2: K[]): K[] {
+    return array1.filter(id => !array2.includes(id));
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key = 'id') {
     return objects.reduce<Record<string, T>>((map, object) => ((map[`${object[key]}`] = object), map), {});
@@ -40,6 +52,14 @@ export function notEmptyFilter<TValue>(value: TValue | null | undefined): value 
     return value !== null && value !== undefined;
 }
 
+/**
+ * Wraps a supplied value in an array if it's not an array; return as is if it is an array already.
+ *
+ * @export
+ * @template K
+ * @param {(K | K[])} groupIds
+ * @returns {K[]}
+ */
 export function wrapInArray<K>(groupIds: K | K[]): K[] {
     return Array.isArray(groupIds) ? groupIds : [groupIds];
 }

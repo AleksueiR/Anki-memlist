@@ -1,14 +1,7 @@
 import { db, Group, GroupDisplayMode } from '@/api/db';
 import { reduceArrayToObject, removeFromArrayByValue } from '@/util';
 import log from 'loglevel';
-import { NonJournalStashModule } from '../common';
-import { EntrySet, Stash, StashModuleState } from '../internal';
-
-export enum SelectionMode {
-    Replace = 0,
-    Add = 1,
-    Remove = 2
-}
+import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
 
 export type GroupWordCountSet = Record<number, number>;
 export type GroupSet = EntrySet<Group>;
@@ -130,7 +123,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         // get groups from the provided groupIds and filter non-groups if some of the ids are phony
         const groups = this.get(groupIds ? this.vetIds(groupIds) : this.getAllIds());
 
-        return await Promise.all(
+        return Promise.all(
             groups.map(async group => {
                 // include `isArchived` condition based on the `displayMode` if it's not set to `all`
                 const isArchivedClause = group.displayMode !== GroupDisplayMode.All ? group.displayMode : void 0;
@@ -185,10 +178,10 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
     }
 
     /**
-     * Move a `Group` from one subgroup to another.
+     * Move a groupId from one subgroup to another.
      * Will remove from the current parent group as the same group cannot be in several subgroups.
      *
-     * @param {number} groupId
+     * @param {number} groupId Group object to move
      * @param {number} targetGroupId
      * @returns {(Promise<void | 0>)}
      * @memberof GroupsModule
@@ -274,6 +267,10 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
             case SelectionMode.Remove:
                 newSelectedGroupIds = this.state.selectedIds.filter(id => !vettedGroupIds.includes(id));
                 break;
+
+            default:
+                log.warn(`groups/setSelectedIds: Unknown code ${selectionMode}.`);
+                return 0;
         }
 
         this.state.selectedIds = newSelectedGroupIds;

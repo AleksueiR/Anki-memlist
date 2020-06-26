@@ -1,9 +1,7 @@
 import { db, Word, WordArchived } from '@/api/db';
-import { notEmptyFilter, reduceArrayToObject, wrapInArray } from '@/util';
+import { reduceArrayToObject, wrapInArray, exceptArray, unionArrays } from '@/util';
 import log from 'loglevel';
-import { NonJournalStashModule } from '../common';
-import { EntrySet, Stash, StashModuleState } from '../internal';
-import { SelectionMode } from './groups';
+import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
 
 export type WordSet = EntrySet<Word>;
 
@@ -43,7 +41,8 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
     }
 
     /**
-     * Add a new word to the selected groups.
+     * Add a new word or link an existing word to the selected groups.
+     *
      * If adding fails, return 0;
      * If a single text was provided and added/linked, return the id of the word.
      * If several text were provided and added/linked, return an array of words ids.
@@ -124,6 +123,49 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
     }
 
     /**
+     * Move a specified word (or words) from one subgroup to another.
+     * Only words in the currently selected groups can be moved, but they can be moved to any other group in the journal.
+     *
+     * @param {(number | number[])} wordIds
+     * @param {(number | number[])} fromGroupIds
+     * @param {number} toGroupId
+     * @returns {(Promise<void | 0>)}
+     * @memberof WordsModule
+     */
+    async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void | 0> {
+        const fromGroupIdsList = wrapInArray(fromGroupIds);
+
+        if (!this.$stash.groups.isValid([...fromGroupIdsList, toGroupId])) return 0;
+        if (fromGroupIdsList.some(id => !this.$stash.groups.selectedIds.includes(id)))
+            return log.warn(`words/move: Moving from a non-selected groups ${fromGroupIdsList} is not allowed.`), 0;
+
+        const wordIdsList = wrapInArray(wordIds);
+        if (!this.isValid(wordIdsList)) return 0;
+
+        return db.transaction('rw', this.table, async () => {
+            const updateStateResult = await Promise.all(
+                wordIdsList.map(async wordId => {
+                    const word = this.get(wordId);
+                    if (!word) return 0;
+
+                    // calculate new memberGroupIds for a given words and update state/db
+                    const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, fromGroupIdsList), [
+                        toGroupId
+                    ]);
+                    return this.updateStateAndDb(wordId, 'memberGroupIds', newMemberGroupIds);
+                })
+            );
+
+            if (updateStateResult.includes(0)) return 0;
+
+            // reload all the group words
+            // this will add new words to the state and also reload existing words that were added to the active groups
+            await this.fetchGroupWords();
+            await this.$stash.groups.refreshWordCounts([...fromGroupIdsList, toGroupId]);
+        });
+    }
+
+    /**
      * Count words in the specified group. Return the word count.
      * Return 0 if the active journal is not set or the group doesn't exist or the group has 0 words.
      *
@@ -177,9 +219,13 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                 break;
 
             case SelectionMode.Remove:
-                // intersect existing ids with the provided ids
+                // remove existing ids with the provided ids
                 newMemberGroupIds = word.memberGroupIds.filter(id => !groupIds.includes(id));
                 break;
+
+            default:
+                log.warn(`words/setMemberGroupIds: Unknown code ${selectionMode}.`);
+                return 0;
         }
 
         return this.table.update(word.id, { memberGroupIds: newMemberGroupIds });

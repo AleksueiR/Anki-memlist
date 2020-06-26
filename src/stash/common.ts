@@ -4,6 +4,12 @@ import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
 
+export enum SelectionMode {
+    Replace = 0,
+    Add = 1,
+    Remove = 2
+}
+
 export type SpecificUpdater<K> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(
     id: number,
     key: T,
@@ -176,7 +182,9 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 
     /**
      * Vet a list of supplied ids against the loaded entries.
+     * Use to filter out externally supplied ids.
      *
+     * // TODO: maybe combine with `isValid` function
      * @protected
      * @param {number[]} [value]
      * @returns {number[]}
@@ -193,6 +201,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 
     /**
      * Update a specified record in the entry set and update the corresponding record in the db.
+     * Returns 0 on error or if the value is already set.
      *
      * @param {*} id
      * @param {*} key

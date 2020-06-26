@@ -77,6 +77,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                     .filter(word => word.journalId === activeJournal.id) // filter by active journal
                     .toArray();
 
+                // update existing words with new group ids
                 const setMemberGroupIdsResult = await Promise.all(
                     existingWords.map(word => this.setMemberGroupIds(word, selectedGroupIds, SelectionMode.Add))
                 );
@@ -89,6 +90,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                 let newWordIds: number[] = [];
                 let newWords: Word[] = [];
 
+                // if there are any new words
                 if (newTexts.length > 0) {
                     // write new words to the db
                     newWordIds = await this.table.bulkAdd(
@@ -100,15 +102,16 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                     newWords = await this.table.bulkGet(newWordIds);
                     if (newWordIds.length !== newTexts.length)
                         return log.warn('words/new: Cannot write words to the db.'), 0;
-
-                    this.addToAll(newWords);
                 }
 
+                // reload all the group words
+                // this will add new words to the state and also reload existing words that were added to the active groups
                 await this.fetchGroupWords();
                 await this.$stash.groups.refreshWordCounts(selectedGroupIds);
 
                 const allModifiedWords = [...newWords, ...existingWords];
 
+                // if only a single word was provided and we have more modified words, something went wrong
                 if (!Array.isArray(value)) {
                     if (allModifiedWords.length > 1) log.warn('words/new: Something is wrong.'), 0;
 
@@ -146,6 +149,16 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
             .count();
     }
 
+    /**
+     * Set the memberGroupIds list of the give word object.
+     *
+     * @protected
+     * @param {Word} word
+     * @param {number[]} groupIds
+     * @param {SelectionMode} [selectionMode=SelectionMode.Replace]
+     * @returns {Promise<number>}
+     * @memberof WordsModule
+     */
     protected async setMemberGroupIds(
         word: Word,
         groupIds: number[],
@@ -159,10 +172,12 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                 break;
 
             case SelectionMode.Add:
+                // remove duplicate
                 newMemberGroupIds = [...new Set([...word.memberGroupIds, ...groupIds])];
                 break;
 
             case SelectionMode.Remove:
+                // intersect existing ids with the provided ids
                 newMemberGroupIds = word.memberGroupIds.filter(id => !groupIds.includes(id));
                 break;
         }

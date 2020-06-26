@@ -147,6 +147,16 @@ describe('creating new words', () => {
         expect(result1).toEqual([void 0, void 0, totalWordCount + 1]);
     });
 
+    test('adds duplicate words to as single group', async () => {
+        await groups.setSelectedIds(2);
+        const totalWordCount = await db.words.count();
+
+        // duplicate words will return the same id
+        const result0 = await words.new(['dot', 'dot', 'dot']);
+        expect(result0).toEqual([totalWordCount + 1, totalWordCount + 1, totalWordCount + 1]);
+        expect(words.get(totalWordCount + 1)?.memberGroupIds).toEqual([2]);
+    });
+
     test('adds words when not groups are selected', async () => {
         const err0 = await words.new('test1');
         expect(err0).toBe(0); // no groups selected

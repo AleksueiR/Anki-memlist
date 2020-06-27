@@ -184,19 +184,37 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * Vet a list of supplied ids against the loaded entries.
      * Use to filter out externally supplied ids.
      *
-     * // TODO: maybe combine with `isValid` function
-     * @protected
-     * @param {number[]} [value]
+     * @param {(number | number[])} value
      * @returns {number[]}
      * @memberof StashModule
      */
-    protected vetIds(value: number | number[]): number[] {
+    vetIds(value: number | number[]): number[] {
         const ids = wrapInArray(value);
         const allIds = this.getAllIds();
 
         // either filter the the provided list to make sure there are no phony ids or return all of them if `ids` is not provided.
         // this also filters out duplicates
         return allIds.filter(id => ids.includes(id));
+    }
+
+    /**
+     * Check if the supplied id is valid.
+     * If at least one id is not valid, return `false`.
+     *
+     * @param {(number | number[])} value
+     * @returns {boolean}
+     * @memberof StashModule
+     */
+    isValidId(value: number | number[]): boolean {
+        const ids = wrapInArray(value);
+
+        // it's assumed that if an entry has been added to the `state.all`, the entry is valid
+        // as only the internal stash functions can write to `state.all`
+
+        console.log(ids, this.vetIds(ids), this.all);
+
+        // vet ids and if all the ids are found in the collection return true
+        return this.vetIds(ids).length === ids.length;
     }
 
     /**
@@ -259,33 +277,6 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
         if (activeJournal.rootGroupId <= 0) log.warn('record: Root Group of the Active journal is not set'), undefined;
 
         return activeJournal;
-    }
-
-    /**
-     * Check if the supplied non-journal entry id is valid and belongs to the active journal.
-     * If at least one id is not valid, return `false`.
-     *
-     * @param {number} id
-     * @returns {boolean}
-     * @memberof WordsModule
-     */
-    isValid(value: number | number[]): boolean {
-        if (Array.isArray(value)) {
-            return value.every(id => this.isValid(id));
-        }
-
-        const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return false;
-
-        const entry = this.get(value);
-        if (!entry) return false;
-
-        if (entry.journalId !== activeJournal.id) {
-            log.warn(`record/isValid: Word ${value} doesn't belong to Journal ${activeJournal.id}.`);
-            return false;
-        }
-
-        return true;
     }
 }
 

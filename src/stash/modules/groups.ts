@@ -1,5 +1,5 @@
 import { db, Group, GroupDisplayMode } from '@/api/db';
-import { reduceArrayToObject, removeFromArrayByValue } from '@/util';
+import { reduceArrayToObject, removeFromArrayByValue, wrapInArray } from '@/util';
 import log from 'loglevel';
 import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
 
@@ -168,7 +168,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
     protected async detach(groupId: number): Promise<void | 0> {
         // get parent group
         const parentGroup = Object.values(this.$stash.groups.all).find(group => group.subGroupIds.includes(groupId));
-        if (!parentGroup || !this.isValid(parentGroup.id))
+        if (!parentGroup || !this.isValidId(parentGroup.id))
             return log.warn(`groups/detach: Group #${groupId} has no parent group in the active journal.`), 0;
 
         // remove groupId from the parent's subgroupIds
@@ -193,7 +193,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         if (activeJournal.rootGroupId === groupId) return log.warn(`groups/move: Cannot move the Root Group.`), 0;
 
         // check that both group and targetGroup exist
-        if (!this.isValid([groupId, targetGroupId])) return 0;
+        if (!this.isValidId([groupId, targetGroupId])) return 0;
 
         if (this.get(targetGroupId)?.subGroupIds.includes(groupId))
             return log.warn(`groups/move: Group ${groupId} is already a direct subgroup of ${targetGroupId}.`), 0;
@@ -321,6 +321,14 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         });
     }
 
+    /**
+     *
+     *
+     * @param {(number | number[])} ids
+     * @param {boolean} [excludeRootGroup=false]
+     * @returns {number[]}
+     * @memberof GroupsModule
+     */
     vetIds(ids: number | number[], excludeRootGroup = false): number[] {
         let vettedIds = super.vetIds(ids);
 
@@ -332,5 +340,18 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         }
 
         return vettedIds;
+    }
+
+    /**
+     *
+     *
+     * @param {(number | number[])} value
+     * @param {boolean} [excludeRootGroup=false]
+     * @returns {boolean}
+     * @memberof GroupsModule
+     */
+    isValidId(value: number | number[], excludeRootGroup = false): boolean {
+        const ids = wrapInArray(value);
+        return this.vetIds(ids, excludeRootGroup).length === ids.length;
     }
 }

@@ -301,6 +301,14 @@ describe('moving words', () => {
         expect(words.get(1)?.memberGroupIds).toEqual([2]);
     });
 
+    test('moves a single word to from a non-existent and a regular group', async () => {
+        await groups.setSelectedIds([2, 3]);
+
+        const result0 = await words.move(1, [2, 395], 3);
+        expect(result0).not.toBe(0);
+        expect(words.get(1)?.memberGroupIds).toEqual([3]);
+    });
+
     test('moves a single word from a non-selected group', async () => {
         await groups.setSelectedIds(3);
 
@@ -343,7 +351,7 @@ describe('moving words', () => {
     test('moves a single word to the Root Group', async () => {
         await groups.setSelectedIds(2);
 
-        const result0 = await words.move(1, 2, 0);
+        const result0 = await words.move(1, 2, 1);
         expect(result0).toBe(0);
         expect(words.get(1)?.memberGroupIds).toEqual([2]);
     });

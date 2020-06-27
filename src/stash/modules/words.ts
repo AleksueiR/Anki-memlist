@@ -1,5 +1,6 @@
 import { db, Word, WordArchived } from '@/api/db';
-import { reduceArrayToObject, wrapInArray, exceptArray, unionArrays } from '@/util';
+import { exceptArray, reduceArrayToObject, unionArrays, wrapInArray } from '@/util';
+import Dexie from 'dexie';
 import log from 'loglevel';
 import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
 
@@ -80,7 +81,8 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                 const setMemberGroupIdsResult = await Promise.all(
                     existingWords.map(word => this.setMemberGroupIds(word, selectedGroupIds, SelectionMode.Add))
                 );
-                if (setMemberGroupIdsResult.includes(0)) return 0; // something broke
+                // something broke, abort the transaction
+                if (setMemberGroupIdsResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
 
                 // filter down to new words
                 const existingWordsTexts = existingWords.map(word => word.text);
@@ -133,35 +135,42 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      * @memberof WordsModule
      */
     async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void | 0> {
-        const fromGroupIdsList = wrapInArray(fromGroupIds);
+        // check if there is at least a single `fromGroup` id that is valid
+        const vettedFromGroupIds = this.$stash.groups.vetIds(fromGroupIds, true);
+        if (vettedFromGroupIds.length === 0) return log.warn(`words/move: All "fromGroup" ids are invalid.`), 0;
 
-        if (!this.$stash.groups.isValid([...fromGroupIdsList, toGroupId])) return 0;
-        if (fromGroupIdsList.some(id => !this.$stash.groups.selectedIds.includes(id)))
-            return log.warn(`words/move: Moving from a non-selected groups ${fromGroupIdsList} is not allowed.`), 0;
+        // check that `fromGroup` ids belong to selected groups
+        if (vettedFromGroupIds.some(id => !this.$stash.groups.selectedIds.includes(id)))
+            return log.warn(`words/move: Moving from a non-selected groups ${vettedFromGroupIds} is not allowed.`), 0;
 
-        const wordIdsList = wrapInArray(wordIds);
-        if (!this.isValid(wordIdsList)) return 0;
+        // check that `toGroup` id is valid
+        if (!this.$stash.groups.isValidId(toGroupId, true))
+            return log.warn(`words/move: The "toGroup" id is invalid.`), 0;
+
+        const vettedWordIds = this.vetIds(wordIds);
+        if (vettedWordIds.length === 0) return log.warn(`words/move: All word ids are invalid.`), 0;
 
         return db.transaction('rw', this.table, async () => {
             const updateStateResult = await Promise.all(
-                wordIdsList.map(async wordId => {
+                vettedWordIds.map(async wordId => {
                     const word = this.get(wordId);
                     if (!word) return 0;
 
                     // calculate new memberGroupIds for a given words and update state/db
-                    const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, fromGroupIdsList), [
+                    const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, vettedFromGroupIds), [
                         toGroupId
                     ]);
                     return this.updateStateAndDb(wordId, 'memberGroupIds', newMemberGroupIds);
                 })
             );
 
-            if (updateStateResult.includes(0)) return 0;
+            // if at least one result fails, abort the transaction
+            if (updateStateResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
 
             // reload all the group words
             // this will add new words to the state and also reload existing words that were added to the active groups
             await this.fetchGroupWords();
-            await this.$stash.groups.refreshWordCounts([...fromGroupIdsList, toGroupId]);
+            await this.$stash.groups.refreshWordCounts([...vettedFromGroupIds, toGroupId]);
         });
     }
 

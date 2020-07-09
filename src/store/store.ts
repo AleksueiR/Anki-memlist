@@ -1,4 +1,3 @@
-import pathify from '@/pathify';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import { app } from './modules/app';
@@ -15,7 +14,7 @@ Vue.use(Vuex);
 
 export const createStore = () =>
     new Vuex.Store<RootState>({
-        plugins: [pathify.plugin],
+        // plugins: [pathify.plugin],
         modules: {
             app,
             collection,

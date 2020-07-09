@@ -1,27 +1,17 @@
 import Vue from 'vue';
-import Vuex, { Store } from 'vuex';
-import VueRx from 'vue-rx';
-import { Observable, Subscription, Subject } from 'rxjs';
-import Vuebar from 'vuebar';
 
-import app from './components/app.vue';
+/* import VueRx from 'vue-rx';
+import { Observable, Subscription, Subject } from 'rxjs'; */
 
-import { createStore } from './store';
-import { RootState } from './store/state';
+import app from '@/app.vue';
 
 import { Stash } from '@/stash';
 
-Vue.use(Vuex);
-Vue.use(VueRx, {
+/* Vue.use(VueRx, {
     Observable,
     Subscription,
     Subject
-});
-
-Vue.use(Vuebar);
-
-const store: Store<RootState> = createStore();
-(window as any).store = store;
+}); */
 
 import OctoIconV from '@/components/bits/octo-icon.vue';
 Vue.component('octo-icon', OctoIconV);
@@ -38,25 +28,16 @@ Vue.config.keyCodes = {
     ctrl: 17
 };
 
-import amDrag from './am-drag.plugin';
-Vue.use(amDrag);
-
-// augment Vue type with vuebar functions
-declare module 'vue/types/vue' {
-    interface Vue {
-        $vuebar: {
-            refreshScrollbar: (elemeht: HTMLElement) => void;
-        };
-    }
-}
+/* import amDrag from './am-drag.plugin';
+Vue.use(amDrag); */
 
 const stash = new Stash();
 
-(window as any).stash = stash;
-
 new Vue({
     el: '#app',
-    store,
     stash,
     render: h => h(app)
 });
+
+// NOTE: expose stash on window for dev
+(window as any).stash = stash;

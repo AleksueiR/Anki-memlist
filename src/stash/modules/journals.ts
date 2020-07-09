@@ -33,6 +33,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         const journalSet = reduceArrayToObject(journals);
 
         // TODO: pick a journal to load somehow (a setting/option/user?)
+        // otherwise if there are no journals, it fails;
 
         const journal = journals[0];
 

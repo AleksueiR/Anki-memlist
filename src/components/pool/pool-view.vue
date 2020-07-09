@@ -203,7 +203,7 @@ interface VueStream extends Vue {
         'rename-input': RenameInputV,
         'uk-dropdown': UkDropdownV
     },
-    domStreams: [Streams.lookup],
+    /* domStreams: [Streams.lookup],
     subscriptions() {
         const vues: VueStream = this as VueStream;
 
@@ -213,7 +213,7 @@ interface VueStream extends Vue {
                 pluck<Event, string>('event', 'target', 'value')
             )
         };
-    },
+    }, */
     directives: {
         StayInView
     }
@@ -279,11 +279,11 @@ export default class PoolViewV extends mixins(CollectionStateMixin) {
     }
 
     created() {
-        this.$observables.lookupObservable.subscribe(value => {
+        /* this.$observables.lookupObservable.subscribe(value => {
             this.performLookup({ value });
             // TODO: update `loadDefinitions` to accept wordid or just text
             this.loadDefinitions({ value: collectionFactory.CollectionWord(value) });
-        });
+        }); */
     }
 
     displayModeLabels = {

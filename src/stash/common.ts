@@ -274,7 +274,8 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
         const activeJournal = this.$stash.journals.active;
         if (!activeJournal) return log.warn('record/getActiveJournal: Active journal is not set'), undefined;
 
-        if (activeJournal.rootGroupId <= 0) log.warn('record: Root Group of the Active journal is not set'), undefined;
+        if (activeJournal.rootGroupId === -1)
+            log.warn('record: Root Group of the Active journal is not set'), undefined;
 
         return activeJournal;
     }

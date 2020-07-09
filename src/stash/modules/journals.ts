@@ -102,7 +102,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      */
     async setDefaultGroupId(defaultGroupId: number | null): Promise<void | 0> {
         if (!this.activeId) return log.warn('journals/setRootGroupId: Active journal is not set.'), 0;
-        if (defaultGroupId && !this.$stash.groups.isValidId(defaultGroupId)) return 0;
+        if (defaultGroupId && !this.$stash.groups.isValidId(defaultGroupId, true)) return 0;
 
         return this.updateStateAndDb(this.activeId, 'defaultGroupId', defaultGroupId);
     }

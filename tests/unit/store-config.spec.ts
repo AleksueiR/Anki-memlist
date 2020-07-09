@@ -79,20 +79,27 @@ test.skip('moves groups', async () => {
     // TODO: try moving groups between journals and root groups too
 });
 
-test('selects groups with no active journal', async () => {
-    journals.setActiveId();
+describe('selecting groups', () => {
+    test('sets Root Group as default', async () => {
+        const err0 = await journals.setDefaultGroupId(1);
+        expect(err0).toBe(0);
+    });
 
-    const err0 = await groups.setSelectedIds(2);
-    expect(err0).toBe(0);
-});
+    test('selects groups with no active journal', async () => {
+        journals.setActiveId();
 
-test('selects Root Groups', async () => {
-    await groups.setSelectedIds(1);
-    expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
+        const err0 = await groups.setSelectedIds(2);
+        expect(err0).toBe(0);
+    });
 
-    await groups.setSelectedIds([2, 1, 3]);
-    expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
-    expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
+    test('selects Root Groups', async () => {
+        await groups.setSelectedIds(1);
+        expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
+
+        await groups.setSelectedIds([2, 1, 3]);
+        expect(groups.selectedIds.includes(1)).toBe(false); // can't select the Root Group;
+        expect(groups.selectedIds).toEqual([2, 3]); // can't select the Root Group;
+    });
 });
 
 describe('moving groups', () => {

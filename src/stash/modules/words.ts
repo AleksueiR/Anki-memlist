@@ -136,7 +136,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      */
     async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void | 0> {
         // check if there is at least a single `fromGroup` id that is valid
-        const vettedFromGroupIds = this.$stash.groups.vetIds(fromGroupIds, true);
+        const vettedFromGroupIds = this.$stash.groups.vetId(fromGroupIds, true);
         if (vettedFromGroupIds.length === 0) return log.warn(`words/move: All "fromGroup" ids are invalid.`), 0;
 
         // check that `fromGroup` ids belong to selected groups
@@ -147,7 +147,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         if (!this.$stash.groups.isValidId(toGroupId, true))
             return log.warn(`words/move: The "toGroup" id is invalid.`), 0;
 
-        const vettedWordIds = this.vetIds(wordIds);
+        const vettedWordIds = this.vetId(wordIds);
         if (vettedWordIds.length === 0) return log.warn(`words/move: All word ids are invalid.`), 0;
 
         return db.transaction('rw', this.table, async () => {

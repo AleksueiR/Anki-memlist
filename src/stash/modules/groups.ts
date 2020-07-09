@@ -81,7 +81,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      */
     async delete(groupIds: number[]): Promise<void | 0> {
         // TODO: needs more;
-        const groups = this.get(this.vetIds(groupIds));
+        const groups = this.get(this.vetId(groupIds));
         if (groups.length === 0) return;
 
         await db.transaction('rw', this.table, async () => {
@@ -121,7 +121,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         const groupIds = Array.isArray(value) || value === undefined ? value : [value];
 
         // get groups from the provided groupIds and filter non-groups if some of the ids are phony
-        const groups = this.get(groupIds ? this.vetIds(groupIds) : this.getAllIds());
+        const groups = this.get(groupIds ? this.vetId(groupIds) : this.getAllIds());
 
         return Promise.all(
             groups.map(async group => {
@@ -251,7 +251,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         if (!activeJournal) return 0;
 
         // sanitize group ids and remove Root Group id if present
-        const vettedGroupIds = this.vetIds(groupIds, true);
+        const vettedGroupIds = this.vetId(groupIds, true);
 
         let newSelectedGroupIds;
 
@@ -329,8 +329,8 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      * @returns {number[]}
      * @memberof GroupsModule
      */
-    vetIds(ids: number | number[], excludeRootGroup = false): number[] {
-        let vettedIds = super.vetIds(ids);
+    vetId(ids: number | number[], excludeRootGroup = false): number[] {
+        let vettedIds = super.vetId(ids);
 
         const activeJournal = this.getActiveJournal();
 
@@ -352,6 +352,6 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      */
     isValidId(value: number | number[], excludeRootGroup = false): boolean {
         const ids = wrapInArray(value);
-        return this.vetIds(ids, excludeRootGroup).length === ids.length;
+        return this.vetId(ids, excludeRootGroup).length === ids.length;
     }
 }

@@ -188,7 +188,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {number[]}
      * @memberof StashModule
      */
-    vetIds(value: number | number[]): number[] {
+    vetId(value: number | number[]): number[] {
         const ids = wrapInArray(value);
         const allIds = this.getAllIds();
 
@@ -198,8 +198,8 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 
     /**
-     * Check if the supplied id is valid.
-     * If at least one id is not valid, return `false`.
+     * Check if the supplied id or ids are valid.
+     * If at least one ids is not valid, return `false`.
      *
      * @param {(number | number[])} value
      * @returns {boolean}
@@ -211,10 +211,8 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         // it's assumed that if an entry has been added to the `state.all`, the entry is valid
         // as only the internal stash functions can write to `state.all`
 
-        console.log(ids, this.vetIds(ids), this.all);
-
         // vet ids and if all the ids are found in the collection return true
-        return this.vetIds(ids).length === ids.length;
+        return this.vetId(ids).length === ids.length;
     }
 
     /**

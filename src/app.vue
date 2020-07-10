@@ -1,18 +1,27 @@
 <template>
-    <div class="">
+    <div class="foo">
         <span>hello!</span> 👩‍💼
 
-        <button class="p-4 font-bold text-red-500 bg-gray-300 rounded-md">I'm button</button>
+        <button class="p-4 font-bold text-red-500 bg-gray-300 rounded-md">{{ text }}</button>
     </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
+import { Component, Inject, Model, Prop, Watch } from 'vue-property-decorator';
 
-export default class App extends Vue {}
+@Component
+export default class App extends Vue {
+    text = "I'm button!21";
+
+    mounted() {
+        const a = 46;
+        console.log('fsdf', a);
+    }
+}
 </script>
 
-<style lang="scss">
+<style lang="postcss">
 @tailwind base;
 
 @tailwind components;
@@ -20,4 +29,4 @@ export default class App extends Vue {}
 @tailwind utilities;
 </style>
 
-<style lang="scss" scoped></style>
+<style lang="postcss" scoped></style>

@@ -1,3 +1,6 @@
 module.exports = {
-    lintOnSave: true
+    lintOnSave: true,
+    configureWebpack: {
+        devtool: 'source-map'
+    }
 };

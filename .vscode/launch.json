@@ -4,11 +4,20 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
+            "name": "Launch Chromium against localhost",
             "sourceMaps": true,
-            "url": "http://localhost:3001",
-            "webRoot": "${workspaceRoot}/src",
-            "runtimeExecutable": "C:/Users/Aleksuei Riabtsev/AppData/Local/Programs/Opera/launcher.exe"
+            "url": "http://localhost:6479",
+            "webRoot": "${workspaceRoot}",
+            "runtimeExecutable": "c:/Program FIles (portable)/chrlauncher-win64-stable-ungoogled/bin/chrome.exe",
+            "runtimeArgs": [
+                "--flag-switches-begin",
+                "--user-data-dir=c:/Program FIles (portable)/chrlauncher-win64-stable-ungoogled/profile",
+                "--no-default-browser-check",
+                "--allow-outdated-plugins",
+                "--disable-logging",
+                "--disable-breakpad",
+                "--flag-switches-end"
+            ]
         }
     ]
 }

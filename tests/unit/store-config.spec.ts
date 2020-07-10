@@ -10,7 +10,8 @@ beforeEach(async () => {
     ({ journals, groups, words } = new Stash());
 
     await rePopulate(db);
-    return journals.fetch();
+    await journals.fetch();
+    return journals.setActiveId(1);
 });
 
 test.skip('creates journals', async () => {

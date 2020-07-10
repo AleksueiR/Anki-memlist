@@ -25,7 +25,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
     }
 
     /**
-     * Fetches groups belonging to the active journal.
+     * Fetch groups belonging to the active journal.
      * Return 0 if active journal is not set.
      *
      * @returns {(Promise<void | 0>)}
@@ -234,7 +234,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
 
     /**
      * Set provided group ids as selected.
-     * Selection mode lets you add to , remove from, or replace the existing selection list.
+     * Selection mode lets you add to, remove from, or replace the existing selection list.
      *
      * @param {(number | number[])} groupIds
      * @param {SelectionMode} [selectionMode=SelectionMode.Replace]

@@ -1,5 +1,12 @@
 import { Group, GroupDisplayMode, Journal, Word, WordPouch } from '@/api/db';
 
+/**
+ * Delete the existing database and populated it with the fresh set of test data.
+ *
+ * @export
+ * @param {WordPouch} db
+ * @returns {Promise<void>}
+ */
 export async function rePopulate(db: WordPouch): Promise<void> {
     /* await db.journals.clear();
     await db.groups.clear();

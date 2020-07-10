@@ -23,7 +23,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     }
 
     /**
-     * Fetch journals from the db and load the active one.
+     * Fetch journals from the db.
      *
      * @returns {Promise<void>}
      */
@@ -31,14 +31,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         const journals = await this.table.toArray();
 
         const journalSet = reduceArrayToObject(journals);
-
-        // TODO: pick a journal to load somehow (a setting/option/user?)
-        // otherwise if there are no journals, it fails;
-
-        const journal = journals[0];
-
         this.setAll(journalSet);
-        await this.setActiveId(journal.id); // loading the first journal by default for now
     }
 
     /**
@@ -64,18 +57,22 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
         this.addToAll(newJournal);
 
-        // set rootGroupId of the active Journal;
+        // set rootGroupId of the new Journal;
         // rootGroupId cannot be changed after a journal is created
         await this.updateStateAndDb(newJournal.id, 'rootGroupId', rootGroupId);
-        await this.setActiveId(newJournal.id);
 
         return newJournal.id;
     }
 
+    /**
+     * Set specified journal as active. This will load all groups belonging to this journal.
+     *
+     * @param {(number | null)} [value=null]
+     * @returns {Promise<void>}
+     * @memberof JournalsModule
+     */
     async setActiveId(value: number | null = null): Promise<void> {
         this.state.activeId = value;
-
-        // TODO: moar
 
         await this.$stash.groups.fetchJournalGroups();
     }

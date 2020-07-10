@@ -20,13 +20,17 @@
         "loglevel": "^1.6.1",
         "moment": "^2.24.0",
         "rxjs": "^6.4.0",
+        "tailwindcss": "^1.4.6",
         "uikit": "^3.0.3",
         "uniqid": "^5.0.3",
         "vue": "^2.6.11",
         "vue-class-component": "^7.2.3",
         "vue-property-decorator": "^8.4.2",
         "vue-router": "^3.2.0",
-        "vue-rx": "^6.1.0"
+        "vue-rx": "^6.1.0",
+        "vuex": "^3.5.1",
+        "vuex-class": "^0.3.2",
+        "vuex-pathify": "^1.4.1"
     },
     "devDependencies": {
         "@types/cheerio": "^0.22.10",

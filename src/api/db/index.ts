@@ -14,13 +14,13 @@ export interface DBEntry {
     readonly id: number;
 }
 
-export interface DBJournalEntry extends DBEntry {}
+// export interface DBJournalEntry extends DBEntry {}
 
 export interface DBNonJournalEntry extends DBEntry {
     readonly journalId?: number;
 }
 
-export class Journal implements DBJournalEntry {
+export class Journal implements DBEntry {
     readonly id: number;
 
     constructor(

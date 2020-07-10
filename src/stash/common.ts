@@ -266,7 +266,7 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
      *
      * @protected
      * @returns {(Journal | undefined)}
-     * @memberof WordsModule
+     * @memberof NonJournalStashModule
      */
     protected getActiveJournal(): Journal | undefined {
         const activeJournal = this.$stash.journals.active;
@@ -276,6 +276,22 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
             log.warn('record: Root Group of the Active journal is not set'), undefined;
 
         return activeJournal;
+    }
+
+    /**
+     * Delete all entries belonging to the specified journal, even if these entries are not currently loaded.
+     * If the specified journal is currently active, reset the state of the stash module.
+     *
+     * @param {number} id
+     * @returns {Promise<void>}
+     * @memberof NonJournalStashModule
+     */
+    async purgeJournalEntries(id: number): Promise<void> {
+        await this.table.where({ journalId: id }).delete();
+
+        if (id === this.$stash.journals.activeId) {
+            this.reset();
+        }
     }
 }
 

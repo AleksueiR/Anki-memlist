@@ -65,7 +65,28 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     }
 
     /**
-     * Set specified journal as active. This will load all groups belonging to this journal.
+     * Delete a specified journal from the database along with all related journal records (groups, words, sources, etc.).
+     *
+     * @param {number} id
+     * @returns {Promise<void>}
+     * @memberof JournalsModule
+     */
+    async delete(id: number): Promise<void> {
+        await this.$stash.words.purgeJournalEntries(id);
+        await this.$stash.groups.purgeJournalEntries(id);
+        // TODO: purge sample sources
+        await this.table.delete(id);
+
+        delete this.all[id];
+
+        // when deleting an active journal, set active id to `null`
+        if (id === this.activeId) {
+            this.setActiveId();
+        }
+    }
+
+    /**
+     * Set a specified journal as active. This will load all groups belonging to this journal.
      *
      * @param {(number | null)} [value=null]
      * @returns {Promise<void>}

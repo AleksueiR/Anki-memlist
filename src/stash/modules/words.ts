@@ -15,6 +15,10 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         super(stash, db.words, WordsState);
     }
 
+    get selectedIds(): number[] {
+        return this.state.selectedIds;
+    }
+
     /**
      * Fetch words belonging to the currently active groups.
      * Return 0 if active journal is not set.
@@ -23,8 +27,10 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      * @memberof WordsModule
      */
     async fetchGroupWords(): Promise<void | 0> {
+        this.reset(); // remove any previously loaded words
+
         const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return 0;
+        if (!activeJournal) return 0; // if active journal is not set
 
         const selectedGroupIds = this.$stash.groups.selectedIds;
 
@@ -65,11 +71,14 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
 
         values = [...new Set(values)]; // remove duplicates
 
-        const selectedGroupIds = this.$stash.groups.selectedIds; // assume these ids are valid and no Root Group
+        const selectedGroupIds = this.$stash.groups.selectedIds; // assume these ids are valid and they don't contain Root Group
         if (selectedGroupIds.length === 0) return log.warn('words/new: No groups are selected'), 0;
 
         return db
             .transaction('rw', this.table, async () => {
+                // TODO: break up to remove side-effects
+                // TODO: creating new words should not by default link words in other lists
+
                 // find existing words
                 const existingWords = await this.table
                     .where('text')

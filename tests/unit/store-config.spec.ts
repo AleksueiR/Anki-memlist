@@ -80,6 +80,59 @@ test.skip('moves groups', async () => {
     // TODO: try moving groups between journals and root groups too
 });
 
+describe('deleting things', () => {
+    test('deletes an active journal', async () => {
+        await journals.delete(1);
+
+        expect(journals.activeId).toBe(null);
+        expect(journals.active).toBe(null);
+    });
+
+    test('deletes a non-active journal', async () => {
+        await groups.setSelectedIds(2);
+
+        await journals.delete(2);
+
+        expect(journals.all[2]).toEqual(undefined);
+        expect(await db.groups.where({ journalId: 2 }).count()).toBe(0);
+        expect(await db.words.where({ journalId: 2 }).count()).toBe(0);
+
+        expect(journals.activeId).toBe(1);
+        expect(groups.all).not.toEqual({});
+        expect(words.all).not.toEqual({});
+    });
+
+    test('deletes a non-existing journal', async () => {
+        await groups.setSelectedIds(2);
+
+        await journals.delete(13);
+
+        expect(journals.activeId).not.toBe(null);
+        expect(journals.active).not.toBe(null);
+
+        expect(groups.all).not.toEqual({});
+        expect(words.all).not.toEqual({});
+    });
+
+    test('deletes a journal with selected groups', async () => {
+        await groups.setSelectedIds(2);
+
+        await journals.delete(1);
+
+        expect(groups.all).toEqual({});
+        expect(groups.selectedIds).toEqual([]);
+    });
+
+    test.skip('deletes a journal with selected words', async () => {
+        // await words.setSelectedIds(2);
+
+        await journals.delete(1);
+
+        expect(words.all).toEqual({});
+        expect(words.selectedIds).toEqual([]);
+    });
+});
+
 describe('selecting groups', () => {
     test('sets Root Group as default', async () => {
         const err0 = await journals.setDefaultGroupId(1);

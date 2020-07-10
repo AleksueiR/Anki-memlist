@@ -32,8 +32,10 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async fetchJournalGroups(): Promise<void | 0> {
+        this.reset(); // remove any previously loaded groups
+
         const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return 0;
+        if (!activeJournal) return 0; // if active journal is not set
 
         const groups = await this.table.where({ journalId: activeJournal.id }).toArray();
         const groupSet = reduceArrayToObject(groups);

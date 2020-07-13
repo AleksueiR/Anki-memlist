@@ -1,5 +1,5 @@
 import { db, Word, WordArchived } from '@/api/db';
-import { exceptArray, reduceArrayToObject, unionArrays, wrapInArray } from '@/util';
+import { exceptArray, reduceArrayToObject, unionArrays, wrapInArray, intersectArrays } from '@/util';
 import Dexie from 'dexie';
 import log from 'loglevel';
 import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
@@ -23,29 +23,30 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      * Fetch words belonging to the currently active groups.
      * Return 0 if active journal is not set.
      *
-     * @returns {(Promise<void | 0>)}
+     * @returns {(Promise<void>)}
      * @memberof WordsModule
      */
-    async fetchGroupWords(): Promise<void | 0> {
+    async fetchGroupWords(): Promise<void> {
+        const selectedWordIds = this.selectedIds;
+
         this.reset(); // remove any previously loaded words
 
         const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return 0; // if active journal is not set
-
         const selectedGroupIds = this.$stash.groups.selectedIds;
 
         const words = await this.table
             .where('memberGroupIds')
             .anyOf(selectedGroupIds)
-            .distinct()
             .filter(word => word.journalId === activeJournal.id)
+            .distinct()
             .toArray();
 
         const wordSet = reduceArrayToObject(words);
 
         this.setAll(wordSet);
 
-        // TODO: check if the currently selected words need to be deselected
+        // TODO: re-select previously selected words
+        // this.setSelectedIds(intersectArrays(selectedWordIds, this.getAllIds()));
     }
 
     /**
@@ -88,11 +89,12 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                     .toArray();
 
                 // update existing words with new group ids
-                const setMemberGroupIdsResult = await Promise.all(
+                // TODO: `setMemberGroupIds` is removed
+                /* const setMemberGroupIdsResult = await Promise.all(
                     existingWords.map(word => this.setMemberGroupIds(word, selectedGroupIds, SelectionMode.Add))
                 );
                 // something broke, abort the transaction
-                if (setMemberGroupIdsResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
+                if (setMemberGroupIdsResult.includes(0)) return Dexie.currentTransaction.abort(), 0; */
 
                 // filter down to new words
                 const existingWordsTexts = existingWords.map(word => word.text);
@@ -180,53 +182,47 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         });
     }
 
+    /**
+     * Delete specified word ids from the provided groups.
+     * If no group ids are provided, delete words from the journal.
+     *
+     * @param {(number | number[])} wordIds
+     * @param {(number | number[])} [fromGroupIds]
+     * @returns {Promise<void>}
+     * @memberof WordsModule
+     */
     async delete(wordIds: number | number[], fromGroupIds?: number | number[]): Promise<void> {
-        // validate group ids
-        // const vettedFromGroupIds = this.$stash.groups.vetId(fromGroupIds, true);
+        this.validateId(wordIds);
+        this.$stash.groups.validateId(fromGroupIds || []);
 
-        // validate word ids
-
-        // ids are vetted against the db, so we know they belong to active journal
-        const vettedWordIds = await this.vetIdAgainstDb(wordIds);
-
-        if (fromGroupIds === undefined) {
-            await this.table.bulkDelete(vettedWordIds);
-            this.removeFromAll(vettedWordIds);
-        } else {
-            this.updateStateAndDb(vettedWordIds, 'memberGroupIds', word =>
-                exceptArray(word.memberGroupIds, wrapInArray(fromGroupIds))
-            );
-        }
-
-        await this.$stash.groups.refreshWordCounts();
+        const wordIdList = wrapInArray(wordIds);
 
         await db.transaction('rw', this.table, async () => {
-            const updateStateResult = await Promise.all(
-                vettedWordIds.map(async wordId => {
-                    const word = this.get(wordId);
-                    if (!word) return 0;
+            if (fromGroupIds === undefined) {
+                console.log('I shouldnt be called');
 
-                    // calculate new memberGroupIds for a given words and update state/db
-                    // const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, vettedFromGroupIds), [
-                    //     toGroupId
-                    // ]);
-                    // return this.updateStateAndDb(wordId, 'memberGroupIds', newMemberGroupIds);
-                })
-            );
+                // if no groups specified, delete from everywhere
+                await this.table.bulkDelete(wordIdList);
+                this.removeFromAll(wordIdList);
+            } else {
+                // remove `fromGroupIds` from the specified words
+                await this.updateStateAndDb(wordIdList, 'memberGroupIds', word =>
+                    exceptArray(word.memberGroupIds, wrapInArray(fromGroupIds))
+                );
 
-            // if at least one result fails, abort the transaction
-            if (updateStateResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
+                // TODO: remove orphaned words
+            }
 
             // reload all the group words
             // this will add new words to the state and also reload existing words that were added to the active groups
             await this.fetchGroupWords();
-            //await this.$stash.groups.refreshWordCounts([...vettedFromGroupIds, toGroupId]);
         });
+
+        this.$stash.groups.refreshWordCounts();
     }
 
     /**
      * Count words in the specified group. Return the word count.
-     * Return 0 if the active journal is not set or the group doesn't exist or the group has 0 words.
      *
      * @protected
      * @param {number} groupId
@@ -236,9 +232,8 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      */
     async countWordsInAGroup(groupId: number, isArchived?: WordArchived): Promise<number> {
         const activeJournal = this.getActiveJournal();
-        if (!activeJournal) return 0;
 
-        return await this.table
+        return this.table
             .where({ memberGroupIds: groupId })
             .filter(word => {
                 if (word.journalId !== activeJournal.id) return false;
@@ -260,36 +255,38 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      * @returns {Promise<number>}
      * @memberof WordsModule
      */
-    protected async setMemberGroupIds(
+    // NOTE: I dno't think this is needed at all; there is no use case for it
+    /* protected async setMemberGroupIds(
         word: Word,
-        groupIds: number[],
+        groupIds: number | number[],
         selectionMode: SelectionMode = SelectionMode.Replace
     ): Promise<number> {
+        this.validateId(groupIds);
+        const groupIdList = wrapInArray(groupIds);
+
         let newMemberGroupIds;
 
         switch (selectionMode) {
             case SelectionMode.Replace:
-                newMemberGroupIds = groupIds;
+                newMemberGroupIds = groupIdList;
                 break;
 
             case SelectionMode.Add:
                 // remove duplicate
-                newMemberGroupIds = [...new Set([...word.memberGroupIds, ...groupIds])];
+                newMemberGroupIds = [...new Set([...word.memberGroupIds, ...groupIdList])];
                 break;
 
             case SelectionMode.Remove:
                 // remove existing ids with the provided ids
-                newMemberGroupIds = word.memberGroupIds.filter(id => !groupIds.includes(id));
+                newMemberGroupIds = word.memberGroupIds.filter(id => !groupIdList.includes(id));
                 break;
 
             default:
-                log.warn(`words/setMemberGroupIds: Unknown code ${selectionMode}.`);
-                return 0;
+                throw new Error(`words/setMemberGroupIds: Unknown code ${selectionMode}.`);
         }
 
-        // ??? return this.updateStateAndDb(word.id, "memberGroupIds", newMemberGroupIds);
-        return this.table.update(word.id, { memberGroupIds: newMemberGroupIds });
-    }
+        return this.updateStateAndDb(word.id, 'memberGroupIds', newMemberGroupIds);
+    } */
 
     async vetIdAgainstDb(ids: number | number[]): Promise<number[]> {
         const activeJournal = this.getActiveJournal();

@@ -61,6 +61,12 @@ export function exceptArray<K>(array1: K[], array2: K[]): K[] {
     return array1.filter(id => !array2.includes(id));
 }
 
+export function areArraysEqual<K>(array1: K[], array2: K[], respectOrder: boolean = false): boolean {
+    if (array1.length !== array2.length) return false;
+
+    return array1.some((value1, index) => value1 !== array2[index]);
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Reduce an array of objects to a dictionary based on the provided key field.

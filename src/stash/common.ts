@@ -1,5 +1,5 @@
 import { DBEntry, DBNonJournalEntry, Journal } from '@/api/db';
-import { notEmptyFilter, wrapInArray } from '@/util';
+import { notEmptyFilter, wrapInArray, exceptArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
@@ -109,7 +109,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     protected addToAll(values: K[]): (void | 0)[];
     protected addToAll(value: K | K[]): void | 0 | (void | 0)[] {
         if (Array.isArray(value)) {
-            return value.map(value => this.addToAll(value));
+            return value.map(entry => this.addToAll(entry));
         }
 
         if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`), 0;
@@ -128,7 +128,9 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     protected removeFromAll(value: K | number): void;
     protected removeFromAll(values: K[] | number[]): void;
     protected removeFromAll(value: K | K[] | number | number[]): void {
-        if (Array.isArray(value)) return value.forEach(this.removeFromAll);
+        if (Array.isArray(value)) {
+            return value.forEach((v: K | number) => this.removeFromAll(v));
+        }
 
         delete this.all[typeof value === 'number' ? value : value.id];
     }
@@ -192,9 +194,6 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
             return value.map(id => this.get(id)).filter(notEmptyFilter);
         }
 
-        const entry = this.state.all[value];
-        if (!entry) log.warn(`record/get: Cannot load or record ${value} doesn't exist.`);
-
         return this.state.all[value];
     }
 
@@ -233,37 +232,11 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         return this.vetId(ids).length === ids.length;
     }
 
-    /**
-     * Update a specified record in the entry set and update the corresponding record in the db.
-     * Returns 0 on error or if the value is already set.
-     *
-     * @param {*} id
-     * @param {*} key
-     * @param {*} value
-     * @returns {Promise<void>}
-     */
-    updateStateAndDb_: SpecificUpdater<K> = async (id, key, value) => {
-        const entry = this.get(id);
-        if (!entry) return 0;
+    validateId(value: number | number[]): void {
+        const invalidIds = exceptArray(wrapInArray(value), this.getAllIds());
 
-        // value is already set
-        if (entry[key] === value) {
-            return log.info(`record/updateStateAndDb: ${id}.${key} already has value ${value}`), 0;
-        }
-
-        // set the value in the state
-        entry[key] = value;
-
-        // update the db
-        return this.table.update(id, { [key]: value }).then(result => {
-            // if result === 0, either the id is wrong or the value is already set
-            if (result === 0) {
-                log.error(`${id} failed to update db: id doesn't exist or value is already set`);
-
-                return 0;
-            }
-        });
-    };
+        if (invalidIds.length > 0) throw new Error(`entry/validateId: Entry id/ids #${invalidIds} are invalid.`);
+    }
 
     /**
      * Update a specified record in the entry set and update the corresponding record in the db.

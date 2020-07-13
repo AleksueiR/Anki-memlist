@@ -109,6 +109,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
         } else {
             this.$stash.groups.reset();
             this.$stash.words.reset();
+            // TODO: reset sources
         }
     }
 

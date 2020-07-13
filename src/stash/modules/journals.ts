@@ -1,5 +1,6 @@
 import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
+import Dexie from 'dexie';
 import log from 'loglevel';
 import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
 
@@ -28,6 +29,8 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @returns {Promise<void>}
      */
     async fetch(): Promise<void> {
+        this.reset(); // remove any previously loaded journals
+
         const journals = await this.table.toArray();
 
         const journalSet = reduceArrayToObject(journals);
@@ -36,53 +39,59 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
     /**
      * Create a new Journal with the name provided, and add it to the state and db.
-     * Returns the id of the new journal or 0 on failure.
+     * Returns the id of the new journal.
      *
      * @param {string} [name='Default Journal']
-     * @returns {(Promise<number | 0>)}
+     * @returns {Promise<number>}
      * @memberof JournalsModule
      */
-    async new(name = 'Default Journal'): Promise<number | 0> {
-        // create and get a new journal
-        const newJournalId = await this.table.add(new Journal(name));
-        const newJournal = await this.getFromDb(newJournalId);
-        if (!newJournal) return log.warn('journals/new: Cannot create a new journal.'), 0;
+    async new(name = 'Default Journal'): Promise<number> {
+        return db.transaction('rw', this.table, db.groups, async () => {
+            // create and get a new journal
+            const newJournalId = await this.table.add(new Journal(name));
+            const newJournal = await this.table.get(newJournalId);
+            if (!newJournal) {
+                Dexie.currentTransaction.abort();
+                throw new Error('journals/new: Cannot create a new journal.');
+            }
 
-        // create a Root Group directly from here as it's done only during the initial set up and cannot be changed later
-        const rootGroupId = await db.groups.add(new Group('Root group', newJournal.id));
-        const rootGroup = await db.groups.get(rootGroupId);
-        if (!rootGroup) return log.warn('journals/new: Cannot create a Root Group.'), 0;
+            // create a Root Group directly from here as it's done only during the initial set up and cannot be changed later
+            const rootGroupId = await db.groups.add(new Group('Root group', newJournal.id));
 
-        // add the newly created journal directly to the state
-        // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-        this.addToAll(newJournal);
+            // add the newly created journal directly to the state
+            // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
+            this.addToAll(newJournal);
 
-        // set rootGroupId of the new Journal;
-        // rootGroupId cannot be changed after a journal is created
-        await this.updateStateAndDb(newJournal.id, 'rootGroupId', rootGroupId);
+            // set rootGroupId of the new Journal;
+            // rootGroupId cannot be changed after a journal is created
+            await this.updateStateAndDb(newJournal.id, 'rootGroupId', rootGroupId);
 
-        return newJournal.id;
+            return newJournal.id;
+        });
     }
 
     /**
      * Delete a specified journal from the database along with all related journal records (groups, words, sources, etc.).
+     *
      *
      * @param {number} id
      * @returns {Promise<void>}
      * @memberof JournalsModule
      */
     async delete(id: number): Promise<void> {
-        await this.$stash.words.purgeJournalEntries(id);
-        await this.$stash.groups.purgeJournalEntries(id);
-        // TODO: purge sample sources
-        await this.table.delete(id);
+        await db.transaction('rw', this.table, db.groups, db.words, async () => {
+            await this.$stash.words.deleteJournalEntries(id);
+            await this.$stash.groups.deleteJournalEntries(id);
+            // TODO: purge sample sources
+            await this.table.delete(id);
 
-        delete this.all[id];
+            // when deleting an active journal, set active id to `null`
+            if (id === this.activeId) {
+                this.setActiveId();
+            }
 
-        // when deleting an active journal, set active id to `null`
-        if (id === this.activeId) {
-            this.setActiveId();
-        }
+            this.removeFromAll(id);
+        });
     }
 
     /**
@@ -95,7 +104,12 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
     async setActiveId(value: number | null = null): Promise<void> {
         this.state.activeId = value;
 
-        await this.$stash.groups.fetchJournalGroups();
+        if (value) {
+            await this.$stash.groups.fetchJournalGroups();
+        } else {
+            this.$stash.groups.reset();
+            this.$stash.words.reset();
+        }
     }
 
     /**
@@ -108,7 +122,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     async setName(journalId: number, name: string): Promise<void | 0> {
-        return this.updateStateAndDb(journalId, 'name', name);
+        // return this.updateStateAndDb(journalId, 'name', name);
     }
 
     /**
@@ -116,13 +130,14 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * Returns 0 if the operation doesn't succeed.
      *
      * @param {(number | null)} defaultGroupId
-     * @returns {(Promise<void | 0>)}
+     * @returns {Promise<void>}
      * @memberof JournalsModule
      */
-    async setDefaultGroupId(defaultGroupId: number | null): Promise<void | 0> {
-        if (!this.activeId) return log.warn('journals/setRootGroupId: Active journal is not set.'), 0;
-        if (defaultGroupId && !this.$stash.groups.isValidId(defaultGroupId, true)) return 0;
+    async setDefaultGroupId(defaultGroupId: number | null): Promise<void> {
+        if (!this.activeId) throw new Error('journals/setDefaultGroupId: Active journal is not set.');
 
-        return this.updateStateAndDb(this.activeId, 'defaultGroupId', defaultGroupId);
+        if (defaultGroupId) this.$stash.groups.validateId(defaultGroupId);
+
+        await this.updateStateAndDb(this.activeId, 'defaultGroupId', defaultGroupId);
     }
 }

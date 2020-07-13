@@ -41,6 +41,8 @@ export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
     new (): T;
 }
 
+type OmitId<K extends DBEntry> = keyof Omit<K, 'id'>;
+
 /**
  * A stash module class providing some default functions.
  *
@@ -112,7 +114,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 
         if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`), 0;
 
-        this.setAll({ ...this.all, ...{ [value.id]: value } });
+        this.state.all[value.id] = value;
     }
 
     /**
@@ -123,14 +125,12 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {void}
      * @memberof StashModule
      */
-    protected removeFromAll(value: K): void;
-    protected removeFromAll(values: K[]): void;
-    protected removeFromAll(value: K | K[]): void {
-        if (Array.isArray(value)) {
-            return value.forEach(this.removeFromAll);
-        }
+    protected removeFromAll(value: K | number): void;
+    protected removeFromAll(values: K[] | number[]): void;
+    protected removeFromAll(value: K | K[] | number | number[]): void {
+        if (Array.isArray(value)) return value.forEach(this.removeFromAll);
 
-        delete this.all[value.id];
+        delete this.all[typeof value === 'number' ? value : value.id];
     }
 
     /**
@@ -152,11 +152,29 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {Promise<K>}
      * @memberof StashModule
      */
-    protected async getFromDb(id: number): Promise<K | undefined> {
-        const record = await this.table.get(id);
-        if (!record) log.warn(`record/getFromDb: Cannot load or record ${id} doesn't exist.`);
+    protected async _getFromDb(id: number): Promise<K | undefined>;
+    protected async _getFromDb(ids: number[]): Promise<K[] | undefined>;
+    protected async _getFromDb(value: number | number[]): Promise<K | K[] | undefined> {
+        const records = await this.table.bulkGet(wrapInArray(value));
+        if (!records) log.warn(`record/getFromDb: Cannot load or record ${value} doesn't exist.`);
 
-        return record;
+        if (Array.isArray(value)) {
+            return records.pop();
+        }
+
+        return records;
+    }
+
+    /**
+     * Remove the specified Entry from the db.
+     *
+     * @protected
+     * @param {(number | number[])} id
+     * @returns {Promise<void>}
+     * @memberof StashModule
+     */
+    protected async deleteFromDb(id: number | number[]): Promise<void> {
+        await this.table.bulkDelete(wrapInArray(id));
     }
 
     /**
@@ -189,12 +207,12 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @memberof StashModule
      */
     vetId(value: number | number[]): number[] {
-        const ids = wrapInArray(value);
-        const allIds = this.getAllIds();
+        // make return a promise for consistency
+        const ids = [...new Set(wrapInArray(value))]; // remove duplicates
 
         // either filter the the provided list to make sure there are no phony ids or return all of them if `ids` is not provided.
         // this also filters out duplicates
-        return allIds.filter(id => ids.includes(id));
+        return this.getAllIds().filter(id => ids.includes(id));
     }
 
     /**
@@ -224,7 +242,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @param {*} value
      * @returns {Promise<void>}
      */
-    updateStateAndDb: SpecificUpdater<K> = async (id, key, value) => {
+    updateStateAndDb_: SpecificUpdater<K> = async (id, key, value) => {
         const entry = this.get(id);
         if (!entry) return 0;
 
@@ -248,6 +266,82 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     };
 
     /**
+     * Update a specified record in the entry set and update the corresponding record in the db.
+     * Returns the number of entries updated; 0 if no entries were updated:
+     * - the number of provided ids and values doesn't match
+     * - an entry doesn't exist
+     * - an entry already has the value provided
+     *
+     * @protected
+     * @template T
+     * @template S
+     * @param {(number | number[])} ids
+     * @param {T} key
+     * @param {(S | S[] | ((entry: K) => S))} payload
+     * @returns {Promise<number>}
+     * @memberof StashModule
+     */
+    protected async updateStateAndDb<T extends keyof Omit<K, 'id'>, S extends K[T]>(
+        id: number,
+        key: T,
+        payload: S | ((entry: K) => S)
+    ): Promise<number>;
+    protected async updateStateAndDb<T extends keyof Omit<K, 'id'>, S extends K[T]>(
+        ids: number[],
+        key: T,
+        payload: S[] | ((entry: K) => S)
+    ): Promise<number>;
+    protected async updateStateAndDb<T extends keyof Omit<K, 'id'>, S extends K[T]>(
+        ids: number | number[],
+        key: T,
+        payload: S | S[] | ((entry: K) => S)
+    ): Promise<number> {
+        if (Array.isArray(ids) && Array.isArray(payload) && ids.length !== payload.length)
+            throw new Error(`record/updateStateAndDb: The number of supplied ids and values doesn't match.`);
+
+        // if payload is a function, use it to get a value
+        // if payload is value or value[], wrap a function around it to return value by index
+        const getValue =
+            payload instanceof Function
+                ? payload
+                : (() => {
+                      const idList = wrapInArray(ids);
+                      const valueList = isPayloadAnArray(payload) ? payload : [payload];
+
+                      return (entry: K) => valueList[idList.indexOf(entry.id)];
+                  })();
+
+        return this.table
+            .where('id')
+            .anyOf(ids)
+            .modify(dbEntry => {
+                const stateEntry = this.get(dbEntry.id);
+                if (!stateEntry)
+                    throw new Error(`record/updateStateAndDb: ${dbEntry.id} entry doesn't exist in the state.`);
+
+                const value = getValue(stateEntry);
+
+                if (dbEntry[key] === value)
+                    return log.info(
+                        `record/updateStateAndDb: Db ${dbEntry.id}.${key} entry already has value ${value}.`
+                    );
+
+                dbEntry[key] = stateEntry[key] = value;
+            });
+
+        /**
+         * Check if the `payload` an array of values `S`. This will only be true if `ids` is an array as well.
+         * The payload can be an array itself as a single value, but then `ids` must be a single number.
+         *
+         * @param {(S | S[])} x
+         * @returns {x is S[]}
+         */
+        function isPayloadAnArray(x: S | S[]): x is S[] {
+            return Array.isArray(ids);
+        }
+    }
+
+    /**
      * Reset the state to its defaults.
      *
      * @memberof StashModule
@@ -262,18 +356,18 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
     T
 > {
     /**
-     * Return an active journal or undefined if the active journal is not set.
+     * Return an active journal or throws if the active journal is not set or its root group is not set.
      *
      * @protected
-     * @returns {(Journal | undefined)}
+     * @returns {(Journal)}
      * @memberof NonJournalStashModule
      */
-    protected getActiveJournal(): Journal | undefined {
+    protected getActiveJournal(): Journal {
         const activeJournal = this.$stash.journals.active;
-        if (!activeJournal) return log.warn('record/getActiveJournal: Active journal is not set'), undefined;
+        if (!activeJournal) throw new Error('record/getActiveJournal: Active journal is not set.');
 
         if (activeJournal.rootGroupId === -1)
-            log.warn('record: Root Group of the Active journal is not set'), undefined;
+            throw new Error('record/getActiveJournal: Root Group of the Active journal is not set');
 
         return activeJournal;
     }
@@ -282,14 +376,15 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
      * Delete all entries belonging to the specified journal, even if these entries are not currently loaded.
      * If the specified journal is currently active, reset the state of the stash module.
      *
-     * @param {number} id
+     * @param {number} journalId
      * @returns {Promise<void>}
      * @memberof NonJournalStashModule
      */
-    async purgeJournalEntries(id: number): Promise<void> {
-        await this.table.where({ journalId: id }).delete();
+    async deleteJournalEntries(journalId: number): Promise<void> {
+        await this.table.where({ journalId }).delete();
 
-        if (id === this.$stash.journals.activeId) {
+        // reset the state of the stash module of the active journal is being deleted
+        if (journalId === this.$stash.journals.activeId) {
             this.reset();
         }
     }

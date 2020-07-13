@@ -22,20 +22,56 @@ export function removeFromArrayByValue<T>(array: T[], value: T): T[] {
     return arrayClone;
 }
 
+/**
+ * Return a union of two provided array with duplicates removed.
+ *
+ * @export
+ * @template K
+ * @param {K[]} array1
+ * @param {K[]} array2
+ * @returns {K[]}
+ */
 export function unionArrays<K>(array1: K[], array2: K[]): K[] {
     return [...new Set([...array1, ...array2])];
 }
 
+/**
+ * Return an intersection between the two provided arrays.
+ *
+ * @export
+ * @template K
+ * @param {K[]} array1
+ * @param {K[]} array2
+ * @returns {K[]}
+ */
 export function intersectArrays<K>(array1: K[], array2: K[]): K[] {
     return array1.filter(id => array2.includes(id));
 }
 
+/**
+ * Return a subset of elements from the first array that don't exist in the second.
+ *
+ * @export
+ * @template K
+ * @param {K[]} array1
+ * @param {K[]} array2
+ * @returns {K[]}
+ */
 export function exceptArray<K>(array1: K[], array2: K[]): K[] {
     return array1.filter(id => !array2.includes(id));
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function reduceArrayToObject<T extends { [name: string]: any }>(objects: T[], key = 'id') {
+/**
+ * Reduce an array of objects to a dictionary based on the provided key field.
+ *
+ * @export
+ * @template T
+ * @param {T[]} objects
+ * @param {string} [key='id']
+ * @returns
+ */
+export function reduceArrayToObject<T extends Record<string, any>>(objects: T[], key = 'id') {
     return objects.reduce<Record<string, T>>((map, object) => ((map[`${object[key]}`] = object), map), {});
 }
 

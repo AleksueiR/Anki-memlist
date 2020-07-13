@@ -37,6 +37,7 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         const words = await this.table
             .where('memberGroupIds')
             .anyOf(selectedGroupIds)
+            .distinct()
             .filter(word => word.journalId === activeJournal.id)
             .toArray();
 
@@ -148,10 +149,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         const vettedFromGroupIds = this.$stash.groups.vetId(fromGroupIds, true);
         if (vettedFromGroupIds.length === 0) return log.warn(`words/move: All "fromGroup" ids are invalid.`), 0;
 
-        // check that `fromGroup` ids belong to selected groups
-        if (vettedFromGroupIds.some(id => !this.$stash.groups.selectedIds.includes(id)))
-            return log.warn(`words/move: Moving from a non-selected groups ${vettedFromGroupIds} is not allowed.`), 0;
-
         // check that `toGroup` id is valid
         if (!this.$stash.groups.isValidId(toGroupId, true))
             return log.warn(`words/move: The "toGroup" id is invalid.`), 0;
@@ -180,6 +177,50 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
             // this will add new words to the state and also reload existing words that were added to the active groups
             await this.fetchGroupWords();
             await this.$stash.groups.refreshWordCounts([...vettedFromGroupIds, toGroupId]);
+        });
+    }
+
+    async delete(wordIds: number | number[], fromGroupIds?: number | number[]): Promise<void> {
+        // validate group ids
+        // const vettedFromGroupIds = this.$stash.groups.vetId(fromGroupIds, true);
+
+        // validate word ids
+
+        // ids are vetted against the db, so we know they belong to active journal
+        const vettedWordIds = await this.vetIdAgainstDb(wordIds);
+
+        if (fromGroupIds === undefined) {
+            await this.table.bulkDelete(vettedWordIds);
+            this.removeFromAll(vettedWordIds);
+        } else {
+            this.updateStateAndDb(vettedWordIds, 'memberGroupIds', word =>
+                exceptArray(word.memberGroupIds, wrapInArray(fromGroupIds))
+            );
+        }
+
+        await this.$stash.groups.refreshWordCounts();
+
+        await db.transaction('rw', this.table, async () => {
+            const updateStateResult = await Promise.all(
+                vettedWordIds.map(async wordId => {
+                    const word = this.get(wordId);
+                    if (!word) return 0;
+
+                    // calculate new memberGroupIds for a given words and update state/db
+                    // const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, vettedFromGroupIds), [
+                    //     toGroupId
+                    // ]);
+                    // return this.updateStateAndDb(wordId, 'memberGroupIds', newMemberGroupIds);
+                })
+            );
+
+            // if at least one result fails, abort the transaction
+            if (updateStateResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
+
+            // reload all the group words
+            // this will add new words to the state and also reload existing words that were added to the active groups
+            await this.fetchGroupWords();
+            //await this.$stash.groups.refreshWordCounts([...vettedFromGroupIds, toGroupId]);
         });
     }
 
@@ -246,6 +287,17 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
                 return 0;
         }
 
+        // ??? return this.updateStateAndDb(word.id, "memberGroupIds", newMemberGroupIds);
         return this.table.update(word.id, { memberGroupIds: newMemberGroupIds });
+    }
+
+    async vetIdAgainstDb(ids: number | number[]): Promise<number[]> {
+        const activeJournal = this.getActiveJournal();
+
+        return this.table
+            .where('id')
+            .anyOf(wrapInArray(ids))
+            .filter(word => word.journalId === activeJournal?.id)
+            .primaryKeys();
     }
 }

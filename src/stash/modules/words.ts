@@ -143,43 +143,30 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
      * @param {(number | number[])} wordIds
      * @param {(number | number[])} fromGroupIds
      * @param {number} toGroupId
-     * @returns {(Promise<void | 0>)}
+     * @returns {(Promise<void>)}
      * @memberof WordsModule
      */
-    async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void | 0> {
-        // check if there is at least a single `fromGroup` id that is valid
-        const vettedFromGroupIds = this.$stash.groups.vetId(fromGroupIds, true);
-        if (vettedFromGroupIds.length === 0) return log.warn(`words/move: All "fromGroup" ids are invalid.`), 0;
+    async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void> {
+        const fromGroupIdList = wrapInArray(fromGroupIds);
+        const allGroupIds = [...fromGroupIdList, toGroupId];
 
-        // check that `toGroup` id is valid
-        if (!this.$stash.groups.isValidId(toGroupId, true))
-            return log.warn(`words/move: The "toGroup" id is invalid.`), 0;
+        this.$stash.groups.validateId(allGroupIds);
 
-        const vettedWordIds = this.vetId(wordIds);
-        if (vettedWordIds.length === 0) return log.warn(`words/move: All word ids are invalid.`), 0;
+        this.validateId(wordIds);
 
-        return db.transaction('rw', this.table, async () => {
-            const updateStateResult = await Promise.all(
-                vettedWordIds.map(async wordId => {
-                    const word = this.get(wordId);
-                    if (!word) return 0;
+        const wordIdList = wrapInArray(wordIds);
 
-                    // calculate new memberGroupIds for a given words and update state/db
-                    const newMemberGroupIds = unionArrays(exceptArray(word.memberGroupIds, vettedFromGroupIds), [
-                        toGroupId
-                    ]);
-                    return this.updateStateAndDb(wordId, 'memberGroupIds', newMemberGroupIds);
-                })
+        await db.transaction('rw', this.table, async () => {
+            await this.updateStateAndDb(wordIdList, 'memberGroupIds', word =>
+                unionArrays(exceptArray(word.memberGroupIds, fromGroupIdList), [toGroupId])
             );
-
-            // if at least one result fails, abort the transaction
-            if (updateStateResult.includes(0)) return Dexie.currentTransaction.abort(), 0;
 
             // reload all the group words
             // this will add new words to the state and also reload existing words that were added to the active groups
             await this.fetchGroupWords();
-            await this.$stash.groups.refreshWordCounts([...vettedFromGroupIds, toGroupId]);
         });
+
+        this.$stash.groups.refreshWordCounts(allGroupIds);
     }
 
     /**
@@ -199,8 +186,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
 
         await db.transaction('rw', this.table, async () => {
             if (fromGroupIds === undefined) {
-                console.log('I shouldnt be called');
-
                 // if no groups specified, delete from everywhere
                 await this.table.bulkDelete(wordIdList);
                 this.removeFromAll(wordIdList);
@@ -212,10 +197,6 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
 
                 // TODO: remove orphaned words
             }
-
-            // reload all the group words
-            // this will add new words to the state and also reload existing words that were added to the active groups
-            await this.fetchGroupWords();
         });
 
         this.$stash.groups.refreshWordCounts();

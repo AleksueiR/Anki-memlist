@@ -1,7 +1,7 @@
 import { db } from '@/api/db';
 import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
-import { rePopulate } from './dummy-data';
 import Vue from 'vue';
+import { rePopulate } from './dummy-data';
 
 // disable tips in the console
 Vue.config.devtools = false;
@@ -119,9 +119,7 @@ describe('groups/fetchJournalGroups', () => {
 
     test('fetches journal groups when no active journal is set', async () => {
         await journals.setActiveId();
-        await expect(groups.fetchJournalGroups()).rejects.toThrowError(
-            'record/getActiveJournal: Active journal is not set.'
-        );
+        await expect(groups.fetchJournalGroups()).rejects.toThrowError();
     });
 });
 
@@ -352,26 +350,29 @@ describe.skip('creating new words', () => {
     });
 });
 
-describe.skip('moving words', () => {
+describe('words/move', () => {
     test('moves a single word', async () => {
         await groups.setSelectedIds([2, 3]);
+        await groups.refreshWordCounts();
 
         const group3WordCount = groups.wordCount[3];
 
-        const result0 = await words.move(1, 2, 3);
+        await words.move(1, 2, 3);
 
-        expect(result0).not.toBe(0);
+        await groups.refreshWordCounts();
+
         expect(words.get(1)?.memberGroupIds).toEqual([3]);
         expect(groups.wordCount[3]).toBe(group3WordCount + 1);
     });
 
     test('moves a single word to the same group', async () => {
         await groups.setSelectedIds(2);
+        await groups.refreshWordCounts();
 
         const group2WordCount = groups.wordCount[2];
 
-        const result0 = await words.move(1, 2, 2);
-        expect(result0).not.toBe(0);
+        await words.move(1, 2, 2);
+
         expect(words.get(1)?.memberGroupIds).toEqual([2]);
         expect(groups.wordCount[2]).toBe(group2WordCount);
     });
@@ -379,53 +380,45 @@ describe.skip('moving words', () => {
     test('moves a single word to a non-existent group', async () => {
         await groups.setSelectedIds(2);
 
-        const result0 = await words.move(1, 2, 395);
-        expect(result0).toBe(0);
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        await expect(words.move(1, 2, 395)).rejects.toThrowError();
     });
 
-    test('moves a single word to from a non-existent and a regular group', async () => {
+    test('moves a single word from a non-existent and a regular group', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        const result0 = await words.move(1, [2, 395], 3);
-        expect(result0).not.toBe(0);
-        expect(words.get(1)?.memberGroupIds).toEqual([3]);
+        await expect(words.move(1, [2, 395], 3)).rejects.toThrowError();
+        await expect(words.move(1, 234, 3)).rejects.toThrowError();
     });
 
     test('moves a single word from a non-selected group', async () => {
         await groups.setSelectedIds(3);
 
-        const result0 = await words.move(1, 2, 3);
-        expect(result0).toBe(0);
-    });
-
-    test('moves a single word from a non-existent group', async () => {
-        await groups.setSelectedIds(2);
-
-        const result0 = await words.move(1, 234, 3);
-        expect(result0).toBe(0);
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        await expect(words.move(1, 2, 3)).rejects.toThrowError();
     });
 
     test('moves several words', async () => {
         await groups.setSelectedIds([2, 3]);
+        await groups.refreshWordCounts();
 
         const group2WordCount = groups.wordCount[2];
         const group3WordCount = groups.wordCount[3];
-        const result0 = await words.move([1, 2, 3], 2, 3);
+        await words.move([1, 2, 3], 2, 3);
 
-        expect(result0).not.toBe(0);
+        await groups.refreshWordCounts();
+
         expect(groups.wordCount[2]).toBe(group2WordCount - 3);
         expect(groups.wordCount[3]).toBe(group3WordCount + 3);
     });
 
     test('moves all group words', async () => {
         await groups.setSelectedIds([2, 3]);
+        await groups.refreshWordCounts();
 
         const group3WordCount = groups.wordCount[3];
-        const result0 = await words.move([1, 2, 3, 4, 5, 6, 18], 2, 3);
+        await words.move([1, 2, 3, 4, 5, 6, 18], 2, 3);
 
-        expect(result0).not.toBe(0);
+        await groups.refreshWordCounts();
+
         expect(groups.wordCount[2]).toBe(0);
         // words 5 and 6 belong to group 3 already
         expect(groups.wordCount[3]).toBe(group3WordCount + 5);
@@ -434,25 +427,15 @@ describe.skip('moving words', () => {
     test('moves a single word to the Root Group', async () => {
         await groups.setSelectedIds(2);
 
-        const result0 = await words.move(1, 2, 1);
-        expect(result0).toBe(0);
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        await expect(words.move(1, 2, 1)).rejects.toThrowError();
     });
 
     test('moves a single word to another Journal', async () => {
         await groups.setSelectedIds([2]);
 
-        const result0 = await words.move(1, 2, 7);
-
-        expect(result0).toBe(0);
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
+        await expect(words.move(1, 2, 7)).rejects.toThrowError();
     });
 });
-
-// more tests
-// - selectedIds([2,2])
-// - try to link a word from another journal
-// - try some garbage input instead of words
 
 describe('words/delete', () => {
     test('deletes a single word from a selected group', async () => {
@@ -518,3 +501,8 @@ describe('words/delete', () => {
         expect(await db.words.count()).toBe(totalWordCount);
     });
 });
+
+// more tests
+// - selectedIds([2,2])
+// - try to link a word from another journal
+// - try some garbage input instead of words

@@ -112,7 +112,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
             return value.map(entry => this.addToAll(entry));
         }
 
-        if (this.all[value.id]) return log.info(`record/addToAll: Entry ${value.id} already exists.`), 0;
+        if (this.all[value.id]) return log.info(`${this.moduleName}/addToAll: Entry ${value.id} already exists.`), 0;
 
         this.state.all[value.id] = value;
     }
@@ -158,7 +158,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     protected async _getFromDb(ids: number[]): Promise<K[] | undefined>;
     protected async _getFromDb(value: number | number[]): Promise<K | K[] | undefined> {
         const records = await this.table.bulkGet(wrapInArray(value));
-        if (!records) log.warn(`record/getFromDb: Cannot load or record ${value} doesn't exist.`);
+        if (!records) log.warn(`${this.moduleName}/getFromDb: Cannot load or record ${value} doesn't exist.`);
 
         if (Array.isArray(value)) {
             return records.pop();
@@ -235,7 +235,8 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     validateId(value: number | number[]): void {
         const invalidIds = exceptArray(wrapInArray(value), this.getAllIds());
 
-        if (invalidIds.length > 0) throw new Error(`entry/validateId: Entry id/ids #${invalidIds} are invalid.`);
+        if (invalidIds.length > 0)
+            throw new Error(`${this.moduleName}/validateId: Entry id/ids #${invalidIds} are invalid in this context.`);
     }
 
     /**
@@ -270,7 +271,9 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         payload: S | S[] | ((entry: K) => S)
     ): Promise<number> {
         if (Array.isArray(ids) && Array.isArray(payload) && ids.length !== payload.length)
-            throw new Error(`record/updateStateAndDb: The number of supplied ids and values doesn't match.`);
+            throw new Error(
+                `${this.moduleName}/updateStateAndDb: The number of supplied ids and values doesn't match.`
+            );
 
         // if payload is a function, use it to get a value
         // if payload is value or value[], wrap a function around it to return value by index
@@ -290,13 +293,13 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
             .modify(dbEntry => {
                 const stateEntry = this.get(dbEntry.id);
                 if (!stateEntry)
-                    throw new Error(`record/updateStateAndDb: ${dbEntry.id} entry doesn't exist in the state.`);
+                    throw new Error(`${this.moduleName}/updateStateAndDb: State #${dbEntry.id} entry doesn't exist.`);
 
                 const value = getValue(stateEntry);
 
                 if (dbEntry[key] === value)
                     return log.info(
-                        `record/updateStateAndDb: Db ${dbEntry.id}.${key} entry already has value ${value}.`
+                        `${this.moduleName}/updateStateAndDb: Db #${dbEntry.id}.${key} entry already has value ${value}.`
                     );
 
                 dbEntry[key] = stateEntry[key] = value;
@@ -322,6 +325,10 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     reset(): void {
         Object.assign(this.state, new this.StateClass());
     }
+
+    get moduleName(): string {
+        return this.constructor.name.replace('Module', '').toLowerCase();
+    }
 }
 
 export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashModuleState<K>> extends StashModule<
@@ -337,10 +344,10 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
      */
     protected getActiveJournal(): Journal {
         const activeJournal = this.$stash.journals.active;
-        if (!activeJournal) throw new Error('record/getActiveJournal: Active journal is not set.');
+        if (!activeJournal) throw new Error(`${this.moduleName}/getActiveJournal: Active journal is not set.`);
 
         if (activeJournal.rootGroupId === -1)
-            throw new Error('record/getActiveJournal: Root Group of the Active journal is not set');
+            throw new Error(`${this.moduleName}/getActiveJournal: Root Group of the Active journal is not set.`);
 
         return activeJournal;
     }

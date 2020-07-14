@@ -326,38 +326,6 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
         });
     }
 
-    /**
-     *
-     *
-     * @param {(number | number[])} ids
-     * @param {boolean} [excludeRootGroup=false]
-     * @returns {number[]}
-     * @memberof GroupsModule
-     */
-    vetId(ids: number | number[], excludeRootGroup = false): number[] {
-        let vettedIds = super.vetId(ids);
-
-        if (excludeRootGroup) {
-            const rootGroupId = this.getActiveJournal()?.rootGroupId ?? -1;
-            vettedIds = removeFromArrayByValue(vettedIds, rootGroupId);
-        }
-
-        return vettedIds;
-    }
-
-    /**
-     *
-     *
-     * @param {(number | number[])} value
-     * @param {boolean} [excludeRootGroup=false]
-     * @returns {boolean}
-     * @memberof GroupsModule
-     */
-    isValidId(value: number | number[], excludeRootGroup = false): boolean {
-        const ids = wrapInArray(value);
-        return this.vetId(ids, excludeRootGroup).length === ids.length;
-    }
-
     validateId(value: number | number[], allowRootGroup = false): void {
         let ids = [...new Set(wrapInArray(value))];
 

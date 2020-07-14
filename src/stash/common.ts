@@ -336,6 +336,24 @@ export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashM
     T
 > {
     /**
+     * Return an active journal or throws an error if the active journal is not set or its root group is not set.
+     *
+     * @readonly
+     * @protected
+     * @type {Journal}
+     * @memberof NonJournalStashModule
+     */
+    protected get activeJournal(): Journal {
+        const activeJournal = this.$stash.journals.active;
+        if (!activeJournal) throw new Error(`${this.moduleName}/getActiveJournal: Active journal is not set.`);
+
+        if (activeJournal.rootGroupId === -1)
+            throw new Error(`${this.moduleName}/getActiveJournal: Root Group of the Active journal is not set.`);
+
+        return activeJournal;
+    }
+
+    /**
      * Return an active journal or throws if the active journal is not set or its root group is not set.
      *
      * @protected

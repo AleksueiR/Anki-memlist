@@ -216,15 +216,15 @@ describe('groups/move', () => {
     });
 });
 
-describe.skip('creating new words', () => {
+describe('words/add', () => {
     test('adds words with garbage input', async () => {
         await groups.setSelectedIds(2);
         const totalWordCount = await db.words.count();
 
-        const result0 = await words.new(['', '    ']);
+        const result0 = await words.add(['', '    ']);
         expect(result0).toEqual([void 0, void 0]);
 
-        const result1 = await words.new(['', '    ', 'hallo']);
+        const result1 = await words.add(['', '    ', 'hallo']);
         expect(result1).toEqual([void 0, void 0, totalWordCount + 1]);
     });
 
@@ -233,36 +233,40 @@ describe.skip('creating new words', () => {
         const totalWordCount = await db.words.count();
 
         // duplicate words will return the same id
-        const result0 = await words.new(['dot', 'dot', 'dot']);
+        const result0 = await words.add(['dot', 'dot', 'dot']);
         expect(result0).toEqual([totalWordCount + 1, totalWordCount + 1, totalWordCount + 1]);
         expect(words.get(totalWordCount + 1)?.memberGroupIds).toEqual([2]);
     });
 
     test('adds words when not groups are selected', async () => {
-        const err0 = await words.new('test1');
-        expect(err0).toBe(0); // no groups selected
+        await expect(words.add('test1')).rejects.toThrowError(); // no groups selected
 
-        const err1 = await words.new(['test1', 'test2']);
-        expect(err1).toBe(0); // no groups selected
+        await expect(words.add(['test1', 'test2'])).rejects.toThrowError();
     });
 
     test('adds a new word to a single group', async () => {
+        await groups.refreshWordCounts();
         const group2WordCount = groups.wordCount[2];
 
         await groups.setSelectedIds(2);
 
-        const result0 = await words.new('test1');
+        const [result0] = (await words.add('test1')) as number[];
 
-        expect(result0).not.toBe(0);
+        await groups.refreshWordCounts();
+
+        expect(result0).not.toBeUndefined();
         expect(words.get(result0)?.memberGroupIds).toEqual([2]);
         expect(groups.wordCount[2]).toBe(group2WordCount + 1);
     });
 
     test('adds several new words to a single group', async () => {
+        await groups.refreshWordCounts();
         const group2WordCount = groups.wordCount[2];
 
         await groups.setSelectedIds(2);
-        const [result0, result1] = (await words.new(['test1', 'test2'])) as number[];
+        const [result0, result1] = (await words.add(['test1', 'test2'])) as number[];
+
+        await groups.refreshWordCounts();
 
         expect(words.get(result0)?.memberGroupIds).toEqual([2]);
         expect(words.get(result1)?.memberGroupIds).toEqual([2]);
@@ -270,25 +274,32 @@ describe.skip('creating new words', () => {
     });
 
     test('adds a new word to several groups', async () => {
+        await groups.refreshWordCounts();
         const group2WordCount = groups.wordCount[2];
         const group3WordCount = groups.wordCount[3];
 
         await groups.setSelectedIds([2, 3]);
-        const result0 = await words.new('test1');
+        const [result0] = (await words.add('test1')) as number[];
 
-        expect(result0).not.toBe(0);
+        await groups.refreshWordCounts();
+
+        expect(result0).not.toBeUndefined();
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
         expect(groups.wordCount[2]).toBe(group2WordCount + 1);
         expect(groups.wordCount[3]).toBe(group3WordCount + 1);
     });
 
     test('adds several new words to several groups', async () => {
+        await groups.refreshWordCounts();
         const group2WordCount = groups.wordCount[2];
         const group3WordCount = groups.wordCount[3];
 
         await groups.setSelectedIds([2, 3]);
 
-        const [result0, result1] = (await words.new(['test1', 'test2'])) as number[];
+        const [result0, result1] = (await words.add(['test1', 'test2'])) as number[];
+
+        await groups.refreshWordCounts();
+
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
         expect(words.get(result1)?.memberGroupIds).toEqual([2, 3]);
 
@@ -297,11 +308,15 @@ describe.skip('creating new words', () => {
     });
 
     test('adds an existing word to its parent group', async () => {
-        await groups.setSelectedIds(2);
-
+        await groups.refreshWordCounts();
         const group2WordCount = groups.wordCount[2];
 
-        const result1 = await words.new('steep');
+        await groups.setSelectedIds(2);
+
+        const [result1] = (await words.add('steep')) as number[];
+
+        await groups.refreshWordCounts();
+
         expect(result1).toBe(1);
         expect(words.get(1)?.memberGroupIds).toEqual([2]);
         expect(groups.wordCount[2]).toBe(7);
@@ -313,7 +328,9 @@ describe.skip('creating new words', () => {
 
         const wordCount = Object.keys(words.all).length;
 
-        const result0 = await words.new('steep');
+        const [result0] = (await words.add('steep')) as number[];
+
+        await groups.refreshWordCounts();
 
         expect(result0).toBe(1);
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
@@ -326,7 +343,10 @@ describe.skip('creating new words', () => {
 
         const wordCount = Object.keys(words.all).length;
 
-        const result0 = await words.new('steep');
+        const [result0] = (await words.add('steep')) as number[];
+
+        await groups.refreshWordCounts();
+
         expect(result0).toBe(1);
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3, 4]);
         expect(groups.wordCount[2]).toBe(7);
@@ -340,7 +360,10 @@ describe.skip('creating new words', () => {
 
         const wordCount = Object.keys(words.all).length;
 
-        const [result0, result1] = (await words.new(['steep', 'test1'])) as number[];
+        const [result0, result1] = (await words.add(['steep', 'test1'])) as number[];
+
+        await groups.refreshWordCounts();
+
         expect(result0).not.toBe(0);
         expect(result1).not.toBe(0);
         expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);

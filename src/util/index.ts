@@ -49,7 +49,7 @@ export function intersectArrays<K>(array1: K[], array2: K[]): K[] {
 }
 
 /**
- * Return a subset of elements from the first array that don't exist in the second.
+ * Return a subset of elements from the first array that doesn't exist in the second.
  *
  * @export
  * @template K

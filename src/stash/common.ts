@@ -1,14 +1,8 @@
-import { DBEntry, DBNonJournalEntry, Journal } from '@/api/db';
-import { notEmptyFilter, wrapInArray, exceptArray } from '@/util';
+import { DBCommonEntry, DBEntry, Journal } from '@/api/db';
+import { exceptArray, notEmptyFilter, wrapInArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
-
-export enum SelectionMode {
-    Replace = 0,
-    Add = 1,
-    Remove = 2
-}
 
 export type SpecificUpdater<K> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(
     id: number,
@@ -331,10 +325,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 }
 
-export class NonJournalStashModule<K extends DBNonJournalEntry, T extends StashModuleState<K>> extends StashModule<
-    K,
-    T
-> {
+export class CommonStashModule<K extends DBCommonEntry, T extends StashModuleState<K>> extends StashModule<K, T> {
     /**
      * Return an active journal or throws an error if the active journal is not set or its root group is not set.
      *

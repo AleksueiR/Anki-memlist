@@ -1,8 +1,14 @@
 import { db, Group, GroupDisplayMode } from '@/api/db';
-import { reduceArrayToObject, removeFromArrayByValue, wrapInArray, exceptArray, areArraysEqual } from '@/util';
+import {
+    areArraysEqual,
+    reduceArrayToObject,
+    removeFromArrayByValue,
+    updateArrayWithValues,
+    UpdateMode,
+    wrapInArray
+} from '@/util';
 import Dexie from 'dexie';
-import log from 'loglevel';
-import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
+import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
 
 export type GroupWordCountSet = Record<number, number>;
 export type GroupSet = EntrySet<Group>;
@@ -12,7 +18,7 @@ export class GroupsState extends StashModuleState<Group> {
     wordCount: GroupWordCountSet = {};
 }
 
-export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
+export class GroupsModule extends CommonStashModule<Group, GroupsState> {
     constructor(stash: Stash) {
         super(stash, db.groups, GroupsState);
     }
@@ -109,7 +115,7 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
 
             // delete from state
             this.removeFromAll(groupIdList);
-            this.setSelectedIds(groupIdList, SelectionMode.Remove);
+            this.setSelectedIds(groupIdList, UpdateMode.Remove);
             this.removeOldWordCounts();
         });
     }
@@ -246,36 +252,14 @@ export class GroupsModule extends NonJournalStashModule<Group, GroupsState> {
      * Selection mode lets you add to, remove from, or replace the existing selection list.
      *
      * @param {(number | number[])} groupIds
-     * @param {SelectionMode} [selectionMode=SelectionMode.Replace]
-     * @returns {(Promise<void | 0>)}
+     * @param {*} [updateMode=UpdateMode.Replace]
+     * @returns {Promise<void>}
      * @memberof GroupsModule
      */
-    async setSelectedIds(
-        groupIds: number | number[],
-        selectionMode: SelectionMode = SelectionMode.Replace
-    ): Promise<void> {
+    async setSelectedIds(groupIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
         this.validateId(groupIds);
-        const groupIdList = wrapInArray(groupIds);
 
-        let newSelectedGroupIds;
-
-        switch (selectionMode) {
-            case SelectionMode.Replace:
-                newSelectedGroupIds = groupIdList;
-                break;
-
-            case SelectionMode.Add:
-                newSelectedGroupIds = [...new Set([...this.state.selectedIds, ...groupIdList])];
-                break;
-
-            case SelectionMode.Remove:
-                newSelectedGroupIds = this.state.selectedIds.filter(id => !groupIdList.includes(id));
-                break;
-
-            default:
-                throw new Error(`groups/setSelectedIds: Unknown code ${selectionMode}.`);
-        }
-
+        const newSelectedGroupIds = updateArrayWithValues(this.selectedIds, wrapInArray(groupIds), updateMode);
         if (areArraysEqual(this.state.selectedIds, newSelectedGroupIds)) return;
 
         this.state.selectedIds = newSelectedGroupIds;

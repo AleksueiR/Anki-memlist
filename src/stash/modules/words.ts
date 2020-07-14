@@ -1,8 +1,15 @@
 import { db, Word, WordArchived } from '@/api/db';
-import { exceptArray, reduceArrayToObject, unionArrays, wrapInArray, intersectArrays } from '@/util';
-import Dexie from 'dexie';
-import log from 'loglevel';
-import { EntrySet, NonJournalStashModule, SelectionMode, Stash, StashModuleState } from '../internal';
+import {
+    areArraysEqual,
+    exceptArray,
+    intersectArrays,
+    reduceArrayToObject,
+    unionArrays,
+    updateArrayWithValues,
+    UpdateMode,
+    wrapInArray
+} from '@/util';
+import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
 
 export type WordSet = EntrySet<Word>;
 
@@ -10,7 +17,7 @@ export class WordsState extends StashModuleState<Word> {
     selectedIds: number[] = [];
 }
 
-export class WordsModule extends NonJournalStashModule<Word, WordsState> {
+export class WordsModule extends CommonStashModule<Word, WordsState> {
     constructor(stash: Stash) {
         super(stash, db.words, WordsState);
     }
@@ -42,18 +49,19 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
             .toArray();
 
         const wordSet = reduceArrayToObject(words);
-
         this.setAll(wordSet);
 
-        // TODO: re-select previously selected words
-        // this.setSelectedIds(intersectArrays(selectedWordIds, this.getAllIds()));
+        // re-select previously selected words
+        this.setSelectedIds(intersectArrays(selectedWordIds, this.getAllIds()));
     }
 
     private async getIdsByText(values: string[]): Promise<number[]> {
+        const activeJournalId = this.getActiveJournal().id;
+
         return this.table
             .where('text')
             .anyOf(values)
-            .filter(word => word.journalId === this.getActiveJournal()?.id) // filter by active journal
+            .filter(word => word.journalId === activeJournalId) // filter by active journal
             .primaryKeys();
     }
 
@@ -154,7 +162,8 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         const linkedWordIds = db.transaction('rw', this.table, async () => {
             // find existing words to map their ids/texts for the return value
             const existingWords = await this.table
-                .orderBy('text')
+                .where('text')
+                .anyOf(values)
                 .filter(word => word.journalId === activeJournalId)
                 .toArray();
 
@@ -240,6 +249,28 @@ export class WordsModule extends NonJournalStashModule<Word, WordsState> {
         });
 
         this.$stash.groups.refreshWordCounts();
+    }
+
+    /**
+     * Set provided word ids as selected.
+     * Selection mode lets you add to, remove from, or replace the existing selection list.
+     *
+     * @param {(number | number[])} wordIds
+     * @param {*} [updateMode=UpdateMode.Replace]
+     * @returns {Promise<void>}
+     * @memberof WordsModule
+     */
+    async setSelectedIds(wordIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
+        this.validateId(wordIds);
+
+        const newSelectedWordIds = updateArrayWithValues(this.selectedIds, wrapInArray(wordIds), updateMode);
+        if (areArraysEqual(this.state.selectedIds, newSelectedWordIds)) return;
+
+        this.state.selectedIds = newSelectedWordIds;
+
+        // TODO: set lookup, or update lookup or something
+        // load words from the selected groups
+        // await this.$stash.display.fetchGroupWords();
     }
 
     /**

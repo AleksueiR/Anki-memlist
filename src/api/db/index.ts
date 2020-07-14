@@ -16,7 +16,7 @@ export interface DBEntry {
 
 // export interface DBJournalEntry extends DBEntry {}
 
-export interface DBNonJournalEntry extends DBEntry {
+export interface DBCommonEntry extends DBEntry {
     readonly journalId?: number;
 }
 
@@ -30,7 +30,7 @@ export class Journal implements DBEntry {
     ) {}
 }
 
-export class Group implements DBNonJournalEntry {
+export class Group implements DBCommonEntry {
     readonly id: number;
 
     constructor(
@@ -41,7 +41,7 @@ export class Group implements DBNonJournalEntry {
     ) {}
 }
 
-export class Word implements DBNonJournalEntry {
+export class Word implements DBCommonEntry {
     readonly id: number;
 
     constructor(

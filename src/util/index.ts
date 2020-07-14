@@ -1,3 +1,9 @@
+export enum UpdateMode {
+    Replace = 0,
+    Add = 1,
+    Remove = 2
+}
+
 /**
  * Represents a non id when no valid id is set.
  */
@@ -61,10 +67,57 @@ export function exceptArray<K>(array1: K[], array2: K[]): K[] {
     return array1.filter(id => !array2.includes(id));
 }
 
-export function areArraysEqual<K>(array1: K[], array2: K[], respectOrder: boolean = false): boolean {
+/**
+ * Check if two arrays are equal.
+ *
+ * @export
+ * @template K
+ * @param {K[]} array1
+ * @param {K[]} array2
+ * @param {boolean} [respectOrder=false]
+ * @returns {boolean}
+ */
+export function areArraysEqual<K>(array1: K[], array2: K[], respectOrder = false): boolean {
     if (array1.length !== array2.length) return false;
 
     return array1.some((value1, index) => value1 !== array2[index]);
+}
+
+/**
+ * Update the contents of one array with items from another based on the update mode supplied.
+ * Options are:
+ * - replace
+ * - add
+ * - remove
+ *
+ * @export
+ * @template K
+ * @param {K[]} array1
+ * @param {K[]} array2
+ * @param {UpdateMode} updateMode
+ * @returns {K[]}
+ */
+export function updateArrayWithValues<K>(array1: K[], array2: K[], updateMode: UpdateMode): K[] {
+    let resultingArray;
+
+    switch (updateMode) {
+        case UpdateMode.Replace:
+            resultingArray = array2;
+            break;
+
+        case UpdateMode.Add:
+            resultingArray = unionArrays(array1, array2);
+            break;
+
+        case UpdateMode.Remove:
+            resultingArray = exceptArray(array1, array2);
+            break;
+
+        default:
+            throw new Error(`util/updateArrayWithValues: Unknown code ${updateMode}.`);
+    }
+
+    return resultingArray;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

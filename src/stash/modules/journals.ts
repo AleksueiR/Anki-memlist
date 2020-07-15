@@ -127,7 +127,6 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
     /**
      * Set the defaultGroupId of the active Journal.
-     * Returns 0 if the operation doesn't succeed.
      *
      * @param {(number | null)} defaultGroupId
      * @returns {Promise<void>}

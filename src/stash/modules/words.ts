@@ -1,4 +1,4 @@
-import { db, Word, WordArchived } from '@/api/db';
+import { db, Word, WordArchived, GroupDisplayMode } from '@/api/db';
 import {
     areArraysEqual,
     exceptArray,
@@ -219,32 +219,37 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
     }
 
     /**
-     * Delete specified word ids from the provided groups.
-     * If no group ids are provided, delete words from the journal.
+     * Delete specified word ids from everywhere (the journal), the selected groups, or the supplied group ids.
+     * If no value is supplied, delete from the selected groups.
      *
      * @param {(number | number[])} wordIds
-     * @param {(number | number[])} [fromGroupIds]
+     * @param {(number | number[] | boolean)} [value=false]
      * @returns {Promise<void>}
      * @memberof WordsModule
      */
-    async delete(wordIds: number | number[], fromGroupIds?: number | number[]): Promise<void> {
+    async delete(wordIds: number | number[], deleteEverywhere?: boolean): Promise<void>;
+    async delete(wordIds: number | number[], fromGroupIds: number | number[]): Promise<void>;
+    async delete(wordIds: number | number[], value: number | number[] | boolean = false): Promise<void> {
         this.validateId(wordIds);
-        this.$stash.groups.validateId(fromGroupIds || []);
-
         const wordIdList = wrapInArray(wordIds);
 
         await db.transaction('rw', this.table, async () => {
-            if (fromGroupIds === undefined) {
-                // if no groups specified, delete from everywhere
+            if (typeof value === 'boolean' && value) {
+                // if no groups specified, delete from db and state
                 await this.table.bulkDelete(wordIdList);
                 this.removeFromAll(wordIdList);
             } else {
-                // remove `fromGroupIds` from the specified words
+                // if not deleting from everywhere, delete from selected groups or supplied group ids
+                const fromGroupIds = value === false ? this.$stash.groups.selectedIds : wrapInArray(value);
+
+                // remove selected groups from the specified words
                 await this.updateStateAndDb(wordIdList, 'memberGroupIds', word =>
-                    exceptArray(word.memberGroupIds, wrapInArray(fromGroupIds))
+                    exceptArray(word.memberGroupIds, fromGroupIds)
                 );
 
-                // TODO: remove orphaned words
+                // delete orphaned words and reload words if something was deleted
+                const deleteCount = await this.table.where({ memberGroupIds: [] }).delete();
+                if (deleteCount > 0) await this.fetchGroupWords();
             }
         });
 
@@ -271,6 +276,39 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
         // TODO: set lookup, or update lookup or something
         // load words from the selected groups
         // await this.$stash.display.fetchGroupWords();
+    }
+
+    /**
+     * Set text of the given word to the provided value.
+     *
+     * @param {number} wordId
+     * @param {string} text
+     * @returns {Promise<void>}
+     * @memberof WordsModule
+     */
+    async setText(wordId: number, text: string): Promise<void> {
+        this.validateId(wordId);
+        const sanitizedText = this.sanitizeWordTexts(text).pop();
+        if (!sanitizedText) throw new Error(`words/setText: String "${text}" is not valid.`);
+
+        await this.updateStateAndDb(wordId, 'text', sanitizedText);
+    }
+
+    /**
+     * Set `isArchived` flag of the given word to the provided value.
+     * If no value is provided, the archived status is toggled.
+     *
+     * @param {number} wordId
+     * @param {WordArchived} [value]
+     * @returns {Promise<void>}
+     * @memberof WordsModule
+     */
+    async setIsArchived(wordId: number, value?: WordArchived): Promise<void> {
+        this.validateId(wordId);
+
+        await this.updateStateAndDb(wordId, 'isArchived', word =>
+            value ?? word.isArchived === GroupDisplayMode.Active ? GroupDisplayMode.Archived : GroupDisplayMode.Active
+        );
     }
 
     /**

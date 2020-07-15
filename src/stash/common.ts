@@ -175,7 +175,6 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 
     /**
      * Get an Entry (or a list of Entries) with the id specified from the state.
-     * Throws an error if the id is not valid.
      *
      * @param {(number | number[])} value
      * @returns {(K | undefined | K[])}

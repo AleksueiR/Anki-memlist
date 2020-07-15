@@ -496,7 +496,7 @@ describe('words/delete', () => {
     test('deletes a linked word from all groups', async () => {
         await groups.setSelectedIds([2, 3, 5, 6]);
 
-        await words.delete(5);
+        await words.delete(5, true);
 
         await expect(db.words.get(5)).resolves.toBeUndefined();
     });
@@ -529,3 +529,4 @@ describe('words/delete', () => {
 // - selectedIds([2,2])
 // - try to link a word from another journal
 // - try some garbage input instead of words
+// - load groups with linked words and check the number of words loaded

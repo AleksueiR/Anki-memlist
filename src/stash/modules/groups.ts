@@ -11,7 +11,6 @@ import Dexie from 'dexie';
 import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
 
 export type GroupWordCountSet = Record<number, number>;
-export type GroupSet = EntrySet<Group>;
 
 export class GroupsState extends StashModuleState<Group> {
     selectedIds: number[] = [];
@@ -95,7 +94,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async delete(groupIds: number | number[]): Promise<void> {
-        this.validateId(groupIds);
+        /* this.validateId(groupIds);
 
         const groupIdList = wrapInArray(groupIds);
 
@@ -109,6 +108,8 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
             // delete from the db
             await db.groups.bulkDelete(groupIdList);
 
+            await this.$stash.words.delete();
+
             // TODO: delete words
             // - delete all words from the journal
             // - remove only orphaned words
@@ -117,7 +118,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
             this.removeFromAll(groupIdList);
             this.setSelectedIds(groupIdList, UpdateMode.Remove);
             this.removeOldWordCounts();
-        });
+        }); */
     }
 
     /**

@@ -1,14 +1,15 @@
-import { db, Word, WordArchived, GroupDisplayMode } from '@/api/db';
 import {
-    areArraysEqual,
-    exceptArray,
-    intersectArrays,
-    reduceArrayToObject,
-    unionArrays,
-    updateArrayWithValues,
-    UpdateMode,
-    wrapInArray
-} from '@/util';
+    putWordInGroup,
+    db,
+    getGroupWordIds,
+    GroupDisplayMode,
+    isValidDBCommonEntry,
+    Word,
+    WordArchived,
+    deleteWordInGroup,
+    WordInGroup
+} from '@/api/db';
+import { combineArrays, exceptArray, intersectArrays, UpdateMode, wrapInArray } from '@/util';
 import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
 
 export type WordSet = EntrySet<Word>;
@@ -38,24 +39,36 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
 
         this.reset(); // remove any previously loaded words
 
-        const activeJournal = this.getActiveJournal();
         const selectedGroupIds = this.$stash.groups.selectedIds;
 
-        const words = await this.table
-            .where('memberGroupIds')
-            .anyOf(selectedGroupIds)
-            .filter(word => word.journalId === activeJournal.id)
-            .distinct()
-            .toArray();
+        const wordLists = await Promise.all(
+            selectedGroupIds.map(async groupId => {
+                const group = this.$stash.groups.get(groupId);
+                if (!group) throw new Error(`words/fetchGroupWords: Group #${groupId} is not valid in active journal.`);
 
-        const wordSet = reduceArrayToObject(words);
-        this.setAll(wordSet);
+                // get word ids for this group
+                const wordIds = await getGroupWordIds(group.id);
+
+                // select only words that match this group's display mode
+                const wordCollection = db.words.where('id').anyOf(wordIds);
+                const filteredCollection =
+                    group.displayMode === GroupDisplayMode.All
+                        ? wordCollection
+                        : wordCollection.filter(word => word.isArchived === group.displayMode);
+
+                return filteredCollection.toArray();
+            })
+        );
+
+        wordLists.flat().forEach(word => {
+            if (!this.has(word.id)) this.add(word);
+        });
 
         // re-select previously selected words
-        this.setSelectedIds(intersectArrays(selectedWordIds, this.getAllIds()));
+        this.setSelectedIds(intersectArrays(selectedWordIds, this.state.allIds));
     }
 
-    private async getIdsByText(values: string[]): Promise<number[]> {
+    /*     private async getIdsByText(values: string[]): Promise<number[]> {
         const activeJournalId = this.getActiveJournal().id;
 
         return this.table
@@ -63,7 +76,7 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
             .anyOf(values)
             .filter(word => word.journalId === activeJournalId) // filter by active journal
             .primaryKeys();
-    }
+    } */
 
     /**
      * Add a new word or link an existing word to the selected groups.
@@ -75,19 +88,15 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @returns {(Promise<(number | undefined)[]>)}
      * @memberof WordsModule
      */
-    async add(value: string | string[], allowLinking: boolean = true): Promise<(number | undefined)[]> {
-        const activeJournalId = this.getActiveJournal().id;
-
-        const selectedGroupIds = this.$stash.groups.selectedIds;
-        if (selectedGroupIds.length === 0)
-            throw new Error(`words/new: Can create new words -- no groups are selected.`);
+    async newOrLink(value: string | string[], allowLinking: boolean = true): Promise<(number | undefined)[]> {
+        // if linking is allowed, run the set again and link any existing words to the selected groups
+        const linkedWordIds = allowLinking
+            ? await this.link(value)
+            : new Array(wrapInArray(value).length).fill(undefined);
 
         // always add any new words to the selected groups
-        const newWordIds = await this.new(value, selectedGroupIds, activeJournalId);
-        if (!allowLinking) return newWordIds;
+        const newWordIds = await this.new(value);
 
-        // if linking is allowed, run the set again and link any existing words to the selected groups
-        const linkedWordIds = await this.link(value, selectedGroupIds, activeJournalId);
         // merge results of both linking and creating new words and return
         return newWordIds.map((id, index) => id ?? linkedWordIds[index]);
     }
@@ -103,15 +112,18 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @returns {(Promise<(number | undefined)[]>)}
      * @memberof WordsModule
      */
-    protected async new(
-        value: string | string[],
-        groupIds: number[],
-        activeJournalId: number
-    ): Promise<(number | undefined)[]> {
+    protected async new(value: string | string[]): Promise<(number | undefined)[]> {
         const values = this.sanitizeWordTexts(value);
 
-        const newWordIds = db.transaction('rw', this.table, async () => {
-            // get texts of all the words in this active journal
+        if (!this.activeJournal) throw new Error('words/new: Active journal is not set.');
+        const activeJournalId = this.activeJournal.id;
+
+        const selectedGroupIds = this.$stash.groups.selectedIds;
+        if (selectedGroupIds.length === 0)
+            throw new Error(`words/new: Cannot create new words -- no groups are selected.`);
+
+        const newWordIds = db.transaction('rw', this.table, db.groups, db.wordsInGroups, async () => {
+            // get texts of all the words in the active journal
             const existingWordTexts = (await this.table
                 .orderBy('text')
                 .filter(word => word.journalId === activeJournalId)
@@ -122,21 +134,27 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
 
             // add new words to the table
             const newWordIds = await this.table.bulkAdd(
-                newWordTexts.map(text => new Word(text, activeJournalId, groupIds)),
+                newWordTexts.map(text => new Word(text, activeJournalId, [])),
                 { allKeys: true }
             );
 
-            // fetch newly added words from the db to map their ids/texts for the return value
-            const newWords = await this.table.bulkGet(newWordIds);
+            // if no new words detected, return all undefined
+            if (newWordIds.length === 0) return new Array(wrapInArray(value).length).fill(undefined);
+
+            // put the new combinations between word and group ids into the db
+            await this.putWordsInGroups(newWordIds, selectedGroupIds, activeJournalId);
 
             // this will add new words to the state
             await this.fetchGroupWords();
 
             // return an array of new words ids; if the text value hasn't been added, return `undefined` in the place of an id
-            return wrapInArray(value).map(text => newWords.find(word => word.text === text)?.id);
+            return wrapInArray(value).map(text => {
+                const index = newWordTexts.findIndex(newWordText => newWordText === text);
+                return newWordIds[index];
+            });
         });
 
-        this.$stash.groups.refreshWordCounts(groupIds);
+        this.$stash.groups.refreshWordCounts(selectedGroupIds);
 
         return newWordIds;
     }
@@ -152,14 +170,17 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @returns {(Promise<(number | undefined)[]>)}
      * @memberof WordsModule
      */
-    protected async link(
-        value: string | string[],
-        groupIds: number[],
-        activeJournalId: number
-    ): Promise<(number | undefined)[]> {
+    protected async link(value: string | string[]): Promise<(number | undefined)[]> {
         const values = this.sanitizeWordTexts(value);
 
-        const linkedWordIds = db.transaction('rw', this.table, async () => {
+        const selectedGroupIds = this.$stash.groups.selectedIds;
+        if (selectedGroupIds.length === 0)
+            throw new Error(`words/link: Can create new words -- no groups are selected.`);
+
+        if (!this.activeJournal) throw new Error('words/link: Active journal is not set.');
+        const activeJournalId = this.activeJournal.id;
+
+        const linkedWordIds = db.transaction('rw', this.table, db.groups, db.wordsInGroups, async () => {
             // find existing words to map their ids/texts for the return value
             const existingWords = await this.table
                 .where('text')
@@ -167,12 +188,13 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
                 .filter(word => word.journalId === activeJournalId)
                 .toArray();
 
-            // add `selectedGroupIds` to the existing word's groups
-            await this.table
-                .where('text')
-                .anyOf(values)
-                .filter(word => word.journalId === activeJournalId)
-                .modify(word => (word.memberGroupIds = unionArrays(word.memberGroupIds, groupIds)));
+            // if no existing words found, return an array of undefined
+            if (existingWords.length === 0) return new Array(wrapInArray(value).length).fill(undefined);
+
+            const existingWordIds = existingWords.map(({ id }) => id);
+
+            // put the new combinations between word and group ids into the db
+            await this.putWordsInGroups(existingWordIds, selectedGroupIds, activeJournalId);
 
             // this will update state with the modified words
             await this.fetchGroupWords();
@@ -181,7 +203,7 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
             return wrapInArray(value).map(text => existingWords.find(word => word.text === text)?.id);
         });
 
-        this.$stash.groups.refreshWordCounts(groupIds);
+        this.$stash.groups.refreshWordCounts(selectedGroupIds);
 
         return linkedWordIds;
     }
@@ -198,24 +220,23 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      */
     async move(wordIds: number | number[], fromGroupIds: number | number[], toGroupId: number): Promise<void> {
         const fromGroupIdList = wrapInArray(fromGroupIds);
-        const allGroupIds = [...fromGroupIdList, toGroupId];
-
-        this.$stash.groups.validateId(allGroupIds);
-
-        this.validateId(wordIds);
-
         const wordIdList = wrapInArray(wordIds);
 
-        await db.transaction('rw', this.table, async () => {
-            await this.updateStateAndDb(wordIdList, 'memberGroupIds', word =>
-                unionArrays(exceptArray(word.memberGroupIds, fromGroupIdList), [toGroupId])
-            );
+        await db.transaction('rw', this.table, db.groups, db.wordsInGroups, async () => {
+            if (!this.activeJournal) throw new Error('words/move: Active journal is not set.');
+            if (toGroupId === this.activeJournal?.rootGroupId)
+                throw new Error('words/move: Cannot move words to Root Group.');
+
+            // delete all existing combinations of word and fromGroup ids
+            await this.deleteWordsInGroups(wordIdList, fromGroupIdList);
+            // put in new combinations of word and toGroup ids
+            await this.putWordsInGroups(wordIdList, [toGroupId], this.activeJournal.id);
 
             // if words were moved to a non-selected group, these words will be removed from the state
             await this.fetchGroupWords();
         });
 
-        this.$stash.groups.refreshWordCounts(allGroupIds);
+        this.$stash.groups.refreshWordCounts([...fromGroupIdList, toGroupId]);
     }
 
     /**
@@ -230,27 +251,49 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
     async delete(wordIds: number | number[], deleteEverywhere?: boolean): Promise<void>;
     async delete(wordIds: number | number[], fromGroupIds: number | number[]): Promise<void>;
     async delete(wordIds: number | number[], value: number | number[] | boolean = false): Promise<void> {
-        this.validateId(wordIds);
         const wordIdList = wrapInArray(wordIds);
 
-        await db.transaction('rw', this.table, async () => {
+        await db.transaction('rw', this.table, db.groups, db.wordsInGroups, async () => {
+            if (!this.activeJournal) throw new Error('words/delete: Active journal is not set.');
+            // check that words belong to this journal
+
+            await Promise.all(
+                wordIdList.map(async wordId => {
+                    if (!(await this.isValidInDb(wordId)))
+                        throw new Error(`words/delete: Word #${wordId} does not belong to the active journal.`);
+                })
+            );
+
             if (typeof value === 'boolean' && value) {
-                // if no groups specified, delete from db and state
+                // if no groups specified, delete from db
                 await this.table.bulkDelete(wordIdList);
-                this.removeFromAll(wordIdList);
+                await db.wordsInGroups
+                    .where('wordId')
+                    .anyOf(wordIdList)
+                    .delete();
             } else {
                 // if not deleting from everywhere, delete from selected groups or supplied group ids
                 const fromGroupIds = value === false ? this.$stash.groups.selectedIds : wrapInArray(value);
 
                 // remove selected groups from the specified words
-                await this.updateStateAndDb(wordIdList, 'memberGroupIds', word =>
-                    exceptArray(word.memberGroupIds, fromGroupIds)
-                );
+                await this.deleteWordsInGroups(wordIdList, fromGroupIds);
 
                 // delete orphaned words and reload words if something was deleted
-                const deleteCount = await this.table.where({ memberGroupIds: [] }).delete();
-                if (deleteCount > 0) await this.fetchGroupWords();
+                const allWordIds = await this.table.where({ journalId: this.activeJournal.id }).primaryKeys();
+                const allWordsInGroupIds = await db.wordsInGroups
+                    .where('wordId')
+                    .anyOf(allWordIds)
+                    .distinct()
+                    .primaryKeys();
+
+                const wordIdsToDelete = exceptArray(
+                    allWordIds,
+                    allWordsInGroupIds.map(([wordId]) => wordId)
+                );
+                await this.table.bulkDelete(wordIdsToDelete);
             }
+
+            this.fetchGroupWords();
         });
 
         this.$stash.groups.refreshWordCounts();
@@ -266,7 +309,7 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @memberof WordsModule
      */
     async setSelectedIds(wordIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
-        this.validateId(wordIds);
+        /* this.isValidId(wordIds);
 
         const newSelectedWordIds = updateArrayWithValues(this.selectedIds, wrapInArray(wordIds), updateMode);
         if (areArraysEqual(this.state.selectedIds, newSelectedWordIds)) return;
@@ -275,7 +318,7 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
 
         // TODO: set lookup, or update lookup or something
         // load words from the selected groups
-        // await this.$stash.display.fetchGroupWords();
+        // await this.$stash.display.fetchGroupWords(); */
     }
 
     /**
@@ -287,11 +330,11 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @memberof WordsModule
      */
     async setText(wordId: number, text: string): Promise<void> {
-        this.validateId(wordId);
+        /* this.isValidId(wordId);
         const sanitizedText = this.sanitizeWordTexts(text).pop();
         if (!sanitizedText) throw new Error(`words/setText: String "${text}" is not valid.`);
 
-        await this.updateStateAndDb(wordId, 'text', sanitizedText);
+        await this.updateStateAndDb(wordId, 'text', sanitizedText); */
     }
 
     /**
@@ -304,35 +347,29 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @memberof WordsModule
      */
     async setIsArchived(wordId: number, value?: WordArchived): Promise<void> {
-        this.validateId(wordId);
+        /* this.isValidId(wordId);
 
         await this.updateStateAndDb(wordId, 'isArchived', word =>
             value ?? word.isArchived === GroupDisplayMode.Active ? GroupDisplayMode.Archived : GroupDisplayMode.Active
-        );
+        ); */
     }
 
-    /**
-     * Count words in the specified group. Return the word count.
-     *
-     * @protected
-     * @param {number} groupId
-     * @param {WordArchived} [isArchived]
-     * @returns {Promise<number>}
-     * @memberof WordsModule
-     */
-    async countWordsInAGroup(groupId: number, isArchived?: WordArchived): Promise<number> {
-        const activeJournal = this.getActiveJournal();
+    private async putWordsInGroups(existingWordIds: number[], selectedGroupIds: number[], activeJournalId: number) {
+        const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
 
-        return this.table
-            .where({ memberGroupIds: groupId })
-            .filter(word => {
-                if (word.journalId !== activeJournal.id) return false;
-                // if `isArchived` value is set, check that it matches word's `isArchived` status
-                if (isArchived !== undefined && word.isArchived !== isArchived) return false;
+        const promises = wordGroupIdPairs.map(async ([wordId, groupId]) =>
+            putWordInGroup(wordId, groupId, activeJournalId)
+        );
 
-                return true;
-            })
-            .count();
+        await Promise.all(promises);
+    }
+
+    private async deleteWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]) {
+        const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
+
+        const promises = wordGroupIdPairs.map(async ([wordId, groupId]) => deleteWordInGroup(wordId, groupId));
+
+        await Promise.all(promises);
     }
 
     /**

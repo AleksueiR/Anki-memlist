@@ -32,8 +32,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
         const journals = await this.table.toArray();
 
-        const journalSet = reduceArrayToObject(journals);
-        this.setAll(journalSet);
+        this.state.all = reduceArrayToObject(journals);
     }
 
     /**
@@ -59,7 +58,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
             // add the newly created journal directly to the state
             // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-            this.addToAll(newJournal);
+            this.add(newJournal);
 
             // set rootGroupId of the new Journal;
             // rootGroupId cannot be changed after a journal is created
@@ -78,7 +77,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     async delete(id: number): Promise<void> {
-        await db.transaction('rw', this.table, db.groups, db.words, async () => {
+        /* await db.transaction('rw', this.table, db.groups, db.words, async () => {
             await this.$stash.words.deleteJournalEntries(id);
             await this.$stash.groups.deleteJournalEntries(id);
             // TODO: purge sample sources
@@ -90,7 +89,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
             }
 
             this.removeFromAll(id);
-        });
+        }); */
     }
 
     /**
@@ -133,9 +132,14 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     async setDefaultGroupId(defaultGroupId: number | null): Promise<void> {
-        if (!this.activeId) throw new Error('journals/setDefaultGroupId: Active journal is not set.');
+        if (!this.activeId) throw new Error(`${this.moduleName}/setDefaultGroupId: Active journal is not set.`);
 
-        if (defaultGroupId) this.$stash.groups.validateId(defaultGroupId);
+        // check if the `defaultGroupId` is a valid group id and is not the root group id
+        if (
+            defaultGroupId &&
+            (!this.$stash.groups.isValid(defaultGroupId) || defaultGroupId === this.active?.rootGroupId)
+        )
+            throw new Error(`${this.moduleName}/setDefaultGroupId: Group id #${defaultGroupId} is not valid.`);
 
         await this.updateStateAndDb(this.activeId, 'defaultGroupId', defaultGroupId);
     }

@@ -64,7 +64,11 @@ export function intersectArrays<K>(array1: K[], array2: K[]): K[] {
  * @returns {K[]}
  */
 export function exceptArray<K>(array1: K[], array2: K[]): K[] {
-    return array1.filter(id => !array2.includes(id));
+    return array1.filter(a1 => !array2.includes(a1));
+}
+
+export function combineArrays<K>(array1: K[], array2: K[]): [K, K][] {
+    return array1.flatMap(a1 => array2.map<[K, K]>(a2 => [a1, a2]));
 }
 
 /**

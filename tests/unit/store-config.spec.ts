@@ -1,4 +1,4 @@
-import { db } from '@/api/db';
+import { db, getWordGroupIds } from '@/api/db';
 import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
 import Vue from 'vue';
 import { rePopulate } from './dummy-data';
@@ -38,6 +38,13 @@ describe('journals/new', () => {
 });
 
 describe('journal/setDefaultGroup', () => {
+    test('sets group 2 as default', async () => {
+        await journals.setDefaultGroupId(2);
+
+        expect(journals.get(journals.activeId!)?.defaultGroupId).toBe(2);
+        await expect(db.journals.get(journals.activeId!)).resolves.toHaveProperty('defaultGroupId', 2);
+    });
+
     test('sets Root Group as default', async () => {
         await expect(journals.setDefaultGroupId(1)).rejects.toThrowError();
     });
@@ -59,7 +66,7 @@ describe('journal/setDefaultGroup', () => {
     });
 });
 
-describe('journals/delete', () => {
+describe.skip('journals/delete', () => {
     test('deletes an active journal', async () => {
         await journals.delete(1);
 
@@ -130,7 +137,7 @@ describe('groups/setSelectedIds', () => {
         await expect(groups.setSelectedIds(2)).rejects.toThrowError();
     });
 
-    test('selects Root Groups', async () => {
+    test('selects Root Group', async () => {
         await expect(groups.setSelectedIds(1)).rejects.toThrowError(); // can't select the Root Group;
 
         await expect(groups.setSelectedIds([2, 1, 3])).rejects.toThrowError();
@@ -143,33 +150,27 @@ describe('groups/setSelectedIds', () => {
     test('selects a single group', async () => {
         await groups.setSelectedIds(2);
 
-        const wordCount = await db.words
-            .where('memberGroupIds')
-            .anyOf(2)
-            .count();
-
         expect(groups.selectedIds).toEqual([2]);
-        expect(groups.wordCount[2]).toEqual(wordCount);
-        expect(Object.entries(words.all).length).toBe(wordCount);
     });
 
     test('selects several groups', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        const wordCountDistinct = await db.words
-            .where('memberGroupIds')
-            .anyOf([2, 3])
-            .distinct()
-            .count();
-
-        const wordCountWithDuplicates = await db.words
-            .where('memberGroupIds')
-            .anyOf([2, 3])
-            .count();
-
         expect(groups.selectedIds).toEqual([2, 3]);
-        expect(groups.wordCount[2] + groups.wordCount[3]).toEqual(wordCountWithDuplicates);
-        expect(Object.entries(words.all).length).toBe(wordCountDistinct);
+    });
+});
+
+describe('groups/refreshWordCounts', () => {
+    test('refreshes all journal groups', async () => {
+        await groups.refreshWordCounts();
+
+        expect(groups.wordCount[2]).toEqual({ 0: 4, 1: 3, 2: 7 });
+        expect(groups.wordCount[5]).toEqual({ 0: 5, 1: 3, 2: 8 });
+        expect(groups.wordCount[6]).toEqual({ 0: 5, 1: 4, 2: 9 });
+    });
+
+    test('refreshes a group in another journal', async () => {
+        await expect(groups.refreshWordCounts(7)).rejects.toThrowError();
     });
 });
 
@@ -192,13 +193,34 @@ describe('groups/new', () => {
 });
 
 describe('groups/move', () => {
-    test('moves a group to a different journal', async () => {
-        await expect(groups.move(2, 7)).rejects.toThrowError();
+    test('moves a group to another group', async () => {
+        await groups.move(4, 6);
+
+        expect(groups.get(6)?.subGroupIds.includes(4)).toBe(true);
+        expect(groups.get(2)?.subGroupIds.includes(4)).toBe(false);
+
+        expect((await db.groups.get(6))?.subGroupIds.includes(4)).toBe(true);
+        expect((await db.groups.get(2))?.subGroupIds.includes(4)).toBe(false);
+    });
+
+    test('moves a group to Root Group', async () => {
+        await groups.move(5, 1);
+
+        expect(groups.get(1)?.subGroupIds.includes(5)).toBe(true);
+        expect(groups.get(3)?.subGroupIds.includes(5)).toBe(false);
+
+        expect((await db.groups.get(1))?.subGroupIds.includes(5)).toBe(true);
+        expect((await db.groups.get(3))?.subGroupIds.includes(5)).toBe(false);
+
+        await expect(db.groups.where({ subGroupIds: 5 }).count()).resolves.toBe(1);
     });
 
     test('moves a group into the same parent', async () => {
-        await groups.move(3, 2);
-        expect(groups.get(2)?.subGroupIds.includes(3)).toBe(true);
+        await expect(groups.move(2, 7)).rejects.toThrowError();
+    });
+
+    test('moves a group to a different journal', async () => {
+        await expect(groups.move(2, 7)).rejects.toThrowError();
     });
 
     test('moves a group into itself', async () => {
@@ -217,15 +239,34 @@ describe('groups/move', () => {
 });
 
 describe('words/add', () => {
+    test('add no new words', async () => {
+        await groups.setSelectedIds(4);
+        const result0 = await words.newOrLink(['steep', 'unbiased'], false);
+        expect(result0).toEqual([void 0, void 0]);
+    });
+
+    test('add no existing words', async () => {
+        await groups.setSelectedIds(4);
+        const result0 = await words.newOrLink(['steeple', 'bias'], false);
+        expect(result0).toEqual([28, 29]);
+    });
+
+    test('add existing and garbage words', async () => {
+        await groups.setSelectedIds(4);
+        const result0 = await words.newOrLink(['', 'tattoo', '    ', 'steep', '', 'unbiased', '  ', '', 'bivalve']);
+        expect(result0).toEqual([void 0, 28, void 0, 1, void 0, 24, void 0, void 0, 29]);
+    });
+
     test('adds words with garbage input', async () => {
         await groups.setSelectedIds(2);
         const totalWordCount = await db.words.count();
 
-        const result0 = await words.add(['', '    ']);
+        const result0 = await words.newOrLink(['', '    ']);
         expect(result0).toEqual([void 0, void 0]);
 
-        const result1 = await words.add(['', '    ', 'hallo']);
+        const result1 = await words.newOrLink(['', '    ', 'hallo']);
         expect(result1).toEqual([void 0, void 0, totalWordCount + 1]);
+        await expect(db.wordsInGroups.where({ wordId: result1[2], groupId: 2 }).count()).resolves.toBe(1);
     });
 
     test('adds duplicate words to as single group', async () => {
@@ -233,171 +274,159 @@ describe('words/add', () => {
         const totalWordCount = await db.words.count();
 
         // duplicate words will return the same id
-        const result0 = await words.add(['dot', 'dot', 'dot']);
+        const result0 = await words.newOrLink(['dot', 'dot', 'dot']);
         expect(result0).toEqual([totalWordCount + 1, totalWordCount + 1, totalWordCount + 1]);
-        expect(words.get(totalWordCount + 1)?.memberGroupIds).toEqual([2]);
+        await expect(db.wordsInGroups.where({ wordId: totalWordCount + 1, groupId: 2 }).count()).resolves.toBe(1);
     });
 
     test('adds words when not groups are selected', async () => {
-        await expect(words.add('test1')).rejects.toThrowError(); // no groups selected
+        await expect(words.newOrLink('test1')).rejects.toThrowError(); // no groups selected
 
-        await expect(words.add(['test1', 'test2'])).rejects.toThrowError();
+        await expect(words.newOrLink(['test1', 'test2'])).rejects.toThrowError();
     });
 
     test('adds a new word to a single group', async () => {
         await groups.refreshWordCounts();
-        const group2WordCount = groups.wordCount[2];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
 
         await groups.setSelectedIds(2);
 
-        const [result0] = (await words.add('test1')) as number[];
-
-        await groups.refreshWordCounts();
+        const [result0] = (await words.newOrLink('test1')) as number[];
 
         expect(result0).not.toBeUndefined();
-        expect(words.get(result0)?.memberGroupIds).toEqual([2]);
-        expect(groups.wordCount[2]).toBe(group2WordCount + 1);
+
+        await expect(db.wordsInGroups.where({ wordId: result0, groupId: 2 }).count()).resolves.toBe(1);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount + 1);
     });
 
     test('adds several new words to a single group', async () => {
         await groups.refreshWordCounts();
-        const group2WordCount = groups.wordCount[2];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
 
         await groups.setSelectedIds(2);
-        const [result0, result1] = (await words.add(['test1', 'test2'])) as number[];
+        const [result0, result1] = (await words.newOrLink(['test1', 'test2'])) as number[];
 
-        await groups.refreshWordCounts();
+        await expect(db.wordsInGroups.where({ wordId: result0, groupId: 2 }).count()).resolves.toBe(1);
+        await expect(db.wordsInGroups.where({ wordId: result1, groupId: 2 }).count()).resolves.toBe(1);
 
-        expect(words.get(result0)?.memberGroupIds).toEqual([2]);
-        expect(words.get(result1)?.memberGroupIds).toEqual([2]);
-        expect(groups.wordCount[2]).toBe(group2WordCount + 2);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount + 2);
     });
 
     test('adds a new word to several groups', async () => {
         await groups.refreshWordCounts();
-        const group2WordCount = groups.wordCount[2];
-        const group3WordCount = groups.wordCount[3];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
+        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
 
         await groups.setSelectedIds([2, 3]);
-        const [result0] = (await words.add('test1')) as number[];
-
-        await groups.refreshWordCounts();
+        const [result0] = (await words.newOrLink('test1')) as number[];
 
         expect(result0).not.toBeUndefined();
-        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
-        expect(groups.wordCount[2]).toBe(group2WordCount + 1);
-        expect(groups.wordCount[3]).toBe(group3WordCount + 1);
+
+        await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
+
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount + 1);
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(group3WordCount + 1);
     });
 
     test('adds several new words to several groups', async () => {
-        await groups.refreshWordCounts();
-        const group2WordCount = groups.wordCount[2];
-        const group3WordCount = groups.wordCount[3];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
+        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
 
         await groups.setSelectedIds([2, 3]);
 
-        const [result0, result1] = (await words.add(['test1', 'test2'])) as number[];
+        const [result0, result1] = (await words.newOrLink(['test1', 'test2'])) as number[];
 
-        await groups.refreshWordCounts();
-
-        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
-        expect(words.get(result1)?.memberGroupIds).toEqual([2, 3]);
-
-        expect(groups.wordCount[2]).toBe(group2WordCount + 2);
-        expect(groups.wordCount[3]).toBe(group3WordCount + 2);
+        await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
+        await expect(getWordGroupIds(result1)).resolves.toEqual([2, 3]);
     });
 
     test('adds an existing word to its parent group', async () => {
-        await groups.refreshWordCounts();
-        const group2WordCount = groups.wordCount[2];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
 
         await groups.setSelectedIds(2);
 
-        const [result1] = (await words.add('steep')) as number[];
+        const [result0] = (await words.newOrLink('steep')) as number[];
 
-        await groups.refreshWordCounts();
+        expect(result0).toBe(1);
 
-        expect(result1).toBe(1);
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
-        expect(groups.wordCount[2]).toBe(7);
-        expect(Object.keys(words.all).length).toBe(group2WordCount);
+        await expect(db.wordsInGroups.where({ wordId: result0, groupId: 2 }).count()).resolves.toBe(1);
+
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount);
     });
 
     test('adds an existing word to a different group', async () => {
         await groups.setSelectedIds(3);
 
-        const wordCount = Object.keys(words.all).length;
+        const wordCount = await db.words.count();
 
-        const [result0] = (await words.add('steep')) as number[];
-
-        await groups.refreshWordCounts();
+        const [result0] = (await words.newOrLink('steep')) as number[];
 
         expect(result0).toBe(1);
-        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
-        expect(groups.wordCount[3]).toBe(10);
-        expect(Object.keys(words.all).length).toBe(wordCount + 1); // "steep" was not in group 3
+
+        await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(10);
+        await expect(db.words.count()).resolves.toBe(wordCount); // "steep" was not in group 3
     });
 
     test('adds an existing word to several groups', async () => {
         await groups.setSelectedIds([2, 3, 4]);
 
-        const wordCount = Object.keys(words.all).length;
+        const wordCount = await db.words.count();
 
-        const [result0] = (await words.add('steep')) as number[];
-
-        await groups.refreshWordCounts();
+        const [result0] = (await words.newOrLink('steep')) as number[];
 
         expect(result0).toBe(1);
-        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3, 4]);
-        expect(groups.wordCount[2]).toBe(7);
-        expect(groups.wordCount[3]).toBe(10);
-        expect(groups.wordCount[4]).toBe(8);
-        expect(Object.keys(words.all).length).toBe(wordCount);
+
+        await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3, 4]);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(7);
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(10);
+        await expect(db.wordsInGroups.where({ groupId: 4 }).count()).resolves.toBe(8);
+
+        await expect(db.words.count()).resolves.toBe(wordCount);
     });
 
     test('adds an existing and a new word to a single group', async () => {
         await groups.setSelectedIds(3);
 
-        const wordCount = Object.keys(words.all).length;
+        const wordCount = await db.words.count();
 
-        const [result0, result1] = (await words.add(['steep', 'test1'])) as number[];
-
-        await groups.refreshWordCounts();
+        const [result0, result1] = (await words.newOrLink(['steep', 'test1'])) as number[];
 
         expect(result0).not.toBe(0);
         expect(result1).not.toBe(0);
-        expect(words.get(result0)?.memberGroupIds).toEqual([2, 3]);
-        expect(words.get(result1)?.memberGroupIds).toEqual([3]);
-        expect(groups.wordCount[3]).toBe(11);
-        expect(Object.keys(words.all).length).toBe(wordCount + 2); // "steep" was not in group 3
+
+        await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
+        await expect(getWordGroupIds(result1)).resolves.toEqual([3]);
+
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(11);
+
+        await expect(db.words.count()).resolves.toBe(wordCount + 1); // "steep" was not in group 3
     });
 });
 
 describe('words/move', () => {
     test('moves a single word', async () => {
         await groups.setSelectedIds([2, 3]);
-        await groups.refreshWordCounts();
 
-        const group3WordCount = groups.wordCount[3];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
+        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
 
         await words.move(1, 2, 3);
 
-        await groups.refreshWordCounts();
-
-        expect(words.get(1)?.memberGroupIds).toEqual([3]);
-        expect(groups.wordCount[3]).toBe(group3WordCount + 1);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount - 1);
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(group3WordCount + 1);
     });
 
     test('moves a single word to the same group', async () => {
         await groups.setSelectedIds(2);
-        await groups.refreshWordCounts();
 
-        const group2WordCount = groups.wordCount[2];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
 
         await words.move(1, 2, 2);
 
-        expect(words.get(1)?.memberGroupIds).toEqual([2]);
-        expect(groups.wordCount[2]).toBe(group2WordCount);
+        await expect(getWordGroupIds(1)).resolves.toEqual([2]);
+
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount);
     });
 
     test('moves a single word to a non-existent group', async () => {
@@ -406,45 +435,35 @@ describe('words/move', () => {
         await expect(words.move(1, 2, 395)).rejects.toThrowError();
     });
 
-    test('moves a single word from a non-existent and a regular group', async () => {
+    test.skip('moves a single word from a non-existent and a regular group', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        await expect(words.move(1, [2, 395], 3)).rejects.toThrowError();
-        await expect(words.move(1, 234, 3)).rejects.toThrowError();
-    });
+        await expect(words.move(1, [2, 395], 3)).toThrowError();
+        await words.move(1, 234, 3);
 
-    test('moves a single word from a non-selected group', async () => {
-        await groups.setSelectedIds(3);
-
-        await expect(words.move(1, 2, 3)).rejects.toThrowError();
+        await expect(db.wordsInGroups.where({ groupId: 3, wordId: 1 }).count()).resolves.toBe(1);
     });
 
     test('moves several words', async () => {
         await groups.setSelectedIds([2, 3]);
-        await groups.refreshWordCounts();
 
-        const group2WordCount = groups.wordCount[2];
-        const group3WordCount = groups.wordCount[3];
+        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
+        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
         await words.move([1, 2, 3], 2, 3);
 
-        await groups.refreshWordCounts();
-
-        expect(groups.wordCount[2]).toBe(group2WordCount - 3);
-        expect(groups.wordCount[3]).toBe(group3WordCount + 3);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount - 3);
+        await expect(countWordsInGroup(3)).resolves.toBe(group3WordCount + 3);
     });
 
     test('moves all group words', async () => {
         await groups.setSelectedIds([2, 3]);
-        await groups.refreshWordCounts();
 
-        const group3WordCount = groups.wordCount[3];
+        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
         await words.move([1, 2, 3, 4, 5, 6, 18], 2, 3);
 
-        await groups.refreshWordCounts();
-
-        expect(groups.wordCount[2]).toBe(0);
+        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(0);
         // words 5 and 6 belong to group 3 already
-        expect(groups.wordCount[3]).toBe(group3WordCount + 5);
+        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(group3WordCount + 5);
     });
 
     test('moves a single word to the Root Group', async () => {
@@ -457,36 +476,31 @@ describe('words/move', () => {
         await groups.setSelectedIds([2]);
 
         await expect(words.move(1, 2, 7)).rejects.toThrowError();
+        await expect(getWordGroupIds(1)).resolves.toEqual([2]);
     });
 });
 
 describe('words/delete', () => {
     test('deletes a single word from a selected group', async () => {
         await groups.setSelectedIds(6);
-        await groups.refreshWordCounts();
 
-        const group6WordCount = groups.wordCount[6];
-        const groupWordCount = { ...groups.wordCount };
+        const group6WordCount = await countWordsInGroup(6);
 
         await words.delete(25);
-        await groups.refreshWordCounts();
 
-        expect(groups.wordCount[6]).toBe(group6WordCount - 1);
-        expect(groups.wordCount).not.toEqual(groupWordCount);
+        await expect(countWordsInGroup(6)).resolves.toBe(group6WordCount - 1);
     });
 
     test('deletes a linked word from a single group', async () => {
         await groups.setSelectedIds(2);
-        await groups.refreshWordCounts();
 
-        const group2WordCount = groups.wordCount[2];
-        const group3WordCount = groups.wordCount[3];
+        const group2WordCount = await countWordsInGroup(2);
+        const group3WordCount = await countWordsInGroup(3);
 
         await words.delete(5, 2);
-        await groups.refreshWordCounts();
 
-        expect(groups.wordCount[2]).toBe(group2WordCount - 1);
-        expect(groups.wordCount[3]).toBe(group3WordCount);
+        await expect(countWordsInGroup(2)).resolves.toBe(group2WordCount - 1);
+        await expect(countWordsInGroup(3)).resolves.toBe(group3WordCount);
     });
 
     test('deletes a linked word from a non-existing group', async () => {
@@ -508,7 +522,10 @@ describe('words/delete', () => {
     });
 
     test('deletes a non-existing word from an active journal', async () => {
+        const totalWordCount = await db.words.count();
+
         await expect(words.delete(957)).rejects.toThrowError();
+        await expect(db.words.count()).resolves.toBe(totalWordCount);
     });
 
     test('deletes several words from several groups', async () => {
@@ -518,13 +535,18 @@ describe('words/delete', () => {
 
         await words.delete([5, 6], [2, 4]);
 
-        expect(words.get(5)?.memberGroupIds).toEqual([3, 5, 6]);
-        expect(words.get(6)?.memberGroupIds).toEqual([3, 5, 6]);
+        await expect(getWordGroupIds(5)).resolves.toEqual([3, 5, 6]);
+        await expect(getWordGroupIds(6)).resolves.toEqual([3, 5, 6]);
 
         expect(await db.words.count()).toBe(totalWordCount);
     });
+
+    // delete orphan word
 });
 
+function countWordsInGroup(x: number) {
+    return db.wordsInGroups.where({ groupId: x }).count();
+}
 // more tests
 // - selectedIds([2,2])
 // - try to link a word from another journal

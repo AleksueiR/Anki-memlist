@@ -1,4 +1,4 @@
-import { Group, GroupDisplayMode, Journal, Word, WordPouch } from '@/api/db';
+import { Group, GroupDisplayMode, Journal, Word, WordPouch, WordInGroup } from '@/api/db';
 
 /**
  * Delete the existing database and populated it with the fresh set of test data.
@@ -16,9 +16,9 @@ export async function rePopulate(db: WordPouch): Promise<void> {
     await db.open();
 
     // db.on('populate', async () => {
-    const journalId1 = await db.journals.add(new Journal('Second Journal'));
+    const journalId1 = await db.journals.put(new Journal('Second Journal'));
 
-    const rootGroupId1 = await db.groups.add(new Group('Root group', journalId1));
+    const rootGroupId1 = await db.groups.put(new Group('Root group', journalId1));
     await db.journals.update(journalId1, { rootGroupId: rootGroupId1 });
 
     const groupIds1 = await db.groups.bulkAdd(
@@ -32,16 +32,19 @@ export async function rePopulate(db: WordPouch): Promise<void> {
         { allKeys: true }
     );
 
-    await db.groups.update(rootGroupId1, { subGroupIds: groupIds1 });
+    await db.groups.update(rootGroupId1, { subGroupIds: [2] });
 
     // create a second Journal
-    const journalId2 = await db.journals.add(new Journal('Second Journal'));
+    const journalId2 = await db.journals.put(new Journal('Second Journal'));
 
-    const rootGroupId2 = await db.groups.add(new Group('Root group Two', journalId2));
+    const rootGroupId2 = await db.groups.put(new Group('Root group Two', journalId2));
     await db.journals.update(journalId2, { rootGroupId: rootGroupId2 });
 
     const groupIds2 = await db.groups.bulkAdd(
-        [new Group('Group Seven Two', journalId2), new Group('Group Eight Two', journalId2)],
+        [
+            new Group('Group Seven Two', journalId2), // 7
+            new Group('Group Eight Two', journalId2) // 8
+        ],
         { allKeys: true }
     );
     await db.groups.update(rootGroupId2, { subGroupIds: groupIds2 });
@@ -81,6 +84,54 @@ export async function rePopulate(db: WordPouch): Promise<void> {
         new Word('company', journalId2, [7, 8]), // 26
         new Word('parent', journalId2, [8]) // 27
     ]);
+
+    const wordsInGroupsMap: [number, number][] = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [5, 2],
+        [5, 3],
+        [5, 5],
+        [5, 6],
+        [6, 2],
+        [6, 3],
+        [6, 4],
+        [6, 5],
+        [6, 6],
+        [7, 3],
+        [8, 3],
+        [9, 3],
+        [10, 3],
+        [11, 3],
+        [12, 4],
+        [13, 4],
+        [13, 3],
+        [14, 4],
+        [14, 6],
+        [15, 4],
+        [15, 6],
+        [16, 4],
+        [16, 5],
+        [16, 6],
+        [17, 5],
+        [18, 5],
+        [18, 2],
+        [19, 5],
+        [19, 3],
+        [20, 5],
+        [20, 4],
+        [21, 5],
+        [22, 6],
+        [23, 6],
+        [24, 6],
+        [25, 6],
+        [26, 7],
+        [26, 8],
+        [27, 8]
+    ];
+
+    await db.wordsInGroups.bulkAdd(wordsInGroupsMap.map(args => new WordInGroup(...args)));
 
     // });
 }

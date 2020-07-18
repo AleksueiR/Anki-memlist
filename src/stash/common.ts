@@ -1,4 +1,4 @@
-import { DBCommonEntry, DBEntry, Journal } from '@/api/db';
+import { DBCommonEntry, DBEntry, Journal, isValidDBCommonEntry } from '@/api/db';
 import { exceptArray, notEmptyFilter, wrapInArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
@@ -21,6 +21,10 @@ export type EntrySet<K> = Record<number, K>;
  */
 export class StashModuleState<K> {
     all: EntrySet<K> = {};
+
+    get allIds(): number[] {
+        return Object.keys(this.all).map(k => +k);
+    }
 }
 
 /**
@@ -34,8 +38,6 @@ export class StashModuleState<K> {
 export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
     new (): T;
 }
-
-type OmitId<K extends DBEntry> = keyof Omit<K, 'id'>;
 
 /**
  * A stash module class providing some default functions.
@@ -79,35 +81,17 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         return this.state.all;
     }
 
-    /**
-     * Set a collection of all entries.
-     *
-     * @protected
-     * @param {EntrySet<K>} value
-     * @memberof StashModule
-     */
-    protected setAll(value: EntrySet<K>): void {
-        this.state.all = value;
+    protected has(id: number): boolean {
+        return this.state.all[id] !== undefined;
     }
 
-    /**
-     * Add the provided value or a list of values to the `state.all` set.
-     * Return 0 on failure; returns void on success.
-     *
-     * @protected
-     * @param {(K | K[])} values
-     * @returns {(void | 0 | (void | 0)[])}
-     * @memberof StashModule
-     */
-    protected addToAll(value: K): void | 0;
-    protected addToAll(values: K[]): (void | 0)[];
-    protected addToAll(value: K | K[]): void | 0 | (void | 0)[] {
-        if (Array.isArray(value)) {
-            return value.map(entry => this.addToAll(entry));
-        }
+    protected add(value: K): void {
+        if (this.all[value.id]) throw new Error(`${this.moduleName}/put: Entry ${value.id} already exists.`);
 
-        if (this.all[value.id]) return log.info(`${this.moduleName}/addToAll: Entry ${value.id} already exists.`), 0;
+        this.state.all[value.id] = value;
+    }
 
+    protected put(value: K): void {
         this.state.all[value.id] = value;
     }
 
@@ -130,16 +114,6 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 
     /**
-     * Return ids of the `all` collection.
-     *
-     * @returns {number[]}
-     * @memberof StashModule
-     */
-    protected getAllIds(): number[] {
-        return Object.keys(this.all).map(k => +k);
-    }
-
-    /**
      * Get an Entry with the id specified directly from the db.
      * Throws an error if the id is not valid.
      *
@@ -148,17 +122,30 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {Promise<K>}
      * @memberof StashModule
      */
-    protected async _getFromDb(id: number): Promise<K | undefined>;
-    protected async _getFromDb(ids: number[]): Promise<K[] | undefined>;
-    protected async _getFromDb(value: number | number[]): Promise<K | K[] | undefined> {
-        const records = await this.table.bulkGet(wrapInArray(value));
-        if (!records) log.warn(`${this.moduleName}/getFromDb: Cannot load or record ${value} doesn't exist.`);
+    protected async getFromDb(id: number): Promise<K | undefined> {
+        return this.table.get(id);
+    }
 
-        if (Array.isArray(value)) {
-            return records.pop();
-        }
+    /**
+     * Check if the supplied id is valid in the State.
+     *
+     * @param {number} id
+     * @returns {boolean}
+     * @memberof StashModule
+     */
+    isValid(id: number): boolean {
+        return this.state.all[id] !== undefined;
+    }
 
-        return records;
+    /**
+     * Check if the supplied entry id is valid in the State
+     *
+     * @param {number} id
+     * @returns {Promise<boolean>}
+     * @memberof StashModule
+     */
+    async isValidInDb(id: number): Promise<boolean> {
+        return (await this.table.where({ id }).count()) === 1;
     }
 
     /**
@@ -180,56 +167,8 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
      * @returns {(K | undefined | K[])}
      * @memberof StashModule
      */
-    get(id: number): K | undefined;
-    get(ids: number[]): K[];
-    get(value: number | number[]): K | undefined | K[] {
-        if (Array.isArray(value)) {
-            return value.map(id => this.get(id)).filter(notEmptyFilter);
-        }
-
-        return this.state.all[value];
-    }
-
-    /**
-     * Vet a list of supplied ids against the loaded entries.
-     * Use to filter out externally supplied ids.
-     *
-     * @param {(number | number[])} value
-     * @returns {number[]}
-     * @memberof StashModule
-     */
-    vetId(value: number | number[]): number[] {
-        // make return a promise for consistency
-        const ids = [...new Set(wrapInArray(value))]; // remove duplicates
-
-        // either filter the the provided list to make sure there are no phony ids or return all of them if `ids` is not provided.
-        // this also filters out duplicates
-        return this.getAllIds().filter(id => ids.includes(id));
-    }
-
-    /**
-     * Check if the supplied id or ids are valid.
-     * If at least one ids is not valid, return `false`.
-     *
-     * @param {(number | number[])} value
-     * @returns {boolean}
-     * @memberof StashModule
-     */
-    isValidId(value: number | number[]): boolean {
-        const ids = wrapInArray(value);
-
-        // it's assumed that if an entry has been added to the `state.all`, the entry is valid
-        // as only the internal stash functions can write to `state.all`
-
-        // vet ids and if all the ids are found in the collection return true
-        return this.vetId(ids).length === ids.length;
-    }
-
-    validateId(value: number | number[]): void {
-        const invalidIds = exceptArray(wrapInArray(value), this.getAllIds());
-
-        if (invalidIds.length > 0)
-            throw new Error(`${this.moduleName}/validateId: Entry id/ids #${invalidIds} are invalid in this context.`);
+    get(id: number): K | undefined {
+        return this.state.all[id];
     }
 
     /**
@@ -285,8 +224,9 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
             .anyOf(ids)
             .modify(dbEntry => {
                 const stateEntry = this.get(dbEntry.id);
-                if (!stateEntry)
-                    throw new Error(`${this.moduleName}/updateStateAndDb: State #${dbEntry.id} entry doesn't exist.`);
+                // the entry might not exist in the state as it wasn't loaded; it's normal
+                if (!stateEntry) return;
+                // throw new Error(`${this.moduleName}/updateStateAndDb: State #${dbEntry.id} entry doesn't exist.`);
 
                 const value = getValue(stateEntry);
 
@@ -325,6 +265,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
 }
 
 export class CommonStashModule<K extends DBCommonEntry, T extends StashModuleState<K>> extends StashModule<K, T> {
+    // TODO: check if these can be moved to the main class
     /**
      * Return an active journal or throws an error if the active journal is not set or its root group is not set.
      *
@@ -333,31 +274,44 @@ export class CommonStashModule<K extends DBCommonEntry, T extends StashModuleSta
      * @type {Journal}
      * @memberof NonJournalStashModule
      */
-    protected get activeJournal(): Journal {
-        const activeJournal = this.$stash.journals.active;
-        if (!activeJournal) throw new Error(`${this.moduleName}/getActiveJournal: Active journal is not set.`);
+    protected get activeJournal(): Journal | null {
+        return this.$stash.journals.active;
+    }
 
-        if (activeJournal.rootGroupId === -1)
-            throw new Error(`${this.moduleName}/getActiveJournal: Root Group of the Active journal is not set.`);
+    protected async getFromDb(id: number): Promise<K | undefined> {
+        const entry = await super.getFromDb(id);
 
-        return activeJournal;
+        if (!this.activeJournal) throw new Error(`${this.moduleName}/getFromDb: Active journal is not set.`);
+
+        return entry;
     }
 
     /**
-     * Return an active journal or throws if the active journal is not set or its root group is not set.
+     * Check if the supplied entry id is valid in the Db and belongs to the active journal.
      *
-     * @protected
-     * @returns {(Journal)}
-     * @memberof NonJournalStashModule
+     * @param {number} id
+     * @returns {Promise<boolean>}
+     * @memberof CommonStashModule
      */
-    protected getActiveJournal(): Journal {
-        const activeJournal = this.$stash.journals.active;
-        if (!activeJournal) throw new Error(`${this.moduleName}/getActiveJournal: Active journal is not set.`);
+    async isValidInDb(id: number): Promise<boolean> {
+        if (!this.activeJournal) throw new Error(`${this.moduleName}/isValidInDb: Active journal is not set.`);
 
-        if (activeJournal.rootGroupId === -1)
-            throw new Error(`${this.moduleName}/getActiveJournal: Root Group of the Active journal is not set.`);
+        return isValidDBCommonEntry(this.table, { id, journalId: this.activeJournal.id });
+    }
 
-        return activeJournal;
+    /**
+     * Check if the supplied entry id is valid in the State and belongs to the active journal.
+     *
+     * @param {number} id
+     * @returns {boolean}
+     * @memberof CommonStashModule
+     */
+    isValid(id: number): boolean {
+        if (!this.activeJournal) throw new Error(`${this.moduleName}/isValid: Active journal is not set.`);
+
+        const entry = this.get(id);
+
+        return entry !== undefined && entry.journalId === this.activeJournal.id;
     }
 
     /**

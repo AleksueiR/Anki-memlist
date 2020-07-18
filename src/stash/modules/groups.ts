@@ -1,4 +1,4 @@
-import { db, Group, GroupDisplayMode } from '@/api/db';
+import { db, Group, GroupDisplayMode, getGroupWordIds } from '@/api/db';
 import {
     areArraysEqual,
     reduceArrayToObject,
@@ -8,9 +8,15 @@ import {
     wrapInArray
 } from '@/util';
 import Dexie from 'dexie';
-import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
+import { CommonStashModule, Stash, StashModuleState } from '../internal';
 
-export type GroupWordCountSet = Record<number, number>;
+export type GroupWordCountEntry = {
+    [GroupDisplayMode.All]: number;
+    [GroupDisplayMode.Active]: number;
+    [GroupDisplayMode.Archived]: number;
+};
+
+export type GroupWordCountSet = Record<number, GroupWordCountEntry>;
 
 export class GroupsState extends StashModuleState<Group> {
     selectedIds: number[] = [];
@@ -40,12 +46,11 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
     async fetchJournalGroups(): Promise<void> {
         this.reset();
 
-        const activeJournal = this.getActiveJournal();
+        if (!this.activeJournal) throw new Error('groups/fetchJournalGroups: Active journal is not set.');
 
-        const groups = await this.table.where({ journalId: activeJournal.id }).toArray();
-        const groupSet = reduceArrayToObject(groups);
+        const groups = await this.table.where({ journalId: this.activeJournal.id }).toArray();
+        this.state.all = reduceArrayToObject(groups);
 
-        this.setAll(groupSet);
         this.refreshWordCounts();
     }
 
@@ -59,11 +64,11 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async new(name = 'New Group', displayMode: GroupDisplayMode = GroupDisplayMode.All): Promise<number> {
-        const activeJournal = this.getActiveJournal();
-
         const newGroupId = await db.transaction('rw', this.table, async () => {
+            if (!this.activeJournal) throw new Error('groups/new: Active journal is not set.');
+
             // create a new group entry
-            const newGroupId = await this.table.add(new Group(name, activeJournal.id, displayMode));
+            const newGroupId = await this.table.put(new Group(name, this.activeJournal.id, displayMode));
             const newGroup = await this.table.get(newGroupId);
             if (!newGroup) {
                 Dexie.currentTransaction.abort();
@@ -73,10 +78,10 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
             // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
             // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
             // NOTE: if the `attach` fails, it will leave state with an non-existing group added to it
-            this.addToAll(newGroup);
+            this.add(newGroup);
 
             // add it to the root group's subGroupIds
-            await this.attach(newGroup.id, activeJournal.rootGroupId);
+            await this.attach(newGroup.id, this.activeJournal.rootGroupId);
 
             return newGroup.id;
         });
@@ -135,28 +140,34 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async refreshWordCounts(value?: number | number[]): Promise<void> {
-        this.validateId(value || []);
-
         // get all ids if none were supplied
-        const groupIds = wrapInArray(value || this.getAllIds());
+        const groupIds = wrapInArray(value || this.state.allIds);
 
-        // get groups from the provided groupIds
-        const groups = this.get(groupIds);
+        await Promise.all(
+            groupIds.map(async groupId => {
+                // check if the group value is valid in this journal only for supplied ids
+                // there is no sense in refreshing word count for groups that are not loaded
+                if (value && !(await this.isValid(groupId)))
+                    throw new Error(`groups/refreshWordCounts: Group #${groupId} is not valid in active journal`);
 
-        await db.transaction('r', db.words, async () => {
-            await Promise.all(
-                groups.map(async group => {
-                    // include `isArchived` condition based on the `displayMode` if it's not set to `all`
-                    const isArchivedClause = group.displayMode !== GroupDisplayMode.All ? group.displayMode : void 0;
+                const wordIds = await getGroupWordIds(groupId);
 
-                    // count the words and dispatch an action to update the state
-                    const count = await this.$stash.words.countWordsInAGroup(group.id, isArchivedClause);
-                    this.state.wordCount[group.id] = count;
-                })
-            );
+                const allWordCount = wordIds.length;
+                const activeWordCount = await db.words
+                    .where('id')
+                    .anyOf(wordIds)
+                    .filter(word => word.isArchived === GroupDisplayMode.Active)
+                    .count();
 
-            this.removeOldWordCounts();
-        });
+                this.state.wordCount[groupId] = {
+                    [GroupDisplayMode.All]: allWordCount,
+                    [GroupDisplayMode.Active]: activeWordCount,
+                    [GroupDisplayMode.Archived]: allWordCount - activeWordCount
+                };
+            })
+        );
+
+        this.removeOldWordCounts();
     }
 
     /**
@@ -169,8 +180,10 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     protected async attach(groupId: number, targetGroupId: number): Promise<void> {
-        this.validateId(groupId);
-        this.validateId(targetGroupId, true);
+        if (!this.isValid(groupId) || !this.isValid(targetGroupId))
+            throw new Error(`groups/attach: Group #${groupId} is not valid in active journal.`);
+
+        if (groupId === this.activeJournal?.rootGroupId) throw new Error(`groups/attach: Cannot attach Root Group.`);
 
         const parentCount = await this.table.where({ subGroupIds: groupId }).count();
         if (parentCount > 0) throw new Error(`groups/attach: Group #${groupId} already has a parent. Detach it first.`);
@@ -190,7 +203,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     protected async detach(groupId: number): Promise<void> {
-        this.validateId(groupId);
+        if (!this.isValid(groupId)) throw new Error(`groups/detach: Group #${groupId} is not valid in active journal.`);
 
         // get parent group
         const parentGroup = await this.table.where({ subGroupIds: groupId }).first();
@@ -212,9 +225,6 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async move(groupId: number, targetGroupId: number): Promise<void> {
-        this.validateId(groupId);
-        this.validateId(targetGroupId, true);
-
         // `groupId` is already a direct subgroup of `targetGroupId`
         if (this.get(targetGroupId)?.subGroupIds.includes(groupId)) return;
 
@@ -257,8 +267,12 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @returns {Promise<void>}
      * @memberof GroupsModule
      */
-    async setSelectedIds(groupIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
-        this.validateId(groupIds);
+    async setSelectedIds(value: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
+        const groupIds = wrapInArray(value);
+
+        // check if ids are present in the state and that root group id is not among them
+        if (groupIds.some(groupId => !this.isValid(groupId) || groupId === this.activeJournal?.rootGroupId))
+            throw new Error(`groups/setSelectedIds: Group #${value} is not valid`);
 
         const newSelectedGroupIds = updateArrayWithValues(this.selectedIds, wrapInArray(groupIds), updateMode);
         if (areArraysEqual(this.state.selectedIds, newSelectedGroupIds)) return;
@@ -304,21 +318,10 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     protected removeOldWordCounts() {
-        const allIds = this.getAllIds();
+        const allIds = this.state.allIds;
 
         Object.keys(this.state.wordCount).forEach(key => {
             if (!allIds.includes(+key)) delete this.state.wordCount[+key];
         });
-    }
-
-    validateId(value: number | number[], allowRootGroup = false): void {
-        let ids = [...new Set(wrapInArray(value))];
-
-        if (!allowRootGroup && ids.includes(this.getActiveJournal()?.rootGroupId))
-            throw new Error(
-                `groups/validateId: Root Group id #${this.getActiveJournal()?.rootGroupId} is invalid here.`
-            );
-
-        super.validateId(ids);
     }
 }

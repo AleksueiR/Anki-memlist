@@ -251,7 +251,7 @@ export async function putWordInGroup(wordId: number, groupId: number, journalId:
             throw new Error(`db/putWordInGroup: Invalid word id #${wordId}.`);
 
         if (!(await isValidDBCommonEntry(db.groups, { id: groupId, journalId })))
-            throw new Error(`db/putWordInGroup: Invalid group id #${wordId}.`);
+            throw new Error(`db/putWordInGroup: Invalid group id #${groupId}.`);
 
         await db.wordsInGroups.put(new WordInGroup(wordId, groupId));
     });

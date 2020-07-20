@@ -92,38 +92,48 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
     }
 
     /**
+     * Delete specified groups and words belonging to these groups.
      *
-     *
-     * @param {number[]} groupIds
-     * @returns {(Promise<void | 0>)}
+     * @param {(number | number[])} groupIds
+     * @param {boolean} [deleteLinkedWords=false] if true, also deletes any linked words that exist in other groups
+     * @returns {Promise<void>}
      * @memberof GroupsModule
      */
-    async delete(groupIds: number | number[]): Promise<void> {
-        /* this.validateId(groupIds);
-
+    async delete(groupIds: number | number[], deleteLinkedWords = false): Promise<void> {
         const groupIdList = wrapInArray(groupIds);
+        groupIdList.forEach(groupId => {
+            if (!this.isValid(groupId))
+                throw new Error(`groups/delete: Group #${groupId} is not valid in active journal`);
+        });
 
-        // TODO: needs more;
-        const groups = this.get(groupIdList);
+        await db.transaction('rw', this.table, db.words, db.wordsInGroups, async () => {
+            await Promise.all(
+                groupIdList.map(async groupId => {
+                    // remove groupIds from their parent groups
+                    await this.detach(groupId);
 
-        await db.transaction('rw', this.table, async () => {
-            // remove groupIds from their parent groups
-            await Promise.all(groups.map(async ({ id }) => await this.detach(id)));
+                    // get word ids for this group
+                    const wordIds = await getGroupWordIds(groupId);
 
-            // delete from the db
+                    // if `deleteLinkedWords` is false, delete words only from this group
+                    await (deleteLinkedWords
+                        ? this.$stash.words.delete(wordIds, true)
+                        : this.$stash.words.delete(wordIds, groupId));
+
+                    // delete sub groups and their words in turn
+                    await this.delete(this.get(groupId)?.subGroupIds || [], deleteLinkedWords);
+                })
+            );
+
+            // delete groups from the db
             await db.groups.bulkDelete(groupIdList);
+        });
 
-            await this.$stash.words.delete();
-
-            // TODO: delete words
-            // - delete all words from the journal
-            // - remove only orphaned words
-
-            // delete from state
-            this.removeFromAll(groupIdList);
-            this.setSelectedIds(groupIdList, UpdateMode.Remove);
-            this.removeOldWordCounts();
-        }); */
+        // adjust selected ids
+        await this.setSelectedIds(groupIdList, UpdateMode.Remove);
+        // remove them from state
+        groupIdList.forEach(groupId => this.remove(groupId));
+        this.removeOldWordCounts();
     }
 
     /**
@@ -147,7 +157,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
             groupIds.map(async groupId => {
                 // check if the group value is valid in this journal only for supplied ids
                 // there is no sense in refreshing word count for groups that are not loaded
-                if (value && !(await this.isValid(groupId)))
+                if (value && !this.isValid(groupId))
                     throw new Error(`groups/refreshWordCounts: Group #${groupId} is not valid in active journal`);
 
                 const wordIds = await getGroupWordIds(groupId);
@@ -268,11 +278,17 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async setSelectedIds(value: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
+        if (!this.activeJournal) throw new Error('groups/setSelectedIds: Active journal is not set.');
+
         const groupIds = wrapInArray(value);
 
-        // check if ids are present in the state and that root group id is not among them
-        if (groupIds.some(groupId => !this.isValid(groupId) || groupId === this.activeJournal?.rootGroupId))
-            throw new Error(`groups/setSelectedIds: Group #${value} is not valid`);
+        // check if group ids are present in the state
+        if (groupIds.some(groupId => !this.isValid(groupId)))
+            throw new Error(`groups/setSelectedIds: Group #${value} is not valid.`);
+
+        // check that the Root group is not being selected
+        if (groupIds.includes(this.activeJournal.rootGroupId))
+            throw new Error(`groups/setSelectedIds: Root Group cannot be selected.`);
 
         const newSelectedGroupIds = updateArrayWithValues(this.selectedIds, wrapInArray(groupIds), updateMode);
         if (areArraysEqual(this.state.selectedIds, newSelectedGroupIds)) return;

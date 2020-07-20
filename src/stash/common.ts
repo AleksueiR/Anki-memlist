@@ -95,6 +95,10 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         this.state.all[value.id] = value;
     }
 
+    protected remove(value: K | number): void {
+        delete this.all[typeof value === 'number' ? value : value.id];
+    }
+
     /**
      * Remove the provided value from the `state.all` set.
      *

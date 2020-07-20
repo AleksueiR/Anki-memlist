@@ -1,7 +1,8 @@
-import { db, getWordGroupIds } from '@/api/db';
+import { db, getWordGroupIds, getGroupWordIds } from '@/api/db';
 import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
 import Vue from 'vue';
 import { rePopulate } from './dummy-data';
+import { UpdateMode } from '@/util';
 
 // disable tips in the console
 Vue.config.devtools = false;
@@ -158,6 +159,14 @@ describe('groups/setSelectedIds', () => {
 
         expect(groups.selectedIds).toEqual([2, 3]);
     });
+
+    test('remove from selected ids', async () => {
+        await groups.setSelectedIds([2, 3, 4, 5]);
+
+        await groups.setSelectedIds([5], UpdateMode.Remove);
+
+        expect(groups.selectedIds).toEqual([2, 3, 4]);
+    });
 });
 
 describe('groups/refreshWordCounts', () => {
@@ -235,6 +244,73 @@ describe('groups/move', () => {
 
     test('moves Root Group', async () => {
         await expect(groups.move(1, 2)).rejects.toThrowError();
+    });
+});
+
+describe('groups/delete', () => {
+    test('deletes the Root Group', async () => {
+        await expect(groups.delete(1)).rejects.toThrowError();
+    });
+
+    test('deletes a group in a non-active Journal', async () => {
+        await expect(groups.delete(7)).rejects.toThrowError();
+    });
+
+    test('deletes a group', async () => {
+        await groups.delete(6);
+
+        await expect(db.groups.get(6)).resolves.toBeUndefined();
+        await expect(db.groups.where({ subGroupIds: 6 }).count()).resolves.toBe(0); // check if the group 6 was detached
+    });
+
+    test('deletes a group without deleting linked words', async () => {
+        groups.setSelectedIds(6);
+
+        const totalWordCount = await getTotalWordCount();
+        const group6WordIds = await getGroupWordIds(6);
+
+        const result = await Promise.all(
+            group6WordIds.map(async wordId => (await db.wordsInGroups.where({ wordId }).count()) > 1)
+        );
+
+        const linkedWordCount = result.reduce((count, flag) => (flag ? ++count : count), 0);
+
+        await groups.delete(6, false);
+
+        await expect(getTotalWordCount()).resolves.toBe(totalWordCount - (group6WordIds.length - linkedWordCount));
+    });
+
+    test('deletes a group with words', async () => {
+        const totalWordCount = await getTotalWordCount();
+        const group6WordCount = await countWordsInGroup(6);
+
+        await groups.delete(6, true);
+
+        await expect(getTotalWordCount()).resolves.toBe(totalWordCount - group6WordCount);
+    });
+
+    test('deletes a group with subgroups', async () => {
+        const groupCount = await db.groups.count();
+
+        await groups.delete(5);
+
+        await expect(db.groups.get(6)).resolves.toBeUndefined();
+        await expect(db.groups.count()).resolves.toBe(groupCount - 2);
+    });
+
+    test('deletes a group with subgroups and words in subgroups', async () => {
+        const totalWordCount = await getTotalWordCount();
+        const group56WordIds = [...new Set([...(await getGroupWordIds(5)), ...(await getGroupWordIds(6))])];
+
+        await groups.delete(5, true);
+
+        await expect(getTotalWordCount()).resolves.toBe(totalWordCount - group56WordIds.length);
+        await expect(
+            db.words
+                .where('id')
+                .anyOf(group56WordIds)
+                .count()
+        ).resolves.toBe(0);
     });
 });
 
@@ -351,7 +427,7 @@ describe('words/add', () => {
 
         await expect(db.wordsInGroups.where({ wordId: result0, groupId: 2 }).count()).resolves.toBe(1);
 
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount);
+        await expect(countWordsInGroup(2)).resolves.toBe(group2WordCount);
     });
 
     test('adds an existing word to a different group', async () => {
@@ -364,7 +440,7 @@ describe('words/add', () => {
         expect(result0).toBe(1);
 
         await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
-        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(10);
+        await expect(countWordsInGroup(3)).resolves.toBe(10);
         await expect(db.words.count()).resolves.toBe(wordCount); // "steep" was not in group 3
     });
 
@@ -378,9 +454,9 @@ describe('words/add', () => {
         expect(result0).toBe(1);
 
         await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3, 4]);
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(7);
-        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(10);
-        await expect(db.wordsInGroups.where({ groupId: 4 }).count()).resolves.toBe(8);
+        await expect(countWordsInGroup(2)).resolves.toBe(7);
+        await expect(countWordsInGroup(3)).resolves.toBe(10);
+        await expect(countWordsInGroup(4)).resolves.toBe(8);
 
         await expect(db.words.count()).resolves.toBe(wordCount);
     });
@@ -398,9 +474,20 @@ describe('words/add', () => {
         await expect(getWordGroupIds(result0)).resolves.toEqual([2, 3]);
         await expect(getWordGroupIds(result1)).resolves.toEqual([3]);
 
-        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(11);
+        await expect(countWordsInGroup(3)).resolves.toBe(11);
 
         await expect(db.words.count()).resolves.toBe(wordCount + 1); // "steep" was not in group 3
+    });
+});
+
+describe('words/setSelectedIds', () => {
+    test('remove from selected ids', async () => {
+        await groups.setSelectedIds(2);
+
+        await words.setSelectedIds([1, 2, 3, 4, 5]);
+        await words.setSelectedIds([3, 2], UpdateMode.Remove);
+
+        expect(words.selectedIds).toEqual([1, 4, 5]);
     });
 });
 
@@ -408,25 +495,25 @@ describe('words/move', () => {
     test('moves a single word', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
-        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
+        const group2WordCount = await countWordsInGroup(2);
+        const group3WordCount = await countWordsInGroup(3);
 
         await words.move(1, 2, 3);
 
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount - 1);
-        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(group3WordCount + 1);
+        await expect(countWordsInGroup(2)).resolves.toBe(group2WordCount - 1);
+        await expect(countWordsInGroup(3)).resolves.toBe(group3WordCount + 1);
     });
 
     test('moves a single word to the same group', async () => {
         await groups.setSelectedIds(2);
 
-        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
+        const group2WordCount = await countWordsInGroup(2);
 
         await words.move(1, 2, 2);
 
         await expect(getWordGroupIds(1)).resolves.toEqual([2]);
 
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount);
+        await expect(countWordsInGroup(2)).resolves.toBe(group2WordCount);
     });
 
     test('moves a single word to a non-existent group', async () => {
@@ -435,35 +522,33 @@ describe('words/move', () => {
         await expect(words.move(1, 2, 395)).rejects.toThrowError();
     });
 
-    test.skip('moves a single word from a non-existent and a regular group', async () => {
+    test('moves a single word from a non-existent and a regular group', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        await expect(words.move(1, [2, 395], 3)).toThrowError();
-        await words.move(1, 234, 3);
-
-        await expect(db.wordsInGroups.where({ groupId: 3, wordId: 1 }).count()).resolves.toBe(1);
+        await expect(words.move(1, [2, 395], 3)).rejects.toThrowError();
+        await expect(words.move(1, 234, 3)).rejects.toThrowError();
     });
 
     test('moves several words', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        const group2WordCount = await db.wordsInGroups.where({ groupId: 2 }).count();
-        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
+        const group2WordCount = await countWordsInGroup(2);
+        const group3WordCount = await countWordsInGroup(3);
         await words.move([1, 2, 3], 2, 3);
 
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(group2WordCount - 3);
+        await expect(countWordsInGroup(2)).resolves.toBe(group2WordCount - 3);
         await expect(countWordsInGroup(3)).resolves.toBe(group3WordCount + 3);
     });
 
     test('moves all group words', async () => {
         await groups.setSelectedIds([2, 3]);
 
-        const group3WordCount = await db.wordsInGroups.where({ groupId: 3 }).count();
+        const group3WordCount = await countWordsInGroup(3);
         await words.move([1, 2, 3, 4, 5, 6, 18], 2, 3);
 
-        await expect(db.wordsInGroups.where({ groupId: 2 }).count()).resolves.toBe(0);
+        await expect(countWordsInGroup(2)).resolves.toBe(0);
         // words 5 and 6 belong to group 3 already
-        await expect(db.wordsInGroups.where({ groupId: 3 }).count()).resolves.toBe(group3WordCount + 5);
+        await expect(countWordsInGroup(3)).resolves.toBe(group3WordCount + 5);
     });
 
     test('moves a single word to the Root Group', async () => {
@@ -504,7 +589,12 @@ describe('words/delete', () => {
     });
 
     test('deletes a linked word from a non-existing group', async () => {
-        await expect(words.delete(5, 27)).rejects.toThrowError();
+        const totalWordCount = await getTotalWordCount();
+
+        await expect(words.delete(5, 27)).resolves.toBeUndefined();
+
+        // nothing should change
+        await expect(db.words.count()).resolves.toBe(totalWordCount);
     });
 
     test('deletes a linked word from all groups', async () => {
@@ -541,11 +631,37 @@ describe('words/delete', () => {
         expect(await db.words.count()).toBe(totalWordCount);
     });
 
-    // delete orphan word
+    test('deletes a word from its group to make an orphaned word', async () => {
+        await groups.setSelectedIds(2);
+
+        await words.delete(1, 2);
+
+        await expect(db.words.get(1)).resolves.toBeUndefined();
+    });
+
+    test('deletes a word from a non-selected groups', async () => {
+        await groups.setSelectedIds(2);
+
+        const totalWordCount = await db.words.count();
+        const group6WordCount = await countWordsInGroup(6);
+
+        await words.delete(23, true);
+
+        await expect(countWordsInGroup(6)).resolves.toBe(group6WordCount - 1);
+        await expect(db.words.count()).resolves.toBe(totalWordCount - 1);
+    });
 });
 
-function countWordsInGroup(x: number) {
-    return db.wordsInGroups.where({ groupId: x }).count();
+async function getTotalWordCount() {
+    return await db.words.count();
+}
+
+function countWordsInGroup(groupId: number) {
+    return db.wordsInGroups.where({ groupId }).count();
+}
+
+function countGroupsOfWord(wordId: number) {
+    return db.wordsInGroups.where({ wordId }).count();
 }
 // more tests
 // - selectedIds([2,2])

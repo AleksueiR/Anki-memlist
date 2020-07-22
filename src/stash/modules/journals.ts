@@ -58,7 +58,7 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
 
             // add the newly created journal directly to the state
             // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-            this.add(newJournal);
+            this.addToState(newJournal);
 
             // set rootGroupId of the new Journal;
             // rootGroupId cannot be changed after a journal is created
@@ -76,20 +76,29 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      * @returns {Promise<void>}
      * @memberof JournalsModule
      */
-    async delete(id: number): Promise<void> {
-        /* await db.transaction('rw', this.table, db.groups, db.words, async () => {
-            await this.$stash.words.deleteJournalEntries(id);
-            await this.$stash.groups.deleteJournalEntries(id);
+    async delete(journalId: number): Promise<void> {
+        if (!this.isValid(journalId)) throw new Error(`${this.moduleName}/delete: Journal #${journalId} is not valid.`);
+
+        // when deleting an active journal, set active id to `null`
+        if (journalId === this.activeId) {
+            this.reset();
+        }
+
+        await db.transaction('rw', this.table, db.groups, db.words, db.wordsInGroups, async () => {
+            const groupIds = await db.groups.where({ journalId }).primaryKeys();
+
+            await db.groups.where({ journalId }).delete();
+            await db.words.where({ journalId }).delete();
+            await db.wordsInGroups
+                .where('groupId')
+                .anyOf(groupIds)
+                .delete();
+
+            await this.table.delete(journalId);
+            this.deleteFromState(journalId);
+
             // TODO: purge sample sources
-            await this.table.delete(id);
-
-            // when deleting an active journal, set active id to `null`
-            if (id === this.activeId) {
-                this.setActiveId();
-            }
-
-            this.removeFromAll(id);
-        }); */
+        });
     }
 
     /**
@@ -117,11 +126,14 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
      *
      * @param {number} journalId
      * @param {string} name
-     * @returns {(Promise<void | 0>)}
+     * @returns {Promise<number>}
      * @memberof JournalsModule
      */
-    async setName(journalId: number, name: string): Promise<void | 0> {
-        // return this.updateStateAndDb(journalId, 'name', name);
+    async setName(journalId: number, name: string): Promise<number> {
+        if (!this.isValid(journalId))
+            throw new Error(`${this.moduleName}/setName: Journal #${journalId} is not valid.`);
+
+        return this.updateStateAndDb(journalId, 'name', name);
     }
 
     /**
@@ -142,5 +154,17 @@ export class JournalsModule extends StashModule<Journal, JournalsState> {
             throw new Error(`${this.moduleName}/setDefaultGroupId: Group id #${defaultGroupId} is not valid.`);
 
         await this.updateStateAndDb(this.activeId, 'defaultGroupId', defaultGroupId);
+    }
+
+    /**
+     * Reset the Journal, Groups, and Words states to their defaults.
+     *
+     * @memberof JournalsModule
+     */
+    reset(): void {
+        super.reset();
+
+        this.$stash.groups.reset();
+        this.$stash.words.reset();
     }
 }

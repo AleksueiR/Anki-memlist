@@ -67,12 +67,22 @@ describe('journal/setDefaultGroup', () => {
     });
 });
 
-describe.skip('journals/delete', () => {
+describe('journals/delete', () => {
     test('deletes an active journal', async () => {
+        const totalGroupCount = await db.groups.count();
+        const groupCount = await db.groups.where({ journalId: 1 }).count();
+
+        const totalWordCount = await db.words.count();
+        const wordCount = await db.words.where({ journalId: 1 }).count();
+
         await journals.delete(1);
 
         expect(journals.activeId).toBe(null);
         expect(journals.active).toBe(null);
+
+        await expect(db.journals.get(1)).resolves.toBeUndefined();
+        await expect(db.groups.count()).resolves.toBe(totalGroupCount - groupCount);
+        await expect(db.words.count()).resolves.toBe(totalWordCount - wordCount);
     });
 
     test('deletes a non-active journal', async () => {
@@ -92,13 +102,7 @@ describe.skip('journals/delete', () => {
     test('deletes a non-existing journal', async () => {
         await groups.setSelectedIds(2);
 
-        await journals.delete(13);
-
-        expect(journals.activeId).not.toBe(null);
-        expect(journals.active).not.toBe(null);
-
-        expect(groups.all).not.toEqual({});
-        expect(words.all).not.toEqual({});
+        await expect(journals.delete(13)).rejects.toThrowError();
     });
 
     test('deletes a journal with selected groups', async () => {
@@ -110,7 +114,10 @@ describe.skip('journals/delete', () => {
         expect(groups.selectedIds).toEqual([]);
     });
 
-    test.skip('deletes a journal with selected words', async () => {
+    test('deletes a journal with selected words', async () => {
+        await groups.setSelectedIds(2);
+        await words.setSelectedIds(2);
+
         await journals.delete(1);
 
         expect(words.all).toEqual({});
@@ -261,6 +268,8 @@ describe('groups/delete', () => {
 
         await expect(db.groups.get(6)).resolves.toBeUndefined();
         await expect(db.groups.where({ subGroupIds: 6 }).count()).resolves.toBe(0); // check if the group 6 was detached
+
+        expect(groups.get(6)).toBeUndefined();
     });
 
     test('deletes a group without deleting linked words', async () => {
@@ -296,6 +305,9 @@ describe('groups/delete', () => {
 
         await expect(db.groups.get(6)).resolves.toBeUndefined();
         await expect(db.groups.count()).resolves.toBe(groupCount - 2);
+
+        await expect(db.words.get(15)).resolves.not.toBeUndefined();
+        await expect(db.words.get(25)).resolves.toBeUndefined();
     });
 
     test('deletes a group with subgroups and words in subgroups', async () => {
@@ -311,6 +323,15 @@ describe('groups/delete', () => {
                 .anyOf(group56WordIds)
                 .count()
         ).resolves.toBe(0);
+    });
+
+    test('deletes a group and its subgroup explicitly', async () => {
+        const groupCount = await db.groups.count();
+
+        await groups.delete([5, 6]);
+
+        await expect(db.groups.get(6)).resolves.toBeUndefined();
+        await expect(db.groups.count()).resolves.toBe(groupCount - 2);
     });
 });
 
@@ -461,6 +482,15 @@ describe('words/add', () => {
         await expect(db.words.count()).resolves.toBe(wordCount);
     });
 
+    test('adds an existing from another journal', async () => {
+        await groups.setSelectedIds(3);
+
+        const wordId = await words.newOrLink('parent');
+
+        // the word should not be linked across journals
+        expect(wordId).not.toBe(27);
+    });
+
     test('adds an existing and a new word to a single group', async () => {
         await groups.setSelectedIds(3);
 
@@ -574,6 +604,8 @@ describe('words/delete', () => {
         await words.delete(25);
 
         await expect(countWordsInGroup(6)).resolves.toBe(group6WordCount - 1);
+
+        expect(words.get(25)).toBeUndefined();
     });
 
     test('deletes a linked word from a single group', async () => {
@@ -663,8 +695,8 @@ function countWordsInGroup(groupId: number) {
 function countGroupsOfWord(wordId: number) {
     return db.wordsInGroups.where({ wordId }).count();
 }
+
 // more tests
 // - selectedIds([2,2])
 // - try to link a word from another journal
-// - try some garbage input instead of words
 // - load groups with linked words and check the number of words loaded

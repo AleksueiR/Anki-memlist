@@ -1,5 +1,5 @@
-import { DBCommonEntry, DBEntry, Journal, isValidDBCommonEntry } from '@/api/db';
-import { exceptArray, notEmptyFilter, wrapInArray } from '@/util';
+import { DBCommonEntry, DBEntry, isValidDBCommonEntry, Journal } from '@/api/db';
+import { wrapInArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
@@ -81,40 +81,33 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         return this.state.all;
     }
 
-    protected has(id: number): boolean {
+    protected existInState(id: number): boolean {
         return this.state.all[id] !== undefined;
     }
 
-    protected add(value: K): void {
-        if (this.all[value.id]) throw new Error(`${this.moduleName}/put: Entry ${value.id} already exists.`);
+    protected addToState(value: K): void {
+        if (this.all[value.id]) throw new Error(`${this.moduleName}/add: Entry ${value.id} already exists.`);
 
         this.state.all[value.id] = value;
     }
 
-    protected put(value: K): void {
+    protected putInState(value: K): void {
         this.state.all[value.id] = value;
     }
 
-    protected remove(value: K | number): void {
+    protected deleteFromState(value: K | number): void {
         delete this.all[typeof value === 'number' ? value : value.id];
     }
 
     /**
-     * Remove the provided value from the `state.all` set.
+     * Get an Entry (or a list of Entries) with the id specified from the state.
      *
-     * @protected
-     * @param {(K | K[])} values
-     * @returns {void}
+     * @param {number} id
+     * @returns {(K | undefined)}
      * @memberof StashModule
      */
-    protected removeFromAll(value: K | number): void;
-    protected removeFromAll(values: K[] | number[]): void;
-    protected removeFromAll(value: K | K[] | number | number[]): void {
-        if (Array.isArray(value)) {
-            return value.forEach((v: K | number) => this.removeFromAll(v));
-        }
-
-        delete this.all[typeof value === 'number' ? value : value.id];
+    get(id: number): K | undefined {
+        return this.state.all[id];
     }
 
     /**
@@ -153,41 +146,15 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
     }
 
     /**
-     * Remove the specified Entry from the db.
-     *
-     * @protected
-     * @param {(number | number[])} id
-     * @returns {Promise<void>}
-     * @memberof StashModule
-     */
-    protected async deleteFromDb(id: number | number[]): Promise<void> {
-        await this.table.bulkDelete(wrapInArray(id));
-    }
-
-    /**
-     * Get an Entry (or a list of Entries) with the id specified from the state.
-     *
-     * @param {(number | number[])} value
-     * @returns {(K | undefined | K[])}
-     * @memberof StashModule
-     */
-    get(id: number): K | undefined {
-        return this.state.all[id];
-    }
-
-    /**
      * Update a specified record in the entry set and update the corresponding record in the db.
-     * Returns the number of entries updated; 0 if no entries were updated:
-     * - the number of provided ids and values doesn't match
-     * - an entry doesn't exist
-     * - an entry already has the value provided
+     * Returns the number of entries updated (1 or 0);
      *
      * @protected
      * @template T
      * @template S
-     * @param {(number | number[])} ids
+     * @param {number} id
      * @param {T} key
-     * @param {(S | S[] | ((entry: K) => S))} payload
+     * @param {(S | ((entry: K) => S))} payload
      * @returns {Promise<number>}
      * @memberof StashModule
      */
@@ -195,63 +162,25 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         id: number,
         key: T,
         payload: S | ((entry: K) => S)
-    ): Promise<number>;
-    protected async updateStateAndDb<T extends keyof Omit<K, 'id'>, S extends K[T]>(
-        ids: number[],
-        key: T,
-        payload: S[] | ((entry: K) => S)
-    ): Promise<number>;
-    protected async updateStateAndDb<T extends keyof Omit<K, 'id'>, S extends K[T]>(
-        ids: number | number[],
-        key: T,
-        payload: S | S[] | ((entry: K) => S)
     ): Promise<number> {
-        if (Array.isArray(ids) && Array.isArray(payload) && ids.length !== payload.length)
-            throw new Error(
-                `${this.moduleName}/updateStateAndDb: The number of supplied ids and values doesn't match.`
-            );
-
         // if payload is a function, use it to get a value
-        // if payload is value or value[], wrap a function around it to return value by index
-        const getValue =
-            payload instanceof Function
-                ? payload
-                : (() => {
-                      const idList = wrapInArray(ids);
-                      const valueList = isPayloadAnArray(payload) ? payload : [payload];
+        // if payload is value, wrap a function around it to return the payload value
+        const getValue = payload instanceof Function ? payload : () => payload;
 
-                      return (entry: K) => valueList[idList.indexOf(entry.id)];
-                  })();
+        return this.table.where({ id }).modify(dbEntry => {
+            const stateEntry = this.get(dbEntry.id);
+            // the entry might not exist in the state as it wasn't loaded; it's normal
+            if (!stateEntry) return;
 
-        return this.table
-            .where('id')
-            .anyOf(ids)
-            .modify(dbEntry => {
-                const stateEntry = this.get(dbEntry.id);
-                // the entry might not exist in the state as it wasn't loaded; it's normal
-                if (!stateEntry) return;
-                // throw new Error(`${this.moduleName}/updateStateAndDb: State #${dbEntry.id} entry doesn't exist.`);
+            const value = getValue(stateEntry);
 
-                const value = getValue(stateEntry);
+            if (dbEntry[key] === value)
+                return log.info(
+                    `${this.moduleName}/updateStateAndDb: Db #${dbEntry.id}.${key} entry already has value ${value}.`
+                );
 
-                if (dbEntry[key] === value)
-                    return log.info(
-                        `${this.moduleName}/updateStateAndDb: Db #${dbEntry.id}.${key} entry already has value ${value}.`
-                    );
-
-                dbEntry[key] = stateEntry[key] = value;
-            });
-
-        /**
-         * Check if the `payload` an array of values `S`. This will only be true if `ids` is an array as well.
-         * The payload can be an array itself as a single value, but then `ids` must be a single number.
-         *
-         * @param {(S | S[])} x
-         * @returns {x is S[]}
-         */
-        function isPayloadAnArray(x: S | S[]): x is S[] {
-            return Array.isArray(ids);
-        }
+            dbEntry[key] = stateEntry[key] = value;
+        });
     }
 
     /**
@@ -263,7 +192,7 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         Object.assign(this.state, new this.StateClass());
     }
 
-    get moduleName(): string {
+    protected get moduleName(): string {
         return this.constructor.name.replace('Module', '').toLowerCase();
     }
 }
@@ -317,33 +246,4 @@ export class CommonStashModule<K extends DBCommonEntry, T extends StashModuleSta
 
         return entry !== undefined && entry.journalId === this.activeJournal.id;
     }
-
-    /**
-     * Delete all entries belonging to the specified journal, even if these entries are not currently loaded.
-     * If the specified journal is currently active, reset the state of the stash module.
-     *
-     * @param {number} journalId
-     * @returns {Promise<void>}
-     * @memberof NonJournalStashModule
-     */
-    async deleteJournalEntries(journalId: number): Promise<void> {
-        await this.table.where({ journalId }).delete();
-
-        // reset the state of the stash module of the active journal is being deleted
-        if (journalId === this.$stash.journals.activeId) {
-            this.reset();
-        }
-    }
 }
-
-//
-/* export type AbstractUpdater<K = any> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(
-    id: number, key: T, value: S, all?: Record<number, K> ) => void; */
-
-/* export type GenericUpdater = <T extends keyof Omit<K, 'id'>, S extends K[T], K>(
-    all: Record<number, K>,
-    table: Table,
-    id: number,
-    key: T,
-    value: S
-) => Promise<void>; */

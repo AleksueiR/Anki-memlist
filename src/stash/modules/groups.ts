@@ -78,7 +78,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
             // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
             // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
             // NOTE: if the `attach` fails, it will leave state with an non-existing group added to it
-            this.add(newGroup);
+            this.addToState(newGroup);
 
             // add it to the root group's subGroupIds
             await this.attach(newGroup.id, this.activeJournal.rootGroupId);
@@ -132,7 +132,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
         // adjust selected ids
         await this.setSelectedIds(groupIdList, UpdateMode.Remove);
         // remove them from state
-        groupIdList.forEach(groupId => this.remove(groupId));
+        groupIdList.forEach(groupId => this.deleteFromState(groupId));
         this.removeOldWordCounts();
     }
 
@@ -308,9 +308,10 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @returns {(Promise<void | 0>)}
      * @memberof GroupsModule
      */
-    async setName(groupId: number, name: string): Promise<void | 0> {
-        throw Error('Implement me!');
-        // return this.updateStateAndDb(groupId, 'name', name);
+    async setName(groupId: number, name: string): Promise<number> {
+        if (!this.isValid(groupId)) throw new Error(`groups/setName: Group #${groupId} is not valid.`);
+
+        return this.updateStateAndDb(groupId, 'name', name);
     }
 
     /**
@@ -321,10 +322,10 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @returns {(Promise<void | 0>)}
      * @memberof GroupsModule
      */
-    async setDisplayMode(groupId: number, displayMode: GroupDisplayMode): Promise<void | 0> {
-        throw Error('Implement me!');
-        /* if ((await this.updateStateAndDb(groupId, 'displayMode', displayMode)) === 0) return 0;
-        if ((await this.refreshWordCounts(groupId)) === 0) return 0; */
+    async setDisplayMode(groupId: number, displayMode: GroupDisplayMode): Promise<number> {
+        if (!this.isValid(groupId)) throw new Error(`groups/setDisplayMode: Group #${groupId} is not valid.`);
+
+        return this.updateStateAndDb(groupId, 'displayMode', displayMode);
     }
 
     /**
@@ -333,7 +334,7 @@ export class GroupsModule extends CommonStashModule<Group, GroupsState> {
      * @protected
      * @memberof GroupsModule
      */
-    protected removeOldWordCounts() {
+    protected removeOldWordCounts(): void {
         const allIds = this.state.allIds;
 
         Object.keys(this.state.wordCount).forEach(key => {

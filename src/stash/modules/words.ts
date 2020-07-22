@@ -70,7 +70,7 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
 
         // filter out duplicates already in the state
         wordLists.flat().forEach(word => {
-            if (!this.has(word.id)) this.add(word);
+            if (!this.existInState(word.id)) this.addToState(word);
         });
 
         // re-select previously selected words
@@ -346,17 +346,17 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      *
      * @param {number} wordId
      * @param {string} text
-     * @returns {Promise<void>}
+     * @returns {Promise<number>}
      * @memberof WordsModule
      */
-    async setText(wordId: number, text: string): Promise<void> {
+    async setText(wordId: number, text: string): Promise<number> {
         if (!this.isValidInDb(wordId))
             throw new Error(`words/setText: Word #${wordId} does not belong to the active journal.`);
 
         const sanitizedText = this.sanitizeWordTexts(text).pop();
         if (!sanitizedText) throw new Error(`words/setText: String "${text}" is not valid.`);
 
-        await this.updateStateAndDb(wordId, 'text', sanitizedText);
+        return this.updateStateAndDb(wordId, 'text', sanitizedText);
     }
 
     /**
@@ -368,11 +368,11 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @returns {Promise<void>}
      * @memberof WordsModule
      */
-    async setIsArchived(wordId: number, value?: WordArchived): Promise<void> {
+    async setIsArchived(wordId: number, value?: WordArchived): Promise<number> {
         if (!this.isValidInDb(wordId))
             throw new Error(`words/setIsArchived: Word #${wordId} does not belong to the active journal.`);
 
-        await this.updateStateAndDb(wordId, 'isArchived', word =>
+        return this.updateStateAndDb(wordId, 'isArchived', word =>
             value ?? word.isArchived === GroupDisplayMode.Active ? GroupDisplayMode.Archived : GroupDisplayMode.Active
         );
     }
@@ -386,14 +386,18 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @param {number} activeJournalId
      * @memberof WordsModule
      */
-    private async putWordsInGroups(existingWordIds: number[], selectedGroupIds: number[], activeJournalId: number) {
+    private async putWordsInGroups(
+        existingWordIds: number[],
+        selectedGroupIds: number[],
+        activeJournalId: number
+    ): Promise<void[]> {
         const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
 
         const promises = wordGroupIdPairs.map(async ([wordId, groupId]) =>
             putWordInGroup(wordId, groupId, activeJournalId)
         );
 
-        await Promise.all(promises);
+        return Promise.all(promises);
     }
 
     /**
@@ -404,12 +408,12 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
      * @param {number[]} selectedGroupIds
      * @memberof WordsModule
      */
-    private async deleteWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]) {
+    private async deleteWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]): Promise<void[]> {
         const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
 
         const promises = wordGroupIdPairs.map(async ([wordId, groupId]) => deleteWordInGroup(wordId, groupId));
 
-        await Promise.all(promises);
+        return Promise.all(promises);
     }
 
     /**

@@ -1,7 +1,7 @@
 import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import Dexie from 'dexie';
-import { EntrySet, Stash, StashModule, StashModuleState } from '../internal';
+import { EntrySet, Stash, DBEntryStashModule, StashModuleState } from '../internal';
 
 export type JournalSet = EntrySet<Journal>;
 
@@ -9,7 +9,7 @@ export class JournalsState extends StashModuleState<Journal> {
     activeId: number | null = null;
 }
 
-export class JournalsModule extends StashModule<Journal, JournalsState> {
+export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
     constructor(stash: Stash) {
         super(stash, db.journals, JournalsState);
     }

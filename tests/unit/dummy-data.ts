@@ -1,4 +1,4 @@
-import { Group, GroupDisplayMode, Journal, Word, WordPouch, WordInGroup } from '@/api/db';
+import { Group, GroupDisplayMode, Journal, Word, WordInGroup, WordPouch } from '@/api/db';
 
 /**
  * Delete the existing database and populated it with the fresh set of test data.

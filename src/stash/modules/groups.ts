@@ -8,7 +8,7 @@ import {
     wrapInArray
 } from '@/util';
 import Dexie from 'dexie';
-import { CommonStashModule, Stash, StashModuleState } from '../internal';
+import { DBCommonEntryStashModule, Stash, StashModuleState } from '../internal';
 
 export type GroupWordCountEntry = {
     [GroupDisplayMode.All]: number;
@@ -23,7 +23,7 @@ export class GroupsState extends StashModuleState<Group> {
     wordCount: GroupWordCountSet = {};
 }
 
-export class GroupsModule extends CommonStashModule<Group, GroupsState> {
+export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
     constructor(stash: Stash) {
         super(stash, db.groups, GroupsState);
     }

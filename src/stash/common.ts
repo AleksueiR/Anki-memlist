@@ -31,7 +31,7 @@ export class StashModuleState<K> {
  * A state constructor to create an empty state.
  *
  * @export
- * @interface IStashModuleStateClass
+ * @interface StashModuleStateClass
  * @template K
  * @template T
  */
@@ -40,23 +40,43 @@ export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
 }
 
 /**
- * A stash module class providing some default functions.
+ *
  *
  * @export
- * @class StashModule
- * @template K entry class
- * @template T state class
+ * @class BaseStashModule
+ * @template K
+ * @template T
  */
-export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
+export class BaseStashModule<K, T extends StashModuleState<K>> {
+    /**
+     * A reference to the Stash root object.
+     *
+     * @protected
+     * @type {Stash}
+     * @memberof BaseStashModule
+     */
     protected readonly $stash: Stash;
 
-    protected readonly table: Table<K, number>;
+    /**
+     * Module state object.
+     *
+     * @protected
+     * @type {T}
+     * @memberof BaseStashModule
+     */
     protected readonly state: T;
 
+    /**
+     * State Class constructor.
+     *
+     * @private
+     * @type {StashModuleStateClass<K, T>}
+     * @memberof BaseStashModule
+     */
     private readonly StateClass: StashModuleStateClass<K, T>;
 
-    constructor(stash: Stash, table: Table, StateClass: StashModuleStateClass<K, T>) {
-        const map = { $stash: stash, table, StateClass };
+    constructor(stash: Stash, StateClass: StashModuleStateClass<K, T>) {
+        const map = { $stash: stash, StateClass };
 
         // mark $stash as not enumerable so Vue doesn't make it reactive
         Object.entries(map).forEach(([key, value]) =>
@@ -68,6 +88,46 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         );
 
         this.state = new StateClass();
+    }
+
+    /**
+     * Reset the state to its defaults.
+     *
+     * @memberof StashModule
+     */
+    reset(): void {
+        Object.assign(this.state, new this.StateClass());
+    }
+}
+
+/**
+ * A stash module class providing some default functions.
+ *
+ * @export
+ * @class DBEntryStashModule
+ * @extends {BaseStashModule<K, T>}
+ * @template K
+ * @template T
+ */
+export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>> extends BaseStashModule<K, T> {
+    /**
+     * A reference to the corresponding Dexie table.
+     *
+     * @protected
+     * @type {Table<K, number>}
+     * @memberof DBEntryStashModule
+     */
+    protected readonly table: Table<K, number>;
+
+    constructor(stash: Stash, table: Table, StateClass: StashModuleStateClass<K, T>) {
+        super(stash, StateClass);
+
+        // mark `table` as not enumerable so Vue doesn't make it reactive
+        Object.defineProperty(this, 'table', {
+            value: table,
+            enumerable: false,
+            writable: false
+        });
     }
 
     /**
@@ -183,21 +243,15 @@ export class StashModule<K extends DBEntry, T extends StashModuleState<K>> {
         });
     }
 
-    /**
-     * Reset the state to its defaults.
-     *
-     * @memberof StashModule
-     */
-    reset(): void {
-        Object.assign(this.state, new this.StateClass());
-    }
-
     protected get moduleName(): string {
         return this.constructor.name.replace('Module', '').toLowerCase();
     }
 }
 
-export class CommonStashModule<K extends DBCommonEntry, T extends StashModuleState<K>> extends StashModule<K, T> {
+export class DBCommonEntryStashModule<
+    K extends DBCommonEntry,
+    T extends StashModuleState<K>
+> extends DBEntryStashModule<K, T> {
     // TODO: check if these can be moved to the main class
     /**
      * Return an active journal or throws an error if the active journal is not set or its root group is not set.

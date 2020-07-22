@@ -1,5 +1,4 @@
-import Dexie, { DBCoreRangeType, Table } from 'dexie';
-import { wrapInArray } from '@/util';
+import Dexie, { Table } from 'dexie';
 
 Dexie.delete('word-pouch');
 

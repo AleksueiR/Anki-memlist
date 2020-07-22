@@ -1,8 +1,8 @@
-import { db, getWordGroupIds, getGroupWordIds } from '@/api/db';
+import { db, getGroupWordIds, getWordGroupIds } from '@/api/db';
 import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
+import { UpdateMode } from '@/util';
 import Vue from 'vue';
 import { rePopulate } from './dummy-data';
-import { UpdateMode } from '@/util';
 
 // disable tips in the console
 Vue.config.devtools = false;

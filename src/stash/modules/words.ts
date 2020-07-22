@@ -18,7 +18,7 @@ import {
     updateArrayWithValues,
     areArraysEqual
 } from '@/util';
-import { CommonStashModule, EntrySet, Stash, StashModuleState } from '../internal';
+import { DBCommonEntryStashModule, EntrySet, Stash, StashModuleState } from '../internal';
 import { from } from 'rxjs';
 
 export type WordSet = EntrySet<Word>;
@@ -27,7 +27,7 @@ export class WordsState extends StashModuleState<Word> {
     selectedIds: number[] = [];
 }
 
-export class WordsModule extends CommonStashModule<Word, WordsState> {
+export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
     constructor(stash: Stash) {
         super(stash, db.words, WordsState);
     }
@@ -335,10 +335,6 @@ export class WordsModule extends CommonStashModule<Word, WordsState> {
         if (areArraysEqual(this.state.selectedIds, newSelectedWordIds)) return;
 
         this.state.selectedIds = newSelectedWordIds;
-
-        // TODO: set lookup, or update lookup or something
-        // load words from the selected groups
-        // await this.$stash.display.fetchGroupWords();
     }
 
     /**

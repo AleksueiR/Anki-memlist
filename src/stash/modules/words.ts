@@ -1,25 +1,14 @@
+import { db, deleteWordInGroup, getGroupWordIds, GroupDisplayMode, putWordInGroup, Word, WordArchived } from '@/api/db';
 import {
-    putWordInGroup,
-    db,
-    getGroupWordIds,
-    GroupDisplayMode,
-    isValidDBCommonEntry,
-    Word,
-    WordArchived,
-    deleteWordInGroup,
-    WordInGroup
-} from '@/api/db';
-import {
+    areArraysEqual,
     combineArrays,
     exceptArray,
     intersectArrays,
-    UpdateMode,
-    wrapInArray,
     updateArrayWithValues,
-    areArraysEqual
+    UpdateMode,
+    wrapInArray
 } from '@/util';
 import { DBCommonEntryStashModule, EntrySet, Stash, StashModuleState } from '../internal';
-import { from } from 'rxjs';
 
 export type WordSet = EntrySet<Word>;
 
@@ -38,7 +27,6 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
 
     /**
      * Fetch words belonging to the currently active groups.
-     * Return 0 if active journal is not set.
      *
      * @returns {(Promise<void>)}
      * @memberof WordsModule
@@ -58,7 +46,7 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
                 const wordIds = await getGroupWordIds(group.id);
 
                 // select only words that match this group's display mode
-                const wordCollection = db.words.where('id').anyOf(wordIds);
+                const wordCollection = this.table.where('id').anyOf(wordIds);
                 const filteredCollection =
                     group.displayMode === GroupDisplayMode.All
                         ? wordCollection
@@ -142,7 +130,7 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
 
             // add new words to the table
             const newWordIds = await this.table.bulkAdd(
-                newWordTexts.map(text => new Word(text, activeJournalId, [])),
+                newWordTexts.map(text => new Word(text, activeJournalId)),
                 { allKeys: true }
             );
 
@@ -150,7 +138,7 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
             if (newWordIds.length === 0) return new Array(wrapInArray(value).length).fill(undefined);
 
             // put the new combinations between word and group ids into the db
-            await this.putWordsInGroups(newWordIds, selectedGroupIds, activeJournalId);
+            await this.putWordsInGroups(newWordIds, selectedGroupIds);
 
             // this will add new words to the state
             await this.fetchGroupWords();
@@ -201,7 +189,7 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
             const existingWordIds = existingWords.map(({ id }) => id);
 
             // put the new combinations between word and group ids into the db
-            await this.putWordsInGroups(existingWordIds, selectedGroupIds, activeJournalId);
+            await this.putWordsInGroups(existingWordIds, selectedGroupIds);
 
             // this will update state with the modified words
             await this.fetchGroupWords();
@@ -245,7 +233,7 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
             // delete all existing combinations of word and fromGroup ids
             await this.deleteWordsInGroups(wordIdList, fromGroupIdList);
             // put in new combinations of word and toGroup ids
-            await this.putWordsInGroups(wordIdList, [toGroupId], this.activeJournal.id);
+            await this.putWordsInGroups(wordIdList, [toGroupId]);
 
             // if words were moved to a non-selected group, these words will be removed from the state
             await this.fetchGroupWords();
@@ -335,6 +323,8 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
         if (areArraysEqual(this.state.selectedIds, newSelectedWordIds)) return;
 
         this.state.selectedIds = newSelectedWordIds;
+
+        // TODO: trigger lookup [?]
     }
 
     /**
@@ -379,21 +369,20 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
      * @private
      * @param {number[]} existingWordIds
      * @param {number[]} selectedGroupIds
-     * @param {number} activeJournalId
+     * @returns {Promise<void[]>}
      * @memberof WordsModule
      */
-    private async putWordsInGroups(
-        existingWordIds: number[],
-        selectedGroupIds: number[],
-        activeJournalId: number
-    ): Promise<void[]> {
+    private async putWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]): Promise<void[]> {
+        const activeJournalId = this.activeJournal?.id;
+        if (!activeJournalId) throw new Error('words/putWordsInGroups: Active journal is not set.');
+
         const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
 
-        const promises = wordGroupIdPairs.map(async ([wordId, groupId]) =>
-            putWordInGroup(wordId, groupId, activeJournalId)
-        );
-
-        return Promise.all(promises);
+        return db.transaction('rw', this.table, db.groups, db.wordsInGroups, () => {
+            return Promise.all(
+                wordGroupIdPairs.map(([wordId, groupId]) => putWordInGroup(wordId, groupId, activeJournalId))
+            );
+        });
     }
 
     /**
@@ -404,12 +393,12 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
      * @param {number[]} selectedGroupIds
      * @memberof WordsModule
      */
-    private async deleteWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]): Promise<void[]> {
+    private async deleteWordsInGroups(existingWordIds: number[], selectedGroupIds: number[]): Promise<void> {
         const wordGroupIdPairs = combineArrays(existingWordIds, selectedGroupIds);
 
-        const promises = wordGroupIdPairs.map(async ([wordId, groupId]) => deleteWordInGroup(wordId, groupId));
+        const promises = wordGroupIdPairs.map(pair => deleteWordInGroup(...pair));
 
-        return Promise.all(promises);
+        await Promise.all(promises);
     }
 
     /**

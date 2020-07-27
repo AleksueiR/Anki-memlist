@@ -232,7 +232,9 @@ describe('groups/move', () => {
     });
 
     test('moves a group into the same parent', async () => {
-        await expect(groups.move(2, 7)).rejects.toThrowError();
+        await groups.move(3, 2);
+
+        await expect(db.groups.get(2)).resolves.toHaveProperty('subGroupIds', [3, 4]);
     });
 
     test('moves a group to a different journal', async () => {

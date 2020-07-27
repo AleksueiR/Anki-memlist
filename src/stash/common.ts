@@ -1,5 +1,4 @@
 import { DBCommonEntry, DBEntry, isValidDBCommonEntry, Journal } from '@/api/db';
-import { wrapInArray } from '@/util';
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';

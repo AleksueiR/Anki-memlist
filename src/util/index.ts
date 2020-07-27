@@ -1,3 +1,5 @@
+import sbd from 'sbd';
+
 export enum UpdateMode {
     Replace = 0,
     Add = 1,
@@ -8,6 +10,11 @@ export enum UpdateMode {
  * Represents a non id when no valid id is set.
  */
 export const NON_ID = -1;
+
+export interface SentenceSplitOptions {
+    minWords?: number;
+    maxWords?: number;
+}
 
 /**
  * Clone the provided array, return the provided value from it and return the clone.
@@ -161,4 +168,33 @@ export function notEmptyFilter<TValue>(value: TValue | null | undefined): value 
  */
 export function wrapInArray<K>(groupIds: K | K[]): K[] {
     return Array.isArray(groupIds) ? groupIds : [groupIds];
+}
+
+/**
+ * Split the provided text into individual sentence strings using the options provided.
+ *
+ * @export
+ * @param {string} text
+ * @param {SentenceSplitOptions} [options]
+ * @returns {string[]}
+ */
+export function splitIntoSentences(text: string, options?: SentenceSplitOptions): string[] {
+    let sentenceTexts = sbd.sentences(text, { newline_boundaries: true, sanitize: true });
+
+    if (options) {
+        // filter out sentences that are longer/shorter then specified in options
+        sentenceTexts = sentenceTexts.filter(sentence => {
+            const wordCount = sentence.split(' ').length;
+            if (
+                (options.maxWords && wordCount > options.maxWords) ||
+                (options.minWords && wordCount < options.minWords)
+            )
+                return false;
+
+            return true;
+        });
+    }
+
+    // remove duplicates
+    return [...new Set(sentenceTexts)];
 }

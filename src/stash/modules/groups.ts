@@ -1,4 +1,4 @@
-import { db, Group, GroupDisplayMode, getGroupWordIds } from '@/api/db';
+import { db, getGroupWordIds, Group, GroupDisplayMode } from '@/api/db';
 import {
     areArraysEqual,
     reduceArrayToObject,
@@ -7,7 +7,6 @@ import {
     UpdateMode,
     wrapInArray
 } from '@/util';
-import Dexie from 'dexie';
 import { DBCommonEntryStashModule, Stash, StashModuleState } from '../internal';
 
 export type GroupWordCountEntry = {
@@ -38,7 +37,6 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
 
     /**
      * Fetch groups belonging to the active journal.
-     * Return 0 if active journal is not set.
      *
      * @returns {(Promise<void>)}
      * @memberof GroupsModule
@@ -56,7 +54,7 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
 
     /**
      * Create a new `Group` in the root group and return its id when finished.
-     * Return the id of the new group
+     * Return the id of the new group.
      *
      * @param {string} [name='New Group']
      * @param {GroupDisplayMode} [displayMode=GroupDisplayMode.All]
@@ -70,10 +68,7 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
             // create a new group entry
             const newGroupId = await this.table.put(new Group(name, this.activeJournal.id, displayMode));
             const newGroup = await this.table.get(newGroupId);
-            if (!newGroup) {
-                Dexie.currentTransaction.abort();
-                throw new Error('groups/new: Cannot create a new Group.');
-            }
+            if (!newGroup) throw new Error('groups/new: Cannot create a new Group.');
 
             // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
             // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
@@ -126,11 +121,12 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
             );
 
             // delete groups from the db
-            await db.groups.bulkDelete(groupIdList);
+            await this.table.bulkDelete(groupIdList);
         });
 
         // adjust selected ids
         await this.setSelectedIds(groupIdList, UpdateMode.Remove);
+
         // remove them from state
         groupIdList.forEach(groupId => this.deleteFromState(groupId));
         this.removeOldWordCounts();

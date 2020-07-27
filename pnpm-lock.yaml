@@ -10,6 +10,7 @@ dependencies:
   loglevel: 1.6.8
   moment: 2.26.0
   rxjs: 6.5.5
+  sbd: 1.0.18
   tailwindcss: 1.4.6
   uikit: 3.5.3
   uniqid: 5.2.0
@@ -25,6 +26,7 @@ devDependencies:
   '@types/cheerio': 0.22.18
   '@types/jest': 24.9.1
   '@types/node': 10.17.24
+  '@types/sbd': 1.0.1
   '@types/uniqid': 4.1.3
   '@typescript-eslint/eslint-plugin': 2.34.0_2ce5ff4d4c428c35a55f8b98c167bebb
   '@typescript-eslint/parser': 2.34.0_eslint@6.8.0+typescript@3.9.5
@@ -578,6 +580,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-1HcDas8SEj4z1Wc696tH56G8OlRaH/sqZOynNNB+HF0WOeXPaxTtbYzJY2oEfiUxjSKjhCKr+MvR7dCHcEelug==
+  /@types/sbd/1.0.1:
+    dev: true
+    resolution:
+      integrity: sha512-ZUM7gw1TUOV/UV2xn4MwhE4Aq2bSf9Ep4a2FZObw05+JiYziHXei0ZiByhbsQfER9DHA3a0VmT3JWlNtytMF6A==
   /@types/stack-utils/1.0.1:
     dev: true
     resolution:
@@ -3209,6 +3215,14 @@ packages:
       domelementtype: 1.3.1
     resolution:
       integrity: sha512-JiK04h0Ht5u/80fdLMCEmV4zkNh2BcoMFBmZ/91WtYZ8qVXSKjiw7fXMgFPnHcSZgOo3XdinHvmnDUeMf5R4wA==
+  /domhandler/3.0.0:
+    dependencies:
+      domelementtype: 2.0.1
+    dev: false
+    engines:
+      node: '>= 4'
+    resolution:
+      integrity: sha512-eKLdI5v9m67kbXQbJSNn1zjh0SDzvzWVWtX+qEI3eMjZw8daH9k8rlj1FZY9memPwjiskQFbe7vHVVJIAqoEhw==
   /domutils/1.4.3:
     dependencies:
       domelementtype: 1.3.1
@@ -3227,6 +3241,14 @@ packages:
       domelementtype: 1.3.1
     resolution:
       integrity: sha512-Lgd2XcJ/NjEw+7tFvfKxOzCYKZsdct5lczQ2ZaQY8Djz7pfAD3Gbp8ySJWtreII/vDlMVmxwa6pHmdxIYgttDg==
+  /domutils/2.1.0:
+    dependencies:
+      dom-serializer: 0.2.2
+      domelementtype: 2.0.1
+      domhandler: 3.0.0
+    dev: false
+    resolution:
+      integrity: sha512-CD9M0Dm1iaHfQ1R/TI+z3/JWp/pgub0j4jIQKH89ARR4ATAV2nbaOQS5XxU9maJP5jHaPdDDQSEHuE2UmpUTKg==
   /dot-prop/5.2.0:
     dependencies:
       is-obj: 2.0.0
@@ -4612,6 +4634,15 @@ packages:
     dev: false
     resolution:
       integrity: sha1-mWwosZFRaovoZQGn15dX5ccMEGg=
+  /htmlparser2/4.1.0:
+    dependencies:
+      domelementtype: 2.0.1
+      domhandler: 3.0.0
+      domutils: 2.1.0
+      entities: 2.0.3
+    dev: false
+    resolution:
+      integrity: sha512-4zDq1a1zhE4gQso/c5LP1OtrhYTncXNSpvJYtWJBtXAETPlMfi3IFNjGuQbYLuVY4ZR0QMqRVvo4Pdy9KLyP8Q==
   /http-deceiver/1.2.7:
     dev: true
     resolution:
@@ -8300,6 +8331,15 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-hhbzAgTIX8O7SHfp2c8/kREfEn4qO/9q8C9beyY6+tvZ87EpoZ3i1RIEvp27YBswnNbY9mWd6paKVmKbAgLfZA==
+  /sanitize-html/1.27.1:
+    dependencies:
+      htmlparser2: 4.1.0
+      lodash: 4.17.19
+      postcss: 7.0.32
+      srcset: 2.0.1
+    dev: false
+    resolution:
+      integrity: sha512-C+N7E+7ikYaLHdb9lEkQaFOgmj+9ddZ311Ixs/QsBsoLD411/vdLweiFyGqrswUVgLqagOS5NCDxcEPH7trObQ==
   /sass-loader/8.0.2_sass@1.26.8:
     dependencies:
       clone-deep: 4.0.1
@@ -8346,6 +8386,12 @@ packages:
       node: '>=8'
     resolution:
       integrity: sha512-Ydydq3zC+WYDJK1+gRxRapLIED9PWeSuuS41wqyoRmzvhhh9nc+QQrVMKJYzJFULazeGhzSV0QleN2wD3boh2g==
+  /sbd/1.0.18:
+    dependencies:
+      sanitize-html: 1.27.1
+    dev: false
+    resolution:
+      integrity: sha512-XzMkPJ2HRIoZKSfK9GoWgzjnO/H0Ur7Obs0Lw6aE2kApBJm/mnwIR8xNsq4tNFXF21AS32ne/fJwLSzQ6zPGlA==
   /schema-utils/1.0.0:
     dependencies:
       ajv: 6.12.2
@@ -8725,6 +8771,12 @@ packages:
     dev: true
     resolution:
       integrity: sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
+  /srcset/2.0.1:
+    dev: false
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-00kZI87TdRKwt+P8jj8UZxbfp7mK2ufxcIMWvhAOZNJTRROimpHeruWrGvCZneiuVDLqdyHefVp748ECTnyUBQ==
   /sshpk/1.16.1:
     dependencies:
       asn1: 0.2.4
@@ -10321,6 +10373,7 @@ specifiers:
   '@types/cheerio': ^0.22.10
   '@types/jest': ^24.0.19
   '@types/node': ^10.12.26
+  '@types/sbd': ^1.0.1
   '@types/uniqid': ^4.1.3
   '@typescript-eslint/eslint-plugin': ^2.33.0
   '@typescript-eslint/parser': ^2.33.0
@@ -10346,10 +10399,11 @@ specifiers:
   fuse-js-latest: ^3.1.0
   loglevel: ^1.6.1
   moment: ^2.24.0
-  prettier: ^1.19.1
+  prettier: ^2.0.5
   rxjs: ^6.4.0
   sass: ^1.26.5
   sass-loader: ^8.0.2
+  sbd: ^1.0.18
   tailwindcss: ^1.4.6
   typescript: ~3.9.3
   uikit: ^3.0.3

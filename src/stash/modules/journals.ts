@@ -48,10 +48,7 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
             // create and get a new journal
             const newJournalId = await this.table.add(new Journal(name));
             const newJournal = await this.table.get(newJournalId);
-            if (!newJournal) {
-                Dexie.currentTransaction.abort();
-                throw new Error('journals/new: Cannot create a new journal.');
-            }
+            if (!newJournal) throw new Error('journals/new: Cannot create a new journal.');
 
             // create a Root Group directly from here as it's done only during the initial set up and cannot be changed later
             const rootGroupId = await db.groups.add(new Group('Root group', newJournal.id));

@@ -5,3 +5,5 @@ export * from './stash';
 export * from './modules/journals';
 export * from './modules/groups';
 export * from './modules/words';
+export * from './modules/resources';
+export * from './modules/sentences';

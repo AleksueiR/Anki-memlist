@@ -273,7 +273,7 @@ export class DBCommonEntryStashModule<
     }
 
     /**
-     * Check if the supplied entry id is valid in the Db and belongs to the active journal.
+     * Check if the supplied entry id is valid in the DB and belongs to the active journal.
      *
      * @param {number} id
      * @returns {Promise<boolean>}

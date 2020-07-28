@@ -118,8 +118,8 @@ export class WordPouch extends Dexie {
             wordsInGroups: '[wordId+groupId], wordId, groupId',
             resources: '++id, journalId, [id+journalId], name',
             resourcesInGroups: '[resourceId+groupId], resourceId, groupId',
-            sentences: '++id',
-            sentencesInSources: '[sentenceId+resourceId], sentenceId, resourceId'
+            sentences: '++id, journalId, [id+journalId]',
+            sentencesInResources: '[sentenceId+resourceId], &sentenceId, resourceId'
         });
 
         this.journals.mapToClass(Journal);
@@ -207,19 +207,27 @@ export async function getResourceSentenceIds(resourceId: number): Promise<number
  */
 export async function putSentenceInResource(sentenceId: number, resourceId: number, journalId: number): Promise<void> {
     await db.transaction('rw', db.sentencesInResources, db.sentences, db.resources, async () => {
-        if (!(await isValidDBCommonEntry(db.sentencesInResources, { id: sentenceId, journalId })))
+        if (!(await isValidDBCommonEntry(db.sentences, { id: sentenceId, journalId })))
             throw new Error(`db/putSentenceInResource: Invalid sentence id #${sentenceId}.`);
 
-        if (!(await isValidDBCommonEntry(db.groups, { id: resourceId, journalId })))
+        if (!(await isValidDBCommonEntry(db.resources, { id: resourceId, journalId })))
             throw new Error(`db/putSentenceInResource: Invalid resource id #${resourceId}.`);
 
         await db.sentencesInResources.put(new SentenceInResource(sentenceId, resourceId));
     });
 }
 
-export async function deleteSentenceInResource(sentenceId: number, resourceId: number): Promise<void> {
-    await db.transaction('rw', db.sentencesInResources, async () => {
-        await db.sentencesInResources.where({ wordId: sentenceId, groupId: resourceId }).delete();
+/**
+ * Remove specified `Sentence` from the DB.
+ *
+ * @export
+ * @param {number} sentenceId
+ * @returns {Promise<void>}
+ */
+export async function deleteSentence(sentenceId: number): Promise<void> {
+    await db.transaction('rw', db.sentences, db.sentencesInResources, async () => {
+        await db.sentences.delete(sentenceId);
+        await db.sentencesInResources.where({ sentenceId }).delete();
     });
 }
 

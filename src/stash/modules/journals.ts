@@ -134,7 +134,7 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
     }
 
     /**
-     * Set the defaultGroupId of the active Journal.
+     * Set the defaultGroupId of the active `Journal`.
      *
      * @param {(number | null)} defaultGroupId
      * @returns {Promise<void>}

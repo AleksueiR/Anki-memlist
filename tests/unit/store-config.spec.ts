@@ -1,5 +1,5 @@
-import { db, getGroupWordIds, getWordGroupIds } from '@/api/db';
-import { GroupsModule, JournalsModule, Stash, WordsModule } from '@/stash';
+import { db, getGroupWordIds, getWordGroupIds, SentenceInResource } from '@/api/db';
+import { GroupsModule, JournalsModule, Stash, WordsModule, ResourcesModule, SentencesModule } from '@/stash';
 import { UpdateMode } from '@/util';
 import Vue from 'vue';
 import { rePopulate } from './dummy-data';
@@ -11,9 +11,11 @@ Vue.config.productionTip = false;
 let journals: JournalsModule;
 let groups: GroupsModule;
 let words: WordsModule;
+let resources: ResourcesModule;
+let sentences: SentencesModule;
 
 beforeEach(async () => {
-    ({ journals, groups, words } = new Stash());
+    ({ journals, groups, words, resources, sentences } = new Stash());
 
     await rePopulate(db);
     await journals.fetch();
@@ -686,8 +688,76 @@ describe('words/delete', () => {
     });
 });
 
+describe('resources/new', () => {
+    test('adds a new resource', async () => {
+        const resourceId = await resources.new('alice in quantum land');
+
+        expect(journals.get(resourceId)).not.toBeUndefined();
+        await expect(db.resources.get(resourceId)).resolves.toHaveProperty('name', 'alice in quantum land');
+    });
+
+    test('adds a new resource without active journal', async () => {
+        journals.setActiveId();
+
+        await expect(resources.new('alice in quantum land')).rejects.toThrowError();
+    });
+});
+
+describe.only('resources/filterDuplicateSentences', () => {
+    test('use an existing sentence', async () => {
+        await resources.fetchJournalResources();
+
+        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(
+            ['In the matter of Universals.'],
+            1
+        );
+
+        expect(newTexts.length).toBe(0);
+        expect(duplicateTexts.length).toBe(1);
+    });
+
+    test('use a new sentence', async () => {
+        await resources.fetchJournalResources();
+
+        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(['All your base'], 1);
+
+        expect(newTexts.length).toBe(1);
+        expect(duplicateTexts.length).toBe(0);
+    });
+
+    test('use an existing and a  new sentence', async () => {
+        await resources.fetchJournalResources();
+
+        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(
+            ['In the matter of Universals.', 'All your base'],
+            1
+        );
+
+        expect(newTexts.length).toBe(1);
+        expect(duplicateTexts.length).toBe(1);
+    });
+});
+
+describe('sentences/new', () => {
+    test('adds a new sentence to a resource', async () => {
+        const resource1Count = await countSentencesInResources(1);
+
+        const [sentenceId] = await sentences.new(
+            'The first entry in the schema string will always represent the primary key.',
+            1
+        );
+
+        await expect(db.sentencesInResources.where({ sentenceId }).count()).resolves.toBe(1);
+        await expect(countSentencesInResources(1)).resolves.toBe(resource1Count + 1);
+    });
+});
+
 async function getTotalWordCount() {
     return await db.words.count();
+}
+
+function countSentencesInResources(resourceId: number) {
+    return db.sentencesInResources.where({ resourceId }).count();
 }
 
 function countWordsInGroup(groupId: number) {

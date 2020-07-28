@@ -28,6 +28,13 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
 
         const resources = await this.table.where({ journalId: this.activeJournal.id }).toArray();
         this.state.all = reduceArrayToObject(resources);
+
+        // TODO: reselect
+        // // adjust selected ids
+        // await this.setSelectedIds(resourceIdList, UpdateMode.Remove);
+
+        // // remove them from state
+        // resourceIdList.forEach(resourceId => this.deleteFromState(resourceId));
     }
 
     /**
@@ -46,7 +53,7 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
             // create a new group entry
             const newResourceId = await this.table.put(new Resource(name, this.activeJournal.id, 1));
             const newResource = await this.table.get(newResourceId);
-            if (!newResource) throw new Error('resources/new: Cannot create a new Group.');
+            if (!newResource) throw new Error('resources/new: Cannot create a new Resource.');
 
             this.addToState(newResource);
 
@@ -54,6 +61,13 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
         });
     }
 
+    /**
+     * Delete specified `Resource`s.
+     *
+     * @param {(number | number[])} resourceIds
+     * @returns {Promise<void>}
+     * @memberof ResourcesModule
+     */
     async delete(resourceIds: number | number[]): Promise<void> {
         const resourceIdList = wrapInArray(resourceIds);
         resourceIdList.forEach(resourceId => {
@@ -67,7 +81,7 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
                     // get sentence ids for this resource
                     const sentenceIds = await getResourceSentenceIds(resourceId);
 
-                    this.$stash.sentences.delete(sentenceIds, resourceId);
+                    this.$stash.sentences.delete(sentenceIds);
                 })
             );
 
@@ -75,11 +89,7 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
             await this.table.bulkDelete(resourceIdList);
         });
 
-        // adjust selected ids
-        await this.setSelectedIds(resourceIdList, UpdateMode.Remove);
-
-        // remove them from state
-        resourceIdList.forEach(resourceId => this.deleteFromState(resourceId));
+        await this.fetchJournalResources();
     }
 
     /**
@@ -106,25 +116,6 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
     }
 
     /**
-     * Put provided `Sentence`s into the supplied `Resource`.
-     *
-     * @param {number} resourceId
-     * @param {number[]} sentenceIds
-     * @returns {Promise<void>}
-     * @memberof ResourcesModule
-     */
-    async putSentencesInResource(resourceId: number, sentenceIds: number[]): Promise<void> {
-        const activeJournalId = this.activeJournal?.id;
-        if (!activeJournalId) throw new Error('resources/putSentencesInResource: Active journal is not set.');
-
-        await db.transaction('rw', this.table, db.groups, db.wordsInGroups, async () => {
-            return Promise.all(
-                sentenceIds.map(async sentenceId => putSentenceInResource(sentenceId, resourceId, activeJournalId))
-            );
-        });
-    }
-
-    /**
      * Given a list of sentence strings and a `Resource` id, return a tuple of new and duplicate sentences.
      *
      * @param {number} resourceId
@@ -132,9 +123,11 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
      * @returns {Promise<[string[], string[]]>}
      * @memberof ResourcesModule
      */
-    async filterDuplicateSentences(resourceId: number, texts: string[]): Promise<[string[], string[]]> {
+    async filterDuplicateSentences(texts: string[], resourceId: number): Promise<[string[], string[]]> {
         if (!this.isValid(resourceId))
-            throw new Error(`resources/????: Resource #${resourceId} is not valid in the active journal.`);
+            throw new Error(
+                `resources/filterDuplicateSentences: Resource #${resourceId} is not valid in the active journal.`
+            );
 
         // get sentence ids belonging to this resource
         const resourceSentenceIds = await getResourceSentenceIds(resourceId);

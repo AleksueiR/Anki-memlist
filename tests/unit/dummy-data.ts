@@ -1,4 +1,14 @@
-import { Group, GroupDisplayMode, Journal, Word, WordInGroup, WordPouch } from '@/api/db';
+import {
+    Group,
+    GroupDisplayMode,
+    Journal,
+    Word,
+    WordInGroup,
+    WordPouch,
+    Resource,
+    Sentence,
+    SentenceInResource
+} from '@/api/db';
 
 /**
  * Delete the existing database and populated it with the fresh set of test data.
@@ -132,6 +142,23 @@ export async function rePopulate(db: WordPouch): Promise<void> {
     ];
 
     await db.wordsInGroups.bulkAdd(wordsInGroupsMap.map(args => new WordInGroup(...args)));
+
+    const resourceId1 = await db.resources.bulkAdd([new Resource('eclectic', journalId1, 1)]);
+
+    const eclecticSentenceIds = await db.sentences.bulkAdd(
+        [
+            'In the matter of Universals.',
+            'He is not a systematic thinker, but is too much affected by the eclectic notion of reconciling all philosophies.',
+            'In philosophy there has been a remarkable increase of activity.',
+            'In the last stage of Greek philosophy the eclectic spirit produced remarkable results outside the philosophies of those properly called eclectics.',
+            'And yet Neoplatonism cannot be described as an eclectic system.'
+        ].map(text => new Sentence(text, journalId1)),
+        { allKeys: true }
+    );
+
+    await db.sentencesInResources.bulkAdd(
+        eclecticSentenceIds.map(sentenceId => new SentenceInResource(sentenceId, resourceId1))
+    );
 
     // });
 }

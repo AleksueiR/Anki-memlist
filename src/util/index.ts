@@ -198,3 +198,18 @@ export function splitIntoSentences(text: string, options?: SentenceSplitOptions)
     // remove duplicates
     return [...new Set(sentenceTexts)];
 }
+
+/**
+ * Sanitize the text values provided for creating new or linking existing words.
+ *
+ * @export
+ * @param {(string | string[])} value
+ * @returns {string[]}
+ */
+export function sanitizeWordTexts(value: string | string[]): string[] {
+    let values = wrapInArray(value)
+        .map(text => text.trim().toLocaleLowerCase())
+        .filter(text => text !== '');
+
+    return [...new Set(values)]; // remove duplicates
+}

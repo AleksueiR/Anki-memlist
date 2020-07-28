@@ -7,7 +7,8 @@ import {
     updateArrayWithValues,
     UpdateMode,
     wrapInArray,
-    reduceArrayToObject
+    reduceArrayToObject,
+    sanitizeWordTexts
 } from '@/util';
 import { CommonEntryStash, EntrySet, Stash, BaseStashState } from '../internal';
 import { CommonEntryStashState } from '../common';
@@ -101,7 +102,7 @@ export class WordsModule extends CommonEntryStash<Word, WordsState> {
      * @memberof WordsModule
      */
     protected async new(value: string | string[]): Promise<(number | undefined)[]> {
-        const values = this.sanitizeWordTexts(value);
+        const values = sanitizeWordTexts(value);
 
         if (!this.activeJournal) throw new Error('words/new: Active journal is not set.');
         const activeJournalId = this.activeJournal.id;
@@ -158,7 +159,7 @@ export class WordsModule extends CommonEntryStash<Word, WordsState> {
      * @memberof WordsModule
      */
     protected async link(value: string | string[]): Promise<(number | undefined)[]> {
-        const values = this.sanitizeWordTexts(value);
+        const values = sanitizeWordTexts(value);
 
         const selectedGroupIds = this.$stash.groups.selectedIds;
         if (selectedGroupIds.length === 0)
@@ -321,7 +322,7 @@ export class WordsModule extends CommonEntryStash<Word, WordsState> {
         if (!this.isValidInDb(wordId))
             throw new Error(`words/setText: Word #${wordId} does not belong to the active journal.`);
 
-        const sanitizedText = this.sanitizeWordTexts(text).pop();
+        const sanitizedText = sanitizeWordTexts(text).pop();
         if (!sanitizedText) throw new Error(`words/setText: String "${text}" is not valid.`);
 
         return this.updateStateAndDb(wordId, 'text', sanitizedText);
@@ -343,6 +344,29 @@ export class WordsModule extends CommonEntryStash<Word, WordsState> {
         return this.updateStateAndDb(wordId, 'isArchived', word =>
             value ?? word.isArchived === GroupDisplayMode.Active ? GroupDisplayMode.Archived : GroupDisplayMode.Active
         );
+    }
+
+    /**
+     * Given a list of word texts and a `Journal` id, return a tuple of new and duplicate word texts belonging to this `Journal`.
+     *
+     * @param {(string | string[])} value
+     * @param {number} journalId
+     * @returns {Promise<[string[], string[]]>}
+     * @memberof WordsModule
+     */
+    async findDuplicateWords(value: string | string[], journalId: number): Promise<[string[], string[]]> {
+        const values = wrapInArray(value);
+
+        const existingWordTexts = (await this.table
+            .where('text')
+            .anyOf(values)
+            .filter(word => word.journalId === journalId)
+            .keys()) as string[];
+
+        // filter out existing text values from the supplied ones
+        const newWordTexts = exceptArray(values, existingWordTexts);
+
+        return [newWordTexts, existingWordTexts];
     }
 
     /**
@@ -381,21 +405,5 @@ export class WordsModule extends CommonEntryStash<Word, WordsState> {
         const promises = wordGroupIdPairs.map(pair => deleteWordInGroup(...pair));
 
         await Promise.all(promises);
-    }
-
-    /**
-     * Sanitize the text values provided for creating new or linking existing words.
-     *
-     * @private
-     * @param {(string | string[])} value
-     * @returns {string[]}
-     * @memberof WordsModule
-     */
-    private sanitizeWordTexts(value: string | string[]): string[] {
-        let values = wrapInArray(value)
-            .map(text => text.trim().toLocaleLowerCase())
-            .filter(text => text !== '');
-
-        return [...new Set(values)]; // remove duplicates
     }
 }

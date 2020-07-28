@@ -5,7 +5,8 @@ import {
     updateArrayWithValues,
     UpdateMode,
     wrapInArray,
-    intersectArrays
+    intersectArrays,
+    exceptArray
 } from '@/util';
 import { CommonEntryStash, Stash, BaseStashState } from '../internal';
 import { CommonEntryStashState } from '../common';
@@ -96,6 +97,31 @@ export class SentencesModule extends CommonEntryStash<Sentence, SentencesState> 
 
         // re-fetch sentences in case some were deleted from the selected source
         await this.fetchResourceSentences();
+    }
+
+    /**
+     * Given a list of sentence strings and a `Resource` id, return a tuple of new and duplicate sentences already existing in this `Resource`.
+     *
+     * @param {string[]} texts
+     * @param {number} resourceId
+     * @returns {Promise<[string[], string[]]>}
+     * @memberof SentencesModule
+     */
+    async findDuplicateSentences(texts: string[], resourceId: number): Promise<[string[], string[]]> {
+        // get sentence ids belonging to this resource
+        const resourceSentenceIds = await getResourceSentenceIds(resourceId);
+
+        // get resource sentences that match any of the provided texts
+        const duplicateSentences = await db.sentences
+            .where('id')
+            .anyOf(resourceSentenceIds)
+            .filter(({ text }) => texts.includes(text))
+            .toArray();
+
+        const duplicateSentenceTexts = duplicateSentences.map(sentence => sentence.text);
+        const newSentenceTexts = exceptArray(texts, duplicateSentenceTexts);
+
+        return [newSentenceTexts, duplicateSentenceTexts];
     }
 
     /**

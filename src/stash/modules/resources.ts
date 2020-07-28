@@ -106,45 +106,18 @@ export class ResourcesModule extends CommonEntryStash<Resource, ResourcesState> 
     }
 
     /**
-     * Given a list of sentence strings and a `Resource` id, return a tuple of new and duplicate sentences.
+     * Set name of the specified `Resource`.
      *
      * @param {number} resourceId
-     * @param {string[]} texts
-     * @returns {Promise<[string[], string[]]>}
+     * @param {string} name
+     * @returns {Promise<number>}
      * @memberof ResourcesModule
      */
-    async filterDuplicateSentences(texts: string[], resourceId: number): Promise<[string[], string[]]> {
-        if (!this.isValid(resourceId))
-            throw new Error(
-                `resources/filterDuplicateSentences: Resource #${resourceId} is not valid in the active journal.`
-            );
+    async setName(resourceId: number, name: string): Promise<number> {
+        if (!this.isValid(resourceId)) throw new Error(`resources/setName: Resource #${resourceId} is not valid.`);
 
-        // get sentence ids belonging to this resource
-        const resourceSentenceIds = await getResourceSentenceIds(resourceId);
-
-        // get resource sentences that match any of the provided texts
-        const existingSentences = await db.sentences
-            .where('id')
-            .anyOf(resourceSentenceIds)
-            .filter(({ text }) => texts.includes(text))
-            .toArray();
-
-        const existingSentenceTexts = existingSentences.map(sentence => sentence.text);
-
-        // split supplied text list into duplicate (already in the resource) and new ones
-        const result = texts.reduce<[string[], string[]]>(
-            ([newTexts, duplicateTexts], text) => {
-                if (existingSentenceTexts.includes(text)) {
-                    duplicateTexts.push(text);
-                } else {
-                    newTexts.push(text);
-                }
-
-                return [newTexts, duplicateTexts];
-            },
-            [[], []]
-        );
-
-        return result;
+        return this.updateStateAndDb(resourceId, 'name', name);
     }
+
+
 }

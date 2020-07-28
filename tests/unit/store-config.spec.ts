@@ -158,9 +158,13 @@ describe('groups/setSelectedIds', () => {
     });
 
     test('selects a single group', async () => {
+        const group2count = await countWordsInGroup(2);
+
         await groups.setSelectedIds(2);
 
         expect(groups.selectedIds).toEqual([2]);
+
+        expect(Object.values(words.all).length).toBe(group2count);
     });
 
     test('selects several groups', async () => {
@@ -514,6 +518,42 @@ describe('words/add', () => {
     });
 });
 
+describe.only('words/findDuplicateWords', () => {
+    test('use all existing words', async () => {
+        const wordList = ['steep', 'hilarious', 'work', 'ray'].sort();
+        const [newWords, existingWords] = await words.findDuplicateWords(wordList, 1);
+
+        expect(newWords).toEqual([]);
+        expect(existingWords.sort()).toEqual(wordList);
+    });
+
+    test('use existing words from other journal', async () => {
+        const wordList = ['company', 'parent'].sort();
+        const [newWords, existingWords] = await words.findDuplicateWords(wordList, 1);
+
+        expect(newWords).toEqual(wordList);
+        expect(existingWords.sort()).toEqual([]);
+    });
+
+    test('use all new words', async () => {
+        const wordList = ['steeple', 'cup', 'worker'].sort();
+        const [newWords, existingWords] = await words.findDuplicateWords(wordList, 1);
+
+        expect(newWords).toEqual(wordList);
+        expect(existingWords.sort()).toEqual([]);
+    });
+
+    test('use new and existing words', async () => {
+        const existingWordList = ['steep', 'hilarious', 'work', 'ray'].sort();
+        const newWordList = ['steeple', 'cup', 'worker'].sort();
+
+        const [newWords, existingWords] = await words.findDuplicateWords([...existingWordList, ...newWordList], 1);
+
+        expect(newWords).toEqual(newWordList);
+        expect(existingWords.sort()).toEqual(existingWordList);
+    });
+});
+
 describe('words/setSelectedIds', () => {
     test('remove from selected ids', async () => {
         await groups.setSelectedIds(2);
@@ -703,14 +743,11 @@ describe('resources/new', () => {
     });
 });
 
-describe('resources/filterDuplicateSentences', () => {
+describe('resources/findDuplicateSentences', () => {
     test('use an existing sentence', async () => {
         await resources.fetchJournalResources();
 
-        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(
-            ['In the matter of Universals.'],
-            1
-        );
+        const [newTexts, duplicateTexts] = await sentences.findDuplicateSentences(['In the matter of Universals.'], 1);
 
         expect(newTexts.length).toBe(0);
         expect(duplicateTexts.length).toBe(1);
@@ -719,7 +756,7 @@ describe('resources/filterDuplicateSentences', () => {
     test('use a new sentence', async () => {
         await resources.fetchJournalResources();
 
-        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(['All your base'], 1);
+        const [newTexts, duplicateTexts] = await sentences.findDuplicateSentences(['All your base'], 1);
 
         expect(newTexts.length).toBe(1);
         expect(duplicateTexts.length).toBe(0);
@@ -728,7 +765,7 @@ describe('resources/filterDuplicateSentences', () => {
     test('use an existing and a  new sentence', async () => {
         await resources.fetchJournalResources();
 
-        const [newTexts, duplicateTexts] = await resources.filterDuplicateSentences(
+        const [newTexts, duplicateTexts] = await sentences.findDuplicateSentences(
             ['In the matter of Universals.', 'All your base'],
             1
         );

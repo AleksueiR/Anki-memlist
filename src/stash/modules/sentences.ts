@@ -1,16 +1,18 @@
 import { db, getResourceSentenceIds, putSentenceInResource, Sentence } from '@/api/db';
-import { areArraysEqual, reduceArrayToObject, updateArrayWithValues, UpdateMode, wrapInArray } from '@/util';
-import { DBCommonEntryStashModule, Stash, StashModuleState } from '../internal';
+import {
+    areArraysEqual,
+    reduceArrayToObject,
+    updateArrayWithValues,
+    UpdateMode,
+    wrapInArray,
+    intersectArrays
+} from '@/util';
+import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { CommonEntryStashState } from '../common';
 
-export class SentencesState extends StashModuleState<Sentence> {
-    selectedIds: number[] = [];
-}
+export class SentencesState extends CommonEntryStashState<Sentence> {}
 
-export class SentencesModule extends DBCommonEntryStashModule<Sentence, SentencesState> {
-    get selectedIds(): number[] {
-        return this.state.selectedIds;
-    }
-
+export class SentencesModule extends CommonEntryStash<Sentence, SentencesState> {
     constructor(stash: Stash) {
         super(stash, db.sentences, SentencesState);
     }
@@ -22,8 +24,6 @@ export class SentencesModule extends DBCommonEntryStashModule<Sentence, Sentence
      * @memberof SentencesModule
      */
     async fetchResourceSentences(): Promise<void> {
-        this.reset();
-
         if (!this.activeJournal) throw new Error('sentences/fetchResourceSentences: Active journal is not set.');
 
         // use the first selected resource
@@ -35,7 +35,8 @@ export class SentencesModule extends DBCommonEntryStashModule<Sentence, Sentence
 
         this.state.all = reduceArrayToObject(sentences);
 
-        // TODO: reselect
+        // re-select previously selected sentences
+        this.setSelectedIds(intersectArrays(this.selectedIds, this.allIds));
     }
 
     /**
@@ -114,28 +115,5 @@ export class SentencesModule extends DBCommonEntryStashModule<Sentence, Sentence
                 sentenceIds.map(async sentenceId => putSentenceInResource(sentenceId, resourceId, activeJournalId))
             );
         });
-    }
-
-    /**
-     * Set provided `Sentence` ids as selected.
-     * Selection mode lets you add to, remove from, or replace the existing selection list.
-     *
-     * @param {(number | number[])} sentenceIds
-     * @param {*} [updateMode=UpdateMode.Replace]
-     * @returns {Promise<void>}
-     * @memberof SentencesModule
-     */
-    async setSelectedIds(sentenceIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
-        const sentenceIdList = wrapInArray(sentenceIds);
-
-        sentenceIdList.forEach(sentenceId => {
-            if (!this.isValid(sentenceId))
-                throw new Error(`sentences/setSelectedIds: Sentence #${sentenceId} is valid.`);
-        });
-
-        const newSelectedSentenceIds = updateArrayWithValues(this.selectedIds, sentenceIdList, updateMode);
-        if (areArraysEqual(this.state.selectedIds, newSelectedSentenceIds)) return;
-
-        this.state.selectedIds = newSelectedSentenceIds;
     }
 }

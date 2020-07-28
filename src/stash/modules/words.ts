@@ -6,23 +6,19 @@ import {
     intersectArrays,
     updateArrayWithValues,
     UpdateMode,
-    wrapInArray
+    wrapInArray,
+    reduceArrayToObject
 } from '@/util';
-import { DBCommonEntryStashModule, EntrySet, Stash, StashModuleState } from '../internal';
+import { CommonEntryStash, EntrySet, Stash, BaseStashState } from '../internal';
+import { CommonEntryStashState } from '../common';
 
 export type WordSet = EntrySet<Word>;
 
-export class WordsState extends StashModuleState<Word> {
-    selectedIds: number[] = [];
-}
+export class WordsState extends CommonEntryStashState<Word> {}
 
-export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
+export class WordsModule extends CommonEntryStash<Word, WordsState> {
     constructor(stash: Stash) {
         super(stash, db.words, WordsState);
-    }
-
-    get selectedIds(): number[] {
-        return this.state.selectedIds;
     }
 
     /**
@@ -35,12 +31,11 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
         const selectedWordIds = this.selectedIds;
         const selectedGroupIds = this.$stash.groups.selectedIds;
 
-        this.reset(); // remove any previously loaded words
-
-        const wordLists = await Promise.all(
+        const wordIds = await Promise.all(
             selectedGroupIds.map(async groupId => {
                 const group = this.$stash.groups.get(groupId);
-                if (!group) throw new Error(`words/fetchGroupWords: Group #${groupId} is not valid in active journal.`);
+                if (!group)
+                    throw new Error(`words/fetchGroupWords: Group #${groupId} is not valid in the active Journal.`);
 
                 // get word ids for this group
                 const wordIds = await getGroupWordIds(group.id);
@@ -52,17 +47,14 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
                         ? wordCollection
                         : wordCollection.filter(word => word.isArchived === group.displayMode);
 
-                return filteredCollection.toArray();
+                return filteredCollection.primaryKeys();
             })
         );
-
-        // filter out duplicates already in the state
-        wordLists.flat().forEach(word => {
-            if (!this.existInState(word.id)) this.addToState(word);
-        });
+        const words = await this.table.bulkGet([...new Set(wordIds.flat())]);
+        this.state.all = reduceArrayToObject(words);
 
         // re-select previously selected words
-        this.setSelectedIds(intersectArrays(selectedWordIds, this.state.allIds));
+        await this.setSelectedIds(intersectArrays(selectedWordIds, this.allIds));
     }
 
     /*     private async getIdsByText(values: string[]): Promise<number[]> {
@@ -303,26 +295,16 @@ export class WordsModule extends DBCommonEntryStashModule<Word, WordsState> {
     }
 
     /**
-     * Set provided word ids as selected.
+     * Set provided `Word` ids as selected.
      * Selection mode lets you add to, remove from, or replace the existing selection list.
      *
      * @param {(number | number[])} wordIds
      * @param {*} [updateMode=UpdateMode.Replace]
-     * @returns {Promise<void>}
+     * @returns {(Promise<void | 0>)}
      * @memberof WordsModule
      */
-    async setSelectedIds(wordIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
-        const wordIdList = wrapInArray(wordIds);
-
-        wordIdList.forEach(wordId => {
-            if (!this.isValid(wordId))
-                throw new Error(`words/setSelectedIds: Word #${wordId} is not part of the word pool.`);
-        });
-
-        const newSelectedWordIds = updateArrayWithValues(this.selectedIds, wordIdList, updateMode);
-        if (areArraysEqual(this.state.selectedIds, newSelectedWordIds)) return;
-
-        this.state.selectedIds = newSelectedWordIds;
+    async setSelectedIds(wordIds: number | number[], updateMode = UpdateMode.Replace): Promise<void | 0> {
+        super.setSelectedIds(wordIds, updateMode);
 
         // TODO: trigger lookup [?]
     }

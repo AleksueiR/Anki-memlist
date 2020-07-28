@@ -2,12 +2,7 @@ import { DBCommonEntry, DBEntry, isValidDBCommonEntry, Journal } from '@/api/db'
 import { Table } from 'dexie';
 import log from 'loglevel';
 import { Stash } from './internal';
-
-export type SpecificUpdater<K> = <T extends keyof Omit<K, 'id'>, S extends K[T]>(
-    id: number,
-    key: T,
-    value: S
-) => Promise<void | 0>;
+import { UpdateMode, wrapInArray, updateArrayWithValues, areArraysEqual } from '@/util';
 
 export type EntrySet<K> = Record<number, K>;
 
@@ -18,23 +13,19 @@ export type EntrySet<K> = Record<number, K>;
  * @class StashModuleState
  * @template K entry class
  */
-export class StashModuleState<K> {
+export class BaseStashState<K> {
     all: EntrySet<K> = {};
-
-    get allIds(): number[] {
-        return Object.keys(this.all).map(k => +k);
-    }
 }
 
 /**
  * A state constructor to create an empty state.
  *
  * @export
- * @interface StashModuleStateClass
+ * @interface StateClass
  * @template K
  * @template T
  */
-export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
+export interface StashStateClass<K, T extends BaseStashState<K>> {
     new (): T;
 }
 
@@ -46,7 +37,7 @@ export interface StashModuleStateClass<K, T extends StashModuleState<K>> {
  * @template K
  * @template T
  */
-export class BaseStashModule<K, T extends StashModuleState<K>> {
+export class BaseStash<K, T extends BaseStashState<K>> {
     /**
      * A reference to the Stash root object.
      *
@@ -69,12 +60,12 @@ export class BaseStashModule<K, T extends StashModuleState<K>> {
      * State Class constructor.
      *
      * @private
-     * @type {StashModuleStateClass<K, T>}
+     * @type {StashStateClass<K, T>}
      * @memberof BaseStashModule
      */
-    private readonly StateClass: StashModuleStateClass<K, T>;
+    private readonly StateClass: StashStateClass<K, T>;
 
-    constructor(stash: Stash, StateClass: StashModuleStateClass<K, T>) {
+    constructor(stash: Stash, StateClass: StashStateClass<K, T>) {
         const map = { $stash: stash, StateClass };
 
         // mark $stash as not enumerable so Vue doesn't make it reactive
@@ -104,11 +95,11 @@ export class BaseStashModule<K, T extends StashModuleState<K>> {
  *
  * @export
  * @class DBEntryStashModule
- * @extends {BaseStashModule<K, T>}
+ * @extends {BaseStash<K, T>}
  * @template K
  * @template T
  */
-export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>> extends BaseStashModule<K, T> {
+export class EntryStash<K extends DBEntry, T extends BaseStashState<K>> extends BaseStash<K, T> {
     /**
      * A reference to the corresponding Dexie table.
      *
@@ -118,7 +109,7 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
      */
     protected readonly table: Table<K, number>;
 
-    constructor(stash: Stash, table: Table, StateClass: StashModuleStateClass<K, T>) {
+    constructor(stash: Stash, table: Table, StateClass: StashStateClass<K, T>) {
         super(stash, StateClass);
 
         // mark `table` as not enumerable so Vue doesn't make it reactive
@@ -140,26 +131,30 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
         return this.state.all;
     }
 
-    protected existInState(id: number): boolean {
-        return this.state.all[id] !== undefined;
+    protected get allIds(): number[] {
+        return Object.keys(this.all).map(k => +k);
     }
 
-    protected addToState(value: K): void {
+    /* protected existInState(id: number): boolean {
+        return this.state.all[id] !== undefined;
+    } */
+
+    protected addToAll(value: K): void {
         if (this.all[value.id]) throw new Error(`${this.moduleName}/add: Entry ${value.id} already exists.`);
 
         this.state.all[value.id] = value;
     }
 
-    protected putInState(value: K): void {
+    /* protected putInState(value: K): void {
         this.state.all[value.id] = value;
     }
 
     protected deleteFromState(value: K | number): void {
         delete this.all[typeof value === 'number' ? value : value.id];
-    }
+    } */
 
     /**
-     * Get an Entry (or a list of Entries) with the id specified from the state.
+     * Get an Entry<K> with the id specified from the state.
      *
      * @param {number} id
      * @returns {(K | undefined)}
@@ -170,7 +165,7 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
     }
 
     /**
-     * Get an Entry with the id specified directly from the db.
+     * Get an Entry<K> with the id specified directly from the db.
      * Throws an error if the id is not valid.
      *
      * @protected
@@ -194,7 +189,7 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
     }
 
     /**
-     * Check if the supplied entry id is valid in the State
+     * Check if the supplied entry id is valid in the DB.
      *
      * @param {number} id
      * @returns {Promise<boolean>}
@@ -205,7 +200,7 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
     }
 
     /**
-     * Update a specified record in the entry set and update the corresponding record in the db.
+     * Update a specified record in the entry set and update the corresponding record in the DB.
      * Returns the number of entries updated (1 or 0);
      *
      * @protected
@@ -242,15 +237,24 @@ export class DBEntryStashModule<K extends DBEntry, T extends StashModuleState<K>
         });
     }
 
+    /**
+     * Return the name of this Stash module.
+     *
+     * @readonly
+     * @protected
+     * @type {string}
+     * @memberof DBEntryStashModule
+     */
     protected get moduleName(): string {
         return this.constructor.name.replace('Module', '').toLowerCase();
     }
 }
 
-export class DBCommonEntryStashModule<
-    K extends DBCommonEntry,
-    T extends StashModuleState<K>
-> extends DBEntryStashModule<K, T> {
+export class CommonEntryStashState<K> extends BaseStashState<K> {
+    selectedIds: number[] = [];
+}
+
+export class CommonEntryStash<K extends DBCommonEntry, T extends CommonEntryStashState<K>> extends EntryStash<K, T> {
     // TODO: check if these can be moved to the main class
     /**
      * Return an active journal or throws an error if the active journal is not set or its root group is not set.
@@ -298,5 +302,34 @@ export class DBCommonEntryStashModule<
         const entry = this.get(id);
 
         return entry !== undefined && entry.journalId === this.activeJournal.id;
+    }
+
+    get selectedIds(): number[] {
+        return this.state.selectedIds;
+    }
+
+    /**
+     * Set provided `Entry` ids as selected.
+     * Selection mode lets you "add to", "remove from", or "replace" the existing selection list.
+     *
+     * Return 0 if selected ids do not change.
+     *
+     * @param {(number | number[])} entryIds
+     * @param {*} [updateMode=UpdateMode.Replace]
+     * @returns {(Promise<void | 0>)}
+     * @memberof CommonEntryStash
+     */
+    async setSelectedIds(entryIds: number | number[], updateMode = UpdateMode.Replace): Promise<void | 0> {
+        const entryIdList = wrapInArray(entryIds);
+
+        entryIdList.forEach(entryId => {
+            if (!this.isValid(entryId))
+                throw new Error(`${this.moduleName}/setSelectedIds: Entry #${entryId} is not valid.`);
+        });
+
+        const newSelectedEntryIds = updateArrayWithValues(this.selectedIds, entryIdList, updateMode);
+        if (areArraysEqual(this.state.selectedIds, newSelectedEntryIds)) return 0;
+
+        this.state.selectedIds = newSelectedEntryIds;
     }
 }

@@ -703,7 +703,7 @@ describe('resources/new', () => {
     });
 });
 
-describe.only('resources/filterDuplicateSentences', () => {
+describe('resources/filterDuplicateSentences', () => {
     test('use an existing sentence', async () => {
         await resources.fetchJournalResources();
 
@@ -743,9 +743,10 @@ describe('sentences/new', () => {
         const resource1Count = await countSentencesInResources(1);
 
         const [sentenceId] = await sentences.new(
-            'The first entry in the schema string will always represent the primary key.',
-            1
+            'The first entry in the schema string will always represent the primary key.'
         );
+
+        await sentences.putSentencesInResource([sentenceId], 1);
 
         await expect(db.sentencesInResources.where({ sentenceId }).count()).resolves.toBe(1);
         await expect(countSentencesInResources(1)).resolves.toBe(resource1Count + 1);

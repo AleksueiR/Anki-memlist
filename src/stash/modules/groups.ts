@@ -5,9 +5,11 @@ import {
     removeFromArrayByValue,
     updateArrayWithValues,
     UpdateMode,
-    wrapInArray
+    wrapInArray,
+    intersectArrays
 } from '@/util';
-import { DBCommonEntryStashModule, Stash, StashModuleState } from '../internal';
+import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { CommonEntryStashState } from '../common';
 
 export type GroupWordCountEntry = {
     [GroupDisplayMode.All]: number;
@@ -17,18 +19,13 @@ export type GroupWordCountEntry = {
 
 export type GroupWordCountSet = Record<number, GroupWordCountEntry>;
 
-export class GroupsState extends StashModuleState<Group> {
-    selectedIds: number[] = [];
+export class GroupsState extends CommonEntryStashState<Group> {
     wordCount: GroupWordCountSet = {};
 }
 
-export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
+export class GroupsModule extends CommonEntryStash<Group, GroupsState> {
     constructor(stash: Stash) {
         super(stash, db.groups, GroupsState);
-    }
-
-    get selectedIds(): number[] {
-        return this.state.selectedIds;
     }
 
     get wordCount(): GroupWordCountSet {
@@ -42,12 +39,12 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     async fetchJournalGroups(): Promise<void> {
-        this.reset();
-
         if (!this.activeJournal) throw new Error('groups/fetchJournalGroups: Active journal is not set.');
 
         const groups = await this.table.where({ journalId: this.activeJournal.id }).toArray();
+
         this.state.all = reduceArrayToObject(groups);
+        await this.setSelectedIds(intersectArrays(this.selectedIds, this.allIds));
 
         this.refreshWordCounts();
     }
@@ -70,10 +67,8 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
             const newGroup = await this.table.get(newGroupId);
             if (!newGroup) throw new Error('groups/new: Cannot create a new Group.');
 
-            // add the newly created group to the state and refresh its word count (groups can only be created this way, so it's okay to do it here)
-            // otherwise would need to either reload all the journal groups, or have a separate function that can load groups by their ids
-            // NOTE: if the `attach` fails, it will leave state with an non-existing group added to it
-            this.addToState(newGroup);
+            // add group to the state
+            this.addToAll(newGroup);
 
             // add it to the root group's subGroupIds
             await this.attach(newGroup.id, this.activeJournal.rootGroupId);
@@ -127,8 +122,9 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
         // adjust selected ids
         await this.setSelectedIds(groupIdList, UpdateMode.Remove);
 
-        // remove them from state
-        groupIdList.forEach(groupId => this.deleteFromState(groupId));
+        // re-fetch groups
+        await this.fetchJournalGroups();
+
         this.removeOldWordCounts();
     }
 
@@ -147,7 +143,7 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
      */
     async refreshWordCounts(value?: number | number[]): Promise<void> {
         // get all ids if none were supplied
-        const groupIds = wrapInArray(value || this.state.allIds);
+        const groupIds = wrapInArray(value || this.allIds);
 
         await Promise.all(
             groupIds.map(async groupId => {
@@ -268,28 +264,22 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
      * Set provided group ids as selected.
      * Selection mode lets you add to, remove from, or replace the existing selection list.
      *
-     * @param {(number | number[])} groupIds
+     * @param {(number | number[])} value
      * @param {*} [updateMode=UpdateMode.Replace]
-     * @returns {Promise<void>}
+     * @returns {(Promise<void | 0>)}
      * @memberof GroupsModule
      */
-    async setSelectedIds(value: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
+    async setSelectedIds(value: number | number[], updateMode = UpdateMode.Replace): Promise<void | 0> {
         if (!this.activeJournal) throw new Error('groups/setSelectedIds: Active journal is not set.');
 
         const groupIds = wrapInArray(value);
 
-        // check if group ids are present in the state
-        if (groupIds.some(groupId => !this.isValid(groupId)))
-            throw new Error(`groups/setSelectedIds: Group #${value} is not valid.`);
-
         // check that the Root group is not being selected
-        if (groupIds.includes(this.activeJournal.rootGroupId))
+        if (groupIds.includes(this.activeJournal?.rootGroupId))
             throw new Error(`groups/setSelectedIds: Root Group cannot be selected.`);
 
-        const newSelectedGroupIds = updateArrayWithValues(this.selectedIds, wrapInArray(groupIds), updateMode);
-        if (areArraysEqual(this.state.selectedIds, newSelectedGroupIds)) return;
+        if ((await super.setSelectedIds(groupIds, updateMode)) === 0) return 0;
 
-        this.state.selectedIds = newSelectedGroupIds;
         this.refreshWordCounts(this.state.selectedIds);
 
         // load words from the selected groups
@@ -331,7 +321,7 @@ export class GroupsModule extends DBCommonEntryStashModule<Group, GroupsState> {
      * @memberof GroupsModule
      */
     protected removeOldWordCounts(): void {
-        const allIds = this.state.allIds;
+        const allIds = this.allIds;
 
         Object.keys(this.state.wordCount).forEach(key => {
             if (!allIds.includes(+key)) delete this.state.wordCount[+key];

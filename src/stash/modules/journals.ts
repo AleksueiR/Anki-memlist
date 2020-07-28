@@ -1,15 +1,15 @@
 import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
 import Dexie from 'dexie';
-import { EntrySet, Stash, DBEntryStashModule, StashModuleState } from '../internal';
+import { EntrySet, Stash, EntryStash, BaseStashState } from '../internal';
 
 export type JournalSet = EntrySet<Journal>;
 
-export class JournalsState extends StashModuleState<Journal> {
+export class JournalsState extends BaseStashState<Journal> {
     activeId: number | null = null;
 }
 
-export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
+export class JournalsModule extends EntryStash<Journal, JournalsState> {
     constructor(stash: Stash) {
         super(stash, db.journals, JournalsState);
     }
@@ -28,11 +28,11 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
      * @returns {Promise<void>}
      */
     async fetch(): Promise<void> {
-        this.reset(); // remove any previously loaded journals
-
         const journals = await this.table.toArray();
 
         this.state.all = reduceArrayToObject(journals);
+
+        this.setActiveId(this.isValid(this.activeId || -1) ? this.activeId : null);
     }
 
     /**
@@ -53,9 +53,8 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
             // create a Root Group directly from here as it's done only during the initial set up and cannot be changed later
             const rootGroupId = await db.groups.add(new Group('Root group', newJournal.id));
 
-            // add the newly created journal directly to the state
-            // since it's a new journal and it's already in DB and it's not active yet this will not trigger any further fetching from the db
-            this.addToState(newJournal);
+            // add journal to the state
+            this.addToAll(newJournal);
 
             // set rootGroupId of the new Journal;
             // rootGroupId cannot be changed after a journal is created
@@ -76,26 +75,35 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
     async delete(journalId: number): Promise<void> {
         if (!this.isValid(journalId)) throw new Error(`${this.moduleName}/delete: Journal #${journalId} is not valid.`);
 
-        // when deleting an active journal, set active id to `null`
-        if (journalId === this.activeId) {
-            this.reset();
-        }
+        await db.transaction(
+            'rw',
+            [this.table, db.groups, db.words, db.wordsInGroups, db.resources, db.sentences, db.sentencesInResources],
+            async () => {
+                const groupIds = await db.groups.where({ journalId }).primaryKeys();
+                const resourceIds = await db.resources.where({ journalId }).primaryKeys();
 
-        await db.transaction('rw', this.table, db.groups, db.words, db.wordsInGroups, async () => {
-            const groupIds = await db.groups.where({ journalId }).primaryKeys();
+                // delete groups and words
+                await db.groups.where({ journalId }).delete();
+                await db.words.where({ journalId }).delete();
+                await db.wordsInGroups
+                    .where('groupId')
+                    .anyOf(groupIds)
+                    .delete();
 
-            await db.groups.where({ journalId }).delete();
-            await db.words.where({ journalId }).delete();
-            await db.wordsInGroups
-                .where('groupId')
-                .anyOf(groupIds)
-                .delete();
+                // delete resources and sentences
+                await db.resources.where({ journalId }).delete();
+                await db.sentences.where({ journalId }).delete();
+                await db.sentencesInResources
+                    .where('resourceId')
+                    .anyOf(resourceIds)
+                    .delete();
 
-            await this.table.delete(journalId);
-            this.deleteFromState(journalId);
+                // delete journal entry
+                await this.table.delete(journalId);
+            }
+        );
 
-            // TODO: purge sample sources
-        });
+        await this.fetch();
     }
 
     /**
@@ -106,6 +114,11 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
      * @memberof JournalsModule
      */
     async setActiveId(value: number | null = null): Promise<void> {
+        if (value !== null && !this.isValid(value))
+            throw new Error(`journals/setName: Journal #${value} is not valid.`);
+
+        if (this.state.activeId === value) return;
+
         this.state.activeId = value;
 
         if (value) {
@@ -113,7 +126,8 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
         } else {
             this.$stash.groups.reset();
             this.$stash.words.reset();
-            // TODO: reset sources
+            this.$stash.resources.reset();
+            this.$stash.sentences.reset();
         }
     }
 
@@ -154,7 +168,7 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
     }
 
     /**
-     * Reset the Journal, Groups, and Words states to their defaults.
+     * Reset the `Journal`, `Group`, `Word`, `Resource` and `Sentence` module states to their defaults.
      *
      * @memberof JournalsModule
      */
@@ -163,5 +177,7 @@ export class JournalsModule extends DBEntryStashModule<Journal, JournalsState> {
 
         this.$stash.groups.reset();
         this.$stash.words.reset();
+        this.$stash.resources.reset();
+        this.$stash.sentences.reset();
     }
 }

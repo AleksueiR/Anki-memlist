@@ -1,16 +1,18 @@
 import { db, getResourceSentenceIds, putSentenceInResource, Resource } from '@/api/db';
-import { areArraysEqual, reduceArrayToObject, updateArrayWithValues, UpdateMode, wrapInArray } from '@/util';
-import { DBCommonEntryStashModule, Stash, StashModuleState } from '../internal';
+import {
+    areArraysEqual,
+    reduceArrayToObject,
+    updateArrayWithValues,
+    UpdateMode,
+    wrapInArray,
+    intersectArrays
+} from '@/util';
+import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { CommonEntryStashState } from '../common';
 
-export class ResourcesState extends StashModuleState<Resource> {
-    selectedIds: number[] = [];
-}
+export class ResourcesState extends CommonEntryStashState<Resource> {}
 
-export class ResourcesModule extends DBCommonEntryStashModule<Resource, ResourcesState> {
-    get selectedIds(): number[] {
-        return this.state.selectedIds;
-    }
-
+export class ResourcesModule extends CommonEntryStash<Resource, ResourcesState> {
     constructor(stash: Stash) {
         super(stash, db.resources, ResourcesState);
     }
@@ -22,19 +24,14 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
      * @memberof ResourcesModule
      */
     async fetchJournalResources(): Promise<void> {
-        this.reset();
-
         if (!this.activeJournal) throw new Error('resources/fetchJournalResources: Active journal is not set.');
 
         const resources = await this.table.where({ journalId: this.activeJournal.id }).toArray();
+
         this.state.all = reduceArrayToObject(resources);
 
-        // TODO: reselect
-        // // adjust selected ids
-        // await this.setSelectedIds(resourceIdList, UpdateMode.Remove);
-
-        // // remove them from state
-        // resourceIdList.forEach(resourceId => this.deleteFromState(resourceId));
+        // re-select previously selected resources
+        await this.setSelectedIds(intersectArrays(this.selectedIds, this.allIds));
     }
 
     /**
@@ -55,7 +52,8 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
             const newResource = await this.table.get(newResourceId);
             if (!newResource) throw new Error('resources/new: Cannot create a new Resource.');
 
-            this.addToState(newResource);
+            // add resource to the state
+            this.addToAll(newResource);
 
             return newResource.id;
         });
@@ -98,21 +96,13 @@ export class ResourcesModule extends DBCommonEntryStashModule<Resource, Resource
      *
      * @param {(number | number[])} resourceIds
      * @param {*} [updateMode=UpdateMode.Replace]
-     * @returns {Promise<void>}
+     * @returns {(Promise<void | 0>)}
      * @memberof ResourcesModule
      */
-    async setSelectedIds(resourceIds: number | number[], updateMode = UpdateMode.Replace): Promise<void> {
-        const resourceIdList = wrapInArray(resourceIds);
+    async setSelectedIds(resourceIds: number | number[], updateMode = UpdateMode.Replace): Promise<void | 0> {
+        if ((await super.setSelectedIds(resourceIds, updateMode)) === 0) return 0;
 
-        resourceIdList.forEach(resourceId => {
-            if (!this.isValid(resourceId))
-                throw new Error(`resources/setSelectedIds: Resource #${resourceId} is valid.`);
-        });
-
-        const newSelectedResourceIds = updateArrayWithValues(this.selectedIds, resourceIdList, updateMode);
-        if (areArraysEqual(this.state.selectedIds, newSelectedResourceIds)) return;
-
-        this.state.selectedIds = newSelectedResourceIds;
+        await this.$stash.sentences.fetchResourceSentences();
     }
 
     /**

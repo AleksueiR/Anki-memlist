@@ -1,7 +1,6 @@
 import { db, Group, Journal } from '@/api/db';
 import { reduceArrayToObject } from '@/util';
-import Dexie from 'dexie';
-import { EntrySet, Stash, EntryStash, BaseStashState } from '../internal';
+import { BaseStashState, EntrySet, EntryStash, Stash } from '../internal';
 
 export type JournalSet = EntrySet<Journal>;
 

@@ -92,7 +92,7 @@ export async function rePopulate(db: WordPouch): Promise<void> {
         new Word('party', journalId1), // 25
 
         new Word('company', journalId2), // 26
-        new Word('parent', journalId2) // 27
+        new Word('parent', journalId2) // 27,
     ]);
 
     const wordsInGroupsMap: [number, number][] = [

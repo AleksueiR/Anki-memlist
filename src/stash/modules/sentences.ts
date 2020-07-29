@@ -1,15 +1,7 @@
 import { db, getResourceSentenceIds, putSentenceInResource, Sentence } from '@/api/db';
-import {
-    areArraysEqual,
-    reduceArrayToObject,
-    updateArrayWithValues,
-    UpdateMode,
-    wrapInArray,
-    intersectArrays,
-    exceptArray
-} from '@/util';
-import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { exceptArray, intersectArrays, reduceArrayToObject, UpdateMode, wrapInArray } from '@/util';
 import { CommonEntryStashState } from '../common';
+import { CommonEntryStash, Stash } from '../internal';
 
 export class SentencesState extends CommonEntryStashState<Sentence> {}
 
@@ -54,7 +46,7 @@ export class SentencesModule extends CommonEntryStash<Sentence, SentencesState> 
 
         const textList = wrapInArray(texts);
 
-        return db.transaction('rw', this.table, db.resources, db.sentencesInResources, async () => {
+        return db.transaction('rw', this.table, async () => {
             const newSentenceIds = await this.table.bulkAdd(
                 textList.map(text => new Sentence(text, activeJournalId)),
                 { allKeys: true }
@@ -141,5 +133,10 @@ export class SentencesModule extends CommonEntryStash<Sentence, SentencesState> 
                 sentenceIds.map(async sentenceId => putSentenceInResource(sentenceId, resourceId, activeJournalId))
             );
         });
+
+        // re-fetch sentences if adding to one of the active resources
+        if (this.$stash.resources.selectedIds.includes(resourceId)) {
+            await this.fetchResourceSentences();
+        }
     }
 }

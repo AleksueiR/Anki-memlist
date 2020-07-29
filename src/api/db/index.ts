@@ -61,9 +61,7 @@ export class Word implements DBCommonEntry {
     ) {}
 }
 
-export class WordInGroup implements DBEntry {
-    readonly id: number;
-
+export class WordInGroup {
     constructor(public wordId: number, public groupId: number) {}
 }
 
@@ -73,9 +71,7 @@ export class Resource implements DBCommonEntry {
     constructor(public name: string, public journalId: number, public type: number, public componentId?: string) {}
 }
 
-export class ResourceInGroup implements DBEntry {
-    readonly id: number;
-
+export class ResourceInGroup {
     constructor(public resourceId: number, public groupId: number) {}
 }
 
@@ -85,9 +81,7 @@ export class Sentence implements DBCommonEntry {
     constructor(public text: string, public journalId: number) {}
 }
 
-export class SentenceInResource implements DBEntry {
-    readonly id: number;
-
+export class SentenceInResource {
     constructor(public sentenceId: number, public resourceId: number) {}
 }
 
@@ -101,10 +95,12 @@ export class WordPouch extends Dexie {
     wordsInGroups: Dexie.Table<WordInGroup, [number, number]>;
 
     resources: Dexie.Table<Resource, number>;
+    // many-to-many relationship
     resourcesInGroups: Dexie.Table<ResourceInGroup, [number, number]>;
 
     sentences: Dexie.Table<Sentence, number>;
-    sentencesInResources: Dexie.Table<SentenceInResource, [number, number]>;
+    // one-to-many relationship
+    sentencesInResources: Dexie.Table<SentenceInResource, number>;
 
     // NOTE: maybe it will be worth to use many-to-many junction for words-in-group as described here: https://github.com/dfahlander/Dexie.js/issues/815
 
@@ -114,18 +110,22 @@ export class WordPouch extends Dexie {
             // A compound index cannot be marked MultiEntry. The limitation lies within indexedDB itself. :/
             journals: '++id, name, rootGroupId',
             groups: '++id, journalId, [id+journalId], name, displayMode, *subGroupIds',
-            words: '++id, journalId, [id+journalId], text, isArchived',
+            words: '++id, journalId, [id+journalId], &[text+journalId], text, isArchived',
             wordsInGroups: '[wordId+groupId], wordId, groupId',
             resources: '++id, journalId, [id+journalId], name',
             resourcesInGroups: '[resourceId+groupId], resourceId, groupId',
             sentences: '++id, journalId, [id+journalId]',
-            sentencesInResources: '[sentenceId+resourceId], &sentenceId, resourceId'
+            sentencesInResources: '&sentenceId, [sentenceId+resourceId], resourceId'
         });
 
         this.journals.mapToClass(Journal);
-        this.journals.mapToClass(Group);
-        this.journals.mapToClass(Word);
-        this.journals.mapToClass(WordInGroup);
+        this.groups.mapToClass(Group);
+        this.words.mapToClass(Word);
+        this.wordsInGroups.mapToClass(WordInGroup);
+        this.resources.mapToClass(Resource);
+        this.resourcesInGroups.mapToClass(ResourceInGroup);
+        this.sentences.mapToClass(Sentence);
+        this.sentencesInResources.mapToClass(SentenceInResource);
     }
 }
 
@@ -147,6 +147,8 @@ async function rePopulate(db: WordPouch): Promise<void> {}
 export async function isValidDBCommonEntry(table: Table, condition: { [key: string]: any }): Promise<boolean> {
     return (await table.where(condition).count()) === 1;
 }
+
+//#region - Groups / Words
 
 export async function getGroupWordIds(groupId: number): Promise<number[]> {
     return await db.wordsInGroups
@@ -180,6 +182,8 @@ export async function deleteWordInGroup(wordId: number, groupId: number): Promis
     });
 }
 
+//#endregion - Groups / Words
+
 //#region - Sentences / Resources
 
 /**
@@ -190,10 +194,7 @@ export async function deleteWordInGroup(wordId: number, groupId: number): Promis
  * @returns {Promise<number[]>}
  */
 export async function getResourceSentenceIds(resourceId: number): Promise<number[]> {
-    return await db.sentencesInResources
-        .where({ resourceId })
-        .primaryKeys()
-        .then(sentenceAndResourceIds => sentenceAndResourceIds.map(([sentenceId]) => sentenceId));
+    return await db.sentencesInResources.where({ resourceId }).primaryKeys();
 }
 
 /**
@@ -232,90 +233,5 @@ export async function deleteSentence(sentenceId: number): Promise<void> {
 }
 
 //#endregion - Sentences / Resources
-
-// /**
-//  * Get word count of the specified group based on the provided group display mode.
-//  *
-//  * @export
-//  * @param {number} groupId
-//  * @param {*} [displayMode=GroupDisplayMode.All]
-//  * @returns {Promise<number>}
-//  */
-// export async function getGroupWordCount(groupId: number, displayMode = GroupDisplayMode.All): Promise<number> {
-//     if (!(await isValidEntry(groupId, db.groups)))
-//         throw new Error(`db/getGroupWordCount: Invalid group id #${groupId}.`);
-
-//     return db.transaction('r', db.wordsInGroups, async () => {
-//         const wordIds = await getGroupWordIds(groupId);
-
-//         if (displayMode === GroupDisplayMode.All) {
-//             return wordIds.length;
-//         }
-
-//         return db.words
-//             .where('id')
-//             .anyOf(wordIds)
-//             .filter(word => word.isArchived === displayMode)
-//             .count();
-//     });
-// }
-
-// /**
-//  * Get words belonging to the specified group based on the provided group display mode.
-//  *
-//  * @export
-//  * @param {number} groupId
-//  * @param {*} [displayMode=GroupDisplayMode.All]
-//  * @returns {Promise<Word[]>}
-//  */
-// export async function getGroupWords(groupId: number, displayMode = GroupDisplayMode.All): Promise<Word[]> {
-//     if (!(await isValidEntry(groupId, db.groups))) throw new Error(`db/getGroupWords: Invalid group id #${groupId}.`);
-
-//     return db.transaction('r', db.wordsInGroups, async () => {
-//         const wordIds = await getGroupWordIds(groupId);
-
-//         if (displayMode === GroupDisplayMode.All) {
-//             return db.words.bulkGet(wordIds);
-//         }
-
-//         return db.words
-//             .where('id')
-//             .anyOf(wordIds)
-//             .filter(word => word.isArchived === displayMode)
-//             .toArray();
-//     });
-// }
-
-// /**
-//  * Get all word ids belonging to the specified group.
-//  *
-//  * @param {number} groupId
-//  * @returns {Promise<number[]>}
-//  */
-// async function getGroupWordIds(groupId: number): Promise<number[]> {
-//     return await db.wordsInGroups
-//         .where({ groupId })
-//         .primaryKeys()
-//         .then(wordAndGroupIds => wordAndGroupIds.map(([wordId]) => wordId));
-// }
-
-/* export async function getWordGroupCount(wordId: number): Promise<number> {
-    if (!(await isValidEntry(wordId, db.groups))) throw new Error(`db/getWordGroupCount: Invalid word id #${wordId}.`);
-
-    return db.wordsInGroups.where({ wordId }).count();
-} */
-
-/* export async function getWordGroups(wordId: number): Promise<Group[]> {
-    if (!(await isValidEntry(wordId, db.groups))) throw new Error(`db/getWordGroups: Invalid word id #${wordId}.`);
-
-    return db.transaction('r', db.wordsInGroups, async () => {
-        const groupIds = await db.wordsInGroups
-            .where({ wordId })
-            .primaryKeys()
-            .then(wordAndGroupIds => wordAndGroupIds.map(([, groupId]) => groupId));
-
-        return db.groups.bulkGet(groupIds);
-    });
-} */
 
 export { db };

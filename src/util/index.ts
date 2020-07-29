@@ -91,7 +91,11 @@ export function combineArrays<K>(array1: K[], array2: K[]): [K, K][] {
 export function areArraysEqual<K>(array1: K[], array2: K[], respectOrder = false): boolean {
     if (array1.length !== array2.length) return false;
 
-    return array1.some((value1, index) => value1 !== array2[index]);
+    return array1.some((a1, index) => a1 !== array2[index]);
+}
+
+export function doArraysIntersect<K>(array1: K[], array2: K[]): boolean {
+    return array1.some(a1 => array2.includes(a1));
 }
 
 /**

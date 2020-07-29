@@ -1,15 +1,7 @@
 import { db, getGroupWordIds, Group, GroupDisplayMode } from '@/api/db';
-import {
-    areArraysEqual,
-    reduceArrayToObject,
-    removeFromArrayByValue,
-    updateArrayWithValues,
-    UpdateMode,
-    wrapInArray,
-    intersectArrays
-} from '@/util';
-import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { intersectArrays, reduceArrayToObject, removeFromArrayByValue, UpdateMode, wrapInArray } from '@/util';
 import { CommonEntryStashState } from '../common';
+import { CommonEntryStash, Stash } from '../internal';
 
 export type GroupWordCountEntry = {
     [GroupDisplayMode.All]: number;
@@ -109,6 +101,9 @@ export class GroupsModule extends CommonEntryStash<Group, GroupsState> {
                     await (deleteLinkedWords
                         ? this.$stash.words.delete(wordIds, true)
                         : this.$stash.words.delete(wordIds, groupId));
+
+                    // delete group-resource links
+                    await db.resourcesInGroups.where({ groupId }).delete();
 
                     // delete sub groups and their words in turn
                     await this.delete(this.get(groupId)?.subGroupIds || [], deleteLinkedWords);

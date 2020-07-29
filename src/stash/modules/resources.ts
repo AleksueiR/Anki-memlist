@@ -1,14 +1,7 @@
-import { db, getResourceSentenceIds, putSentenceInResource, Resource } from '@/api/db';
-import {
-    areArraysEqual,
-    reduceArrayToObject,
-    updateArrayWithValues,
-    UpdateMode,
-    wrapInArray,
-    intersectArrays
-} from '@/util';
-import { CommonEntryStash, Stash, BaseStashState } from '../internal';
+import { db, getResourceSentenceIds, Resource } from '@/api/db';
+import { intersectArrays, reduceArrayToObject, UpdateMode, wrapInArray } from '@/util';
 import { CommonEntryStashState } from '../common';
+import { CommonEntryStash, Stash } from '../internal';
 
 export class ResourcesState extends CommonEntryStashState<Resource> {}
 
@@ -119,5 +112,5 @@ export class ResourcesModule extends CommonEntryStash<Resource, ResourcesState> 
         return this.updateStateAndDb(resourceId, 'name', name);
     }
 
-
+    async putResourcesInGroups(resourceIds: number[], groupId: number): Promise<void> {}
 }
